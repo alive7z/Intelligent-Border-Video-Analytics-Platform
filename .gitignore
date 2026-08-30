@@ -1,0 +1,83 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+
+# Root build output if created
+dist/
+
+
+# Backend
+backend/node_modules/
+backend/.env
+
+
+# Python / AI Engine
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.venv/
+venv/
+
+ai_engine/.venv/
+ai_engine/venv/
+
+.env
+
+.pytest_cache/
+.mypy_cache/
+
+
+# Environment Files
+.env
+.env.*
+!.env.example
+
+frontend/.env
+backend/.env
+ai_engine/.env
+
+
+# AI Model Weights
+*.pt
+*.pth
+*.onnx
+*.engine
+
+ai_engine/models/weights/*
+
+# Keep weights directory if needed
+!ai_engine/models/weights/.gitkeep
+
+
+# Local Evidence / Runtime
+storage/**
+!storage/.gi
+*.local
+docker-compose.override.yml
+
+
+# Database Local Files
+*.sqlite
+*.sqlite3
+*.db
+
+
+# Coverage / Tests
+coverage/
+htmlcov/
+
+
+# Temporary Files
+*.tmp
+*.temp
+.cache/

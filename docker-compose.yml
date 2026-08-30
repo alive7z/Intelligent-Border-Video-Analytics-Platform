@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://backend:3001
+      VITE_WS_URL: http://backend:3001
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+    depends_on:
+      - redis
+      - sql
+
+  ai_engine:
+    build:
+      context: ./ai_engine
+    ports:
+      - "8000:8000"
+    environment:
+      AI_ENGINE_PORT: 8000
+    depends_on:
+      - redis
+
+  sql:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ibvap
+      POSTGRES_USER: ibvap
+      POSTGRES_PASSWORD: change-me
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+
+# NOTE:
+# This compose file is intentionally minimal and will be refined after final architecture approval.
+# Do not add production-grade deployment topology or app logic yet.

@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'ibvap-backend'
+    static_configs:
+      - targets: ['backend:3001']
+
+  - job_name: 'ibvap-ai-engine'
+    static_configs:
+      - targets: ['ai_engine:8000']

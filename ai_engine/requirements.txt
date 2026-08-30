@@ -1,0 +1,12 @@
+opencv-python>=4.10.0
+numpy>=1.26.0
+pillow>=10.4.0
+pytorch>=2.4.0
+ultralytics>=8.2.0
+imutils>=0.6.0
+redis>=5.0.8
+requests>=2.32.0
+pytz>=2024.1
+
+# OCR and tracking libraries will be finalized after architecture approval.
+# These packages are placeholders for later modelling work.
