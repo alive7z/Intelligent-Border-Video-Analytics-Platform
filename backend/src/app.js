@@ -1,33 +1,26 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
-const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
 const env = require("./config/env");
+const corsOptions = require("./config/cors");
+const requestLogger = require("./middleware/requestLogger.middleware");
+const notFound = require("./middleware/notFound.middleware");
+const errorHandler = require("./middleware/error.middleware");
+const routes = require("./routes");
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
-app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan("combined"));
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(requestLogger);
 
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+app.use(env.API_PREFIX, routes);
 
-app.use("/api", apiLimiter);
-
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", service: "ibvap-backend", mode: env.NODE_ENV });
-});
-
-app.get("/", (req, res) => {
-  res.json({ message: "IBVAP backend scaffold ready." });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;

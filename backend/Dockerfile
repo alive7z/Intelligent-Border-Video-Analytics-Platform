@@ -7,6 +7,9 @@ RUN npm install --only=production
 
 COPY src ./src
 
-EXPOSE 3001
+ENV NODE_ENV=production
+ENV PORT=5000
 
-CMD ["node", "src/server.js"]
+EXPOSE 5000
+
+CMD ["npm", "start"]
