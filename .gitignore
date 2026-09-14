@@ -2,6 +2,10 @@
 .DS_Store
 Thumbs.db
 
+# Editor files
+.idea/
+.vscode/
+
 
 # Node / Frontend
 node_modules/
@@ -15,6 +19,7 @@ dist/
 
 
 # Backend
+
 backend/node_modules/
 backend/.env
 
@@ -60,8 +65,19 @@ ai_engine/models/weights/*
 
 
 # Local Evidence / Runtime
-storage/**
-!storage/.gi
+ai_engine/screenlog.*
+cam01_live_frame.jpg
+logs/
+*.log
+
+/storage/*
+!/storage/.gitkeep
+
+/evidence/
+/snapshots/
+/plates/
+/faces/
+/clips/
 *.local
 docker-compose.override.yml
 
@@ -77,7 +93,15 @@ coverage/
 htmlcov/
 
 
+# Large video files (local test clips)
+*.mp4
+*.mov
+*.avi
+*.mkv
+
 # Temporary Files
 *.tmp
 *.temp
 .cache/
+tmp/
+temp/
