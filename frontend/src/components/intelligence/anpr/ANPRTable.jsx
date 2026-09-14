@@ -7,7 +7,7 @@ function ActionButton({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="btn-focus inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      className="btn-focus inline-flex items-center rounded-lg border border-green-500 bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 hover:border-green-600"
     >
       View
     </button>
@@ -37,10 +37,10 @@ function ANPRTable({ events, onView }) {
             <tbody>
               {events.map((e) => (
                 <tr key={e.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium text-navy-700">{e.plateNumber}</td>
-                  <td className="px-5 py-3 text-slate-700">{e.vehicleType}</td>
-                  <td className="px-5 py-3 text-slate-600">{e.cameraId}</td>
-                  <td className="px-5 py-3 text-slate-600">{e.cameraName}</td>
+                  <td className="px-5 py-3 font-medium text-sky-400">{e.plateNumber}</td>
+                  <td className="px-5 py-3 text-slate-700">{e.vehicleType || "—"}</td>
+                  <td className="px-5 py-3 text-slate-600">{e.cameraId || "—"}</td>
+                  <td className="px-5 py-3 text-slate-600">{e.location || "—"}</td>
                   <td className="px-5 py-3">
                     <ConfidenceBadge value={e.confidence} />
                   </td>
@@ -62,12 +62,12 @@ function ANPRTable({ events, onView }) {
           <div key={e.id} className="card p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-semibold text-navy-700">{e.plateNumber}</p>
+                <p className="font-semibold text-sky-400">{e.plateNumber}</p>
                 <p className="text-sm text-slate-700">
-                  {e.vehicleType} · {e.cameraId}
+                  {e.vehicleType || "—"} · {e.cameraId || "—"}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-400">
-                  {e.location} · {formatTime(e.timestamp)}
+                  {e.location || "—"} · {formatTime(e.timestamp)}
                 </p>
               </div>
               <ConfidenceBadge value={e.confidence} />
@@ -75,7 +75,7 @@ function ANPRTable({ events, onView }) {
             <button
               type="button"
               onClick={() => onView(e)}
-              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-green-500 bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600 hover:border-green-600"
             >
               View
             </button>

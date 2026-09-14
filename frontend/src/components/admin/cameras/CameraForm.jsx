@@ -7,18 +7,27 @@ const EMPTY = {
   id: "",
   name: "",
   location: "",
+  latitude: "",
+  longitude: "",
+  neighbors: "",
   sector: "North",
   rtspUrl: "",
-  fpsLimit: "",
-  sampling: "",
+  sourceType: "IP_CAMERA",
+  streamProtocol: "RTSP",
+  targetFps: "",
+  enabled: true,
   description: "",
 };
 
 const SECTORS = ["North", "South", "East", "West", "Central"];
+const SOURCE_TYPES = ["IP_CAMERA", "MOBILE", "VIDEO_FILE", "OTHER"];
+const STREAM_PROTOCOLS = ["RTSP", "HTTP", "HLS", "WEBRTC", "OTHER"];
 
 /**
  * Add / edit camera dialog. RTSP credentials are never echoed — the URL is
- * always masked so plugin secrets never reach the UI.
+ * always masked so plugin secrets never reach the UI. Source type / protocol /
+ * target FPS are persisted to the backend and consumed by the AI engine
+ * (auto-reconnect on change).
  */
 function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
   const [form, setForm] = useState(EMPTY);
@@ -31,10 +40,15 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
         id: editing.id,
         name: editing.name || "",
         location: editing.location || "",
+        latitude: editing.latitude ?? "",
+        longitude: editing.longitude ?? "",
+        neighbors: (editing.neighborCameraCodes || []).join(", "),
         sector: editing.sector || "North",
         rtspUrl: "",
-        fpsLimit: editing.fpsLimit ?? "",
-        sampling: editing.sampling || "",
+        sourceType: editing.sourceType || "IP_CAMERA",
+        streamProtocol: editing.streamProtocol || "RTSP",
+        targetFps: editing.targetFps != null ? String(editing.targetFps) : "",
+        enabled: editing.enabled !== false,
         description: editing.description || "",
       });
     } else {
@@ -45,13 +59,23 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const setEnabled = (e) => setForm((f) => ({ ...f, enabled: e.target.checked }));
+
   const submit = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = "Name is required";
     if (!form.id.trim() && !editing) errs.id = "Camera ID is required";
+    const fps = Number(form.targetFps);
+    if (form.targetFps !== "" && !(fps > 0 && fps <= 60)) {
+      errs.targetFps = "Target FPS must be between 0 and 60";
+    }
+    if ((form.latitude === "") !== (form.longitude === "")) errs.latitude = "Enter both coordinates or leave both blank";
+    for (const [field, limit] of [["latitude", 90], ["longitude", 180]]) {
+      if (form[field] !== "" && (!Number.isFinite(Number(form[field])) || Math.abs(Number(form[field])) > limit)) errs[field] = `Must be between -${limit} and ${limit}`;
+    }
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    onSubmit(form, editing);
+    onSubmit({ ...form, neighborCameraCodes: form.neighbors.split(",").map((code) => code.trim()).filter(Boolean) }, editing);
   };
 
   return (
@@ -132,24 +156,78 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
           type="password"
           disabled={!canManage}
           placeholder="rtsp://••••••••••••"
-          hint="Masked — never displayed after save"
+          hint={editing
+            ? "Leave blank to keep the existing URL; enter a new RTSP URL to replace it"
+            : "Masked — never displayed after save"}
         />
+        <Input label="Latitude (optional)" id="cam-latitude" type="number" step="any"
+          value={form.latitude} onChange={set("latitude")} error={errors.latitude} disabled={!canManage}
+          hint="Use only the camera's authorized geographic location" />
+        <Input label="Longitude (optional)" id="cam-longitude" type="number" step="any"
+          value={form.longitude} onChange={set("longitude")} error={errors.longitude} disabled={!canManage} />
+        <Input label="Neighbor cameras (optional)" id="cam-neighbors" value={form.neighbors}
+          onChange={set("neighbors")} disabled={!canManage}
+          hint="Comma-separated configured camera codes for related-activity analysis" />
+        <div>
+          <label htmlFor="cam-source-type" className="mb-1.5 block text-sm font-medium text-slate-700">
+            Source Type
+          </label>
+          <select
+            id="cam-source-type"
+            value={form.sourceType}
+            onChange={set("sourceType")}
+            disabled={!canManage}
+            className="input-field"
+          >
+            {SOURCE_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="cam-protocol" className="mb-1.5 block text-sm font-medium text-slate-700">
+            Stream Protocol
+          </label>
+          <select
+            id="cam-protocol"
+            value={form.streamProtocol}
+            onChange={set("streamProtocol")}
+            disabled={!canManage}
+            className="input-field"
+          >
+            {STREAM_PROTOCOLS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
         <Input
-          label="FPS Limit"
-          id="cam-fps"
-          value={form.fpsLimit}
-          onChange={set("fpsLimit")}
+          label="Target Processing FPS"
+          id="cam-target-fps"
+          value={form.targetFps}
+          onChange={set("targetFps")}
+          error={errors.targetFps}
           disabled={!canManage}
           placeholder="e.g. 15"
+          hint="Max frames/sec sent to AI (0.1–60). Blank uses the default (5). Changing this reconfigures the live AI pipeline automatically."
         />
-        <Input
-          label="Sampling"
-          id="cam-sampling"
-          value={form.sampling}
-          onChange={set("sampling")}
-          disabled={!canManage}
-          placeholder="e.g. 10 frames/min"
-        />
+        <label
+          htmlFor="cam-enabled"
+          className="flex cursor-pointer items-center gap-3 py-2 text-sm text-slate-700"
+        >
+          <input
+            id="cam-enabled"
+            type="checkbox"
+            checked={form.enabled}
+            onChange={setEnabled}
+            disabled={!canManage}
+            className="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-500"
+          />
+          Enabled
+        </label>
         <Input
           label="Description"
           id="cam-desc"

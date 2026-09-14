@@ -3,15 +3,14 @@ import {
   getCameras,
   createCamera,
   updateCamera,
-  disableCamera,
-  testCameraConnection,
+  deleteCamera,
 } from "../../../services/adminApi";
 import Card from "../../common/Card";
 import Button from "../../common/Button";
 import Badge from "../../common/Badge";
-import Modal from "../../common/Modal";
 import Loader from "../../common/Loader";
-import { SearchIcon, PlusIcon, EditIcon, CctvIcon, MoreHorizontalIcon } from "../../common/Icons";
+import Modal from "../../common/Modal";
+import { SearchIcon, PlusIcon, EditIcon, TrashIcon, CctvIcon, AlertTriangleIcon } from "../../common/Icons";
 import { useToast } from "../../common/Toast";
 import { useAdminAccess } from "../useAdminAccess";
 import CameraForm from "./CameraForm";
@@ -33,11 +32,8 @@ function CameraManagement() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-
-  const [testing, setTesting] = useState(null);
-  const [testResult, setTestResult] = useState(null);
-
-  const [disableTarget, setDisableTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,9 +70,12 @@ function CameraManagement() {
           name: form.name,
           location: form.location,
           sector: form.sector,
-          fpsLimit: form.fpsLimit ? Number(form.fpsLimit) : null,
-          sampling: form.sampling,
           description: form.description,
+          rtspUrl: form.rtspUrl,
+          targetFps: form.targetFps,
+          sourceType: form.sourceType,
+          streamProtocol: form.streamProtocol,
+          enabled: form.enabled,
         });
         setCameras((cs) => cs.map((c) => (c.id === editingCam.id ? data : c)));
         toast(`${editingCam.id} updated`, "success");
@@ -92,25 +91,18 @@ function CameraManagement() {
     }
   };
 
-  const handleTest = async (cam) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const { data } = await testCameraConnection(cam.id);
-      setTestResult({ cam, ...data });
+      await deleteCamera(deleteTarget.id);
+      setCameras((cs) => cs.filter((c) => c.id !== deleteTarget.id));
+      toast(`${deleteTarget.id} deleted`, "success");
+      setDeleteTarget(null);
     } catch (e) {
-      setTestResult({ cam, ok: false, message: e.message || "Test failed" });
-    }
-  };
-
-  const handleDisable = async () => {
-    if (!disableTarget) return;
-    try {
-      const { data } = await disableCamera(disableTarget.id);
-      setCameras((cs) => cs.map((c) => (c.id === disableTarget.id ? data : c)));
-      toast(`${disableTarget.id} disabled`, "success");
-    } catch (e) {
-      toast(e.message || "Disable failed", "error");
+      toast(e.message || "Delete failed", "error");
     } finally {
-      setDisableTarget(null);
+      setDeleting(false);
     }
   };
 
@@ -118,7 +110,7 @@ function CameraManagement() {
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="relative">
-          <SearchIcon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <SearchIcon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black" />
           <input
             className="input-field pl-9"
             placeholder="Search cameras…"
@@ -177,7 +169,7 @@ function CameraManagement() {
                   <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 font-medium text-slate-800">
-                        <CctvIcon size={16} className="text-navy-600" />
+                        <CctvIcon size={16} className="text-white" />
                         {c.id}
                       </div>
                       <p className="text-xs text-slate-400">{c.name}</p>
@@ -198,29 +190,25 @@ function CameraManagement() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         {canManage && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditing(c);
-                              setFormOpen(true);
-                            }}
-                          >
-                            <EditIcon size={14} /> Edit
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => handleTest(c)}>
-                          <CctvIcon size={14} /> Test
-                        </Button>
-                        {canManage && c.enabled && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50"
-                            onClick={() => setDisableTarget(c)}
-                          >
-                            <MoreHorizontalIcon size={14} /> Disable
-                          </Button>
+                          <>
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => {
+                                setEditing(c);
+                                setFormOpen(true);
+                              }}
+                            >
+                              <EditIcon size={14} /> Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => setDeleteTarget(c)}
+                            >
+                              <TrashIcon size={14} /> Delete
+                            </Button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -246,59 +234,44 @@ function CameraManagement() {
         canManage={canManage}
       />
 
-      {/* Test connection result */}
       <Modal
-        open={!!testResult}
-        onClose={() => setTestResult(null)}
-        title="Camera Connection Test"
-        size="sm"
-        footer={
-          <Button variant="ghost" onClick={() => setTestResult(null)}>
-            Close
-          </Button>
-        }
-      >
-        {testResult && (
-          <div className="space-y-3">
-            <p className="text-sm text-slate-500">
-              Testing <span className="font-medium text-slate-700">{testResult.cam.id}</span> (
-              {testResult.cam.name}).
-            </p>
-            <div
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium ${
-                testResult.ok
-                  ? "border-green-200 bg-green-50 text-green-700"
-                  : "border-red-200 bg-red-50 text-red-700"
-              }`}
-            >
-              {testResult.ok ? "Connection Successful" : "Connection Failed"}
-            </div>
-            <p className="text-xs text-slate-400">Endpoint: {testResult.cam.rtspMasked || "rtsp://***.configured"}</p>
-          </div>
-        )}
-      </Modal>
-
-      {/* Disable confirmation */}
-      <Modal
-        open={!!disableTarget}
-        onClose={() => setDisableTarget(null)}
-        title={`Disable ${disableTarget?.id || ""}?`}
+        open={Boolean(deleteTarget)}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        title="Delete camera"
         size="sm"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setDisableTarget(null)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={deleting}
+              onClick={() => setDeleteTarget(null)}
+            >
               Cancel
             </Button>
-            <Button variant="danger" onClick={handleDisable}>
-              Disable Camera
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={deleting}
+              onClick={handleDelete}
+            >
+              {deleting ? "Deleting…" : "Delete Camera"}
             </Button>
           </>
         }
       >
-        <p className="text-sm text-slate-600">
-          Disabling <span className="font-medium">{disableTarget?.name || disableTarget?.id}</span>{" "}
-          will stop its live stream and pause AI analysis for this camera. This is reversible.
-        </p>
+        <div className="flex items-start gap-3">
+          <AlertTriangleIcon size={20} className="mt-0.5 shrink-0 text-rose-500" />
+          <div>
+            <p className="text-sm text-slate-700">
+              Permanently remove <span className="font-semibold">{deleteTarget?.id}</span>?
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              This disables streaming and clears its runtime state. Events and
+              alerts already recorded are kept.
+            </p>
+          </div>
+        </div>
       </Modal>
     </>
   );

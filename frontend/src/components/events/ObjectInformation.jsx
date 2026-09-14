@@ -7,7 +7,9 @@ function Row({ label, value }) {
   return (
     <div className="flex items-center justify-between py-2">
       <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-medium text-slate-800">{value || "—"}</span>
+      <span className="text-sm font-medium text-slate-800">
+        {value == null || value === "" ? "—" : value}
+      </span>
     </div>
   );
 }
@@ -32,7 +34,7 @@ function ObjectInformation({ event }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <UserIcon size={18} className="text-navy-700" />
+        <UserIcon size={18} className="text-white" />
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
       </div>
 
@@ -61,6 +63,8 @@ function ObjectInformation({ event }) {
       ) : isVehicle && event.object ? (
         <dl className="divide-y divide-slate-100 text-sm">
           <Row label="Track ID" value={event.trackId} />
+          <Row label="Vehicle Number" value={event.vehiclePlate || "Plate not confirmed"} />
+          <Row label="OCR Confidence" value={event.anpr?.ocrConfidence == null ? "—" : `${Math.round(event.anpr.ocrConfidence * 100)}%`} />
           <Row label="Vehicle Type" value={event.object.vehicleType} />
           <Row label="Direction" value={event.object.direction} />
           <Row label="Confidence" value={`${Math.round((event.object.confidence || 0) * 100)}%`} />

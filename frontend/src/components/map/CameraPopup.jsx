@@ -18,7 +18,7 @@ function CameraPopup({ camera, onViewCamera, onViewEvents }) {
   return (
     <div className="min-w-[220px]">
       <div className="flex items-center gap-2">
-        <CameraIcon size={16} className="text-navy-700" />
+        <CameraIcon size={16} className="text-blue-700" />
         <p className="text-sm font-bold text-slate-900">{camera.id}</p>
       </div>
       <p className="text-sm text-slate-600">{camera.name}</p>
@@ -27,15 +27,15 @@ function CameraPopup({ camera, onViewCamera, onViewEvents }) {
       <div className="mt-2 space-y-1 text-xs">
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Status:</span>
-          <Badge tone={online ? "online" : "offline"}>
-            {online ? "Online" : "Offline"}
+          <Badge tone={online ? "online" : ["connecting", "reconnecting", "degraded"].includes(status) ? "warning" : "offline"}>
+            {status.toUpperCase() || "UNKNOWN"}
           </Badge>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Risk:</span>
-          <Badge tone={riskTone}>{(camera.risk || "NORMAL").toUpperCase()}</Badge>
+          <Badge tone={riskTone}>{camera.risk ? camera.risk.toUpperCase() : "No active alert"}</Badge>
         </div>
-        {online && (
+        {online && Array.isArray(camera.detections) && (
           <div className="flex items-center justify-between">
             <span className="text-slate-500">Detections:</span>
             <span className="text-slate-700">
@@ -46,9 +46,7 @@ function CameraPopup({ camera, onViewCamera, onViewEvents }) {
         )}
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Last Update:</span>
-          <span className="text-slate-700">
-            {camera.lastUpdate ? camera.lastUpdate.split(" ").pop() : formatTime(camera.lastSeen)}
-          </span>
+          <span className="text-slate-700">{formatTime(camera.lastUpdate || camera.lastSeen)}</span>
         </div>
       </div>
 

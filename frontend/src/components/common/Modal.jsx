@@ -21,7 +21,13 @@ function Modal({ open, onClose, title, children, footer, size = "md" }) {
   if (!open) return null;
 
   const width =
-    size === "sm" ? "max-w-md" : size === "lg" ? "max-w-2xl" : "max-w-lg";
+    size === "sm"
+      ? "max-w-md"
+      : size === "lg"
+        ? "max-w-2xl"
+        : size === "xl"
+          ? "max-w-5xl"
+          : "max-w-lg";
 
   return (
     <div
@@ -36,7 +42,7 @@ function Modal({ open, onClose, title, children, footer, size = "md" }) {
         aria-hidden="true"
       />
       <div
-        className={`relative w-full ${width} card animate-[modalIn_0.2s_ease-out] shadow-lift`}
+        className={`relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto ${width} card animate-[modalIn_0.2s_ease-out] shadow-lift`}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-800">{title}</h3>

@@ -12,7 +12,7 @@ function PlaceholderPage({ title, subtitle, planned }) {
       <PageHeader title={title} subtitle={subtitle} />
       <div className="card flex flex-col items-start gap-4 p-8">
         <div className="flex items-center gap-2 text-slate-600">
-          <InfoIcon size={18} className="text-navy-700" />
+          <InfoIcon size={18} className="text-white" />
           <span className="text-sm font-medium">
             This page is planned. Final content coming after approval.
           </span>

@@ -1,15 +1,16 @@
 import React from "react";
 import Card from "../common/Card";
-import Badge from "../common/Badge";
 import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import { ActivityIcon } from "../common/Icons";
-import { riskCategory } from "../alerts/RiskScoreBar";
+import { mapRiskReasons } from "../../utils/riskReasons.mjs";
 
 function Row({ label, value }) {
   return (
     <div className="flex items-center justify-between py-2">
       <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-medium text-slate-800">{value || "—"}</span>
+      <span className="text-sm font-medium text-slate-800">
+        {value == null || value === "" ? "—" : value}
+      </span>
     </div>
   );
 }
@@ -20,42 +21,27 @@ function Row({ label, value }) {
  */
 function EventRiskContext({ event }) {
   const ctx = event.context || {};
-  const isSecurity =
-    event.severity && ["medium", "high", "critical"].includes(event.severity);
-  const hasRisk =
-    isSecurity || ctx.restrictedZone || ctx.nightMovement || ctx.fenceProximity;
-
-  const cat = riskCategory(event.riskScore);
+  const reasons = mapRiskReasons(ctx);
+  const hasRisk = reasons.length > 0 || event.riskScore != null;
 
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <ActivityIcon size={18} className="text-navy-700" />
+        <ActivityIcon size={18} className="text-white" />
         <h3 className="text-sm font-semibold text-slate-800">Risk Context</h3>
       </div>
 
       {hasRisk ? (
         <dl className="divide-y divide-slate-100 text-sm">
-          <Row
-            label="Restricted Zone"
-            value={<Badge tone={ctx.restrictedZone ? "high" : "info"}>{ctx.restrictedZone ? "Active" : "Clear"}</Badge>}
-          />
-          <Row
-            label="Night Movement"
-            value={<Badge tone={ctx.nightMovement ? "medium" : "info"}>{ctx.nightMovement ? "Active" : "Clear"}</Badge>}
-          />
-          <Row
-            label="Fence Proximity"
-            value={<Badge tone={ctx.fenceProximity ? "warning" : "info"}>{ctx.fenceProximity ? "Detected" : "Clear"}</Badge>}
-          />
+          {reasons.map((reason, index) => <Row key={index} label={reason.label} value={reason.score == null ? "Recorded" : `+${reason.score}`} />)}
           <Row label="Direction" value={ctx.direction} />
           {ctx.duration != null && <Row label="Duration" value={`${ctx.duration} seconds`} />}
-          <Row label="Risk Score" value={`${event.riskScore} / 100`} />
+          <Row label="Risk Score" value={event.riskScore == null ? "—" : `${event.riskScore} / 100`} />
           <Row label="Severity" value={<AlertSeverityBadge severity={event.severity} />} />
         </dl>
       ) : (
         <p className="text-sm text-slate-500">
-          No elevated risk conditions detected.
+          No risk assessment was stored for this event.
         </p>
       )}
     </Card>

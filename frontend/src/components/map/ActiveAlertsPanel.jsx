@@ -15,7 +15,7 @@ function ActiveAlertsPanel({ alerts, selectedId, onSelect, className = "" }) {
     <div className={`card flex min-w-0 flex-col ${className}`}>
       <div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2">
         <div className="flex items-center gap-2">
-          <BellIcon size={16} className="text-navy-700" />
+          <BellIcon size={16} className="text-blue-700" />
           <h3 className="text-sm font-semibold text-slate-800">Active Alerts</h3>
         </div>
         <Badge tone="high">{alerts.length}</Badge>
@@ -30,7 +30,7 @@ function ActiveAlertsPanel({ alerts, selectedId, onSelect, className = "" }) {
                 type="button"
                 onClick={() => onSelect(a)}
                 className={`btn-focus flex w-full min-w-0 items-start gap-3 px-4 py-2.5 text-left transition-colors ${
-                  active ? "rounded-lg bg-navy-50/70" : "hover:bg-slate-50"
+                  active ? "rounded-lg bg-blue-50/70" : "hover:bg-slate-50"
                 }`}
               >
                 <span

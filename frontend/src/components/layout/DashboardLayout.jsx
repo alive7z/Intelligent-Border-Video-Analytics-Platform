@@ -54,56 +54,58 @@ export function DashboardLayout() {
     closeDrawer();
   }, [location.pathname]);
 
-  const shellBg =
-    "min-h-screen bg-[rgb(var(--c-bg))]";
-
-  const SIDEBAR_W = "w-[272px]";
+const SIDEBAR_W = "w-[272px]";
   const SIDEBAR_RAIL_W = "w-[76px]";
 
+  // Header is fixed full-width at the top (h-[64px] in Header.jsx) —
+  // sidebar and main content start exactly below it.
+  const SIDEBAR_TOP = "top-[64px]";
+  const SIDEBAR_H = "h-[calc(100vh-64px)]";
+  const HEADER_OFFSET = "pt-[64px]";
+
   return (
-    <div className={shellBg}>
-      {/* Desktop sidebar (full or collapsed rail) */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-30 hidden overflow-visible border-r border-slate-200 bg-white shadow-card transition-[width] duration-250 ease-in-out dark:border-[#243247] dark:bg-[#071426] lg:block ${
-          collapsed ? SIDEBAR_RAIL_W : SIDEBAR_W
-        }`}
-      >
-        <div className="h-full w-full">
-          <SidebarContent collapsed={collapsed} onToggleCollapse={toggleCollapse} />
-        </div>
-      </aside>
+    <div className="flex min-h-screen flex-col bg-transparent">
+      <Header
+        onMenuClick={() => setDrawerOpen(true)}
+        lang={lang}
+        setLang={setLang}
+      />
 
-      {/* Mobile / tablet drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div
-            className="absolute inset-0 animate-[backdropIn_0.2s_ease-out] bg-black/40"
-            onClick={closeDrawer}
-            aria-hidden="true"
-          />
-          <aside className="absolute inset-y-0 left-0 w-72 animate-[drawerIn_0.25s_ease-out] bg-white shadow-pop dark:bg-[#071426]">
-            <SidebarContent onNavigate={closeDrawer} showClose onClose={closeDrawer} />
-          </aside>
-        </div>
-      )}
-
-      {/* Main column */}
-      <div
-        className={`flex min-h-screen flex-col transition-[padding] duration-250 ease-in-out ${
-          collapsed ? "lg:pl-[76px]" : "lg:pl-[272px]"
-        }`}
-      >
-        <Header
-          onMenuClick={() => setDrawerOpen(true)}
-          lang={lang}
-          setLang={setLang}
-        />
-        <main
-          key={location.pathname}
-          className="page-enter flex-1 px-4 py-6 lg:px-6"
+      <div className={`flex flex-1 flex-col transition-[padding] duration-250 ease-in-out ${HEADER_OFFSET} ${collapsed ? "lg:pl-[76px]" : "lg:pl-[272px]"}`}>
+        {/* Desktop sidebar (full or collapsed rail) */}
+        <aside
+          className={`sidebar-surface fixed ${SIDEBAR_TOP} left-0 z-30 hidden overflow-visible border-r border-white/20 bg-slate-950/80 shadow-card transition-[width] duration-250 ease-in-out lg:block ${SIDEBAR_H} ${
+            collapsed ? SIDEBAR_RAIL_W : SIDEBAR_W
+          }`}
         >
-          <Outlet />
-        </main>
+          <div className="h-full w-full">
+            <SidebarContent collapsed={collapsed} onToggleCollapse={toggleCollapse} />
+          </div>
+        </aside>
+
+        {/* Mobile / tablet drawer */}
+        {drawerOpen && (
+          <div className="fixed inset-0 z-[60] lg:hidden">
+            <div
+              className="absolute inset-0 animate-[backdropIn_0.2s_ease-out] bg-black/40"
+              onClick={closeDrawer}
+              aria-hidden="true"
+            />
+            <aside className="sidebar-surface absolute inset-y-0 left-0 w-72 animate-[drawerIn_0.25s_ease-out] bg-slate-950/80 shadow-pop">
+              <SidebarContent onNavigate={closeDrawer} showClose onClose={closeDrawer} />
+            </aside>
+          </div>
+        )}
+
+        {/* Main column */}
+        <div className="flex min-h-screen flex-1 flex-col">
+          <main
+            key={location.pathname}
+            className="page-enter flex-1 px-4 py-6 lg:px-6"
+          >
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );

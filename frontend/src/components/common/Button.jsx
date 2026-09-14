@@ -2,15 +2,16 @@ import React from "react";
 
 const variants = {
   primary:
-    "bg-navy-700 text-white hover:bg-navy-800 active:bg-navy-900",
+    "bg-blue-700 text-white hover:bg-blue-800 active:bg-blue-900",
   secondary:
-    "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 active:bg-slate-100",
+    "bg-white text-black border border-white/20 hover:bg-transparent hover:text-white",
   danger:
     "bg-danger text-white hover:bg-red-700 active:bg-red-800",
   ghost:
-    "bg-transparent text-slate-600 hover:bg-slate-100",
+    "bg-white text-black border border-white/20 hover:bg-transparent hover:text-white",
   success:
     "bg-success text-white hover:bg-green-700",
+  info: "bg-blue-500 text-white hover:bg-blue-600",
 };
 
 const sizes = {

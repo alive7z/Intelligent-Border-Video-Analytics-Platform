@@ -1,9 +1,7 @@
 import React from "react";
 import { SearchIcon } from "../../common/Icons";
 
-const vehicleTypes = ["Car", "SUV", "Truck", "Bus", "Motorcycle", "Other"];
-const directions = ["Toward Boundary", "Away from Boundary", "Unknown"];
-const risks = ["NORMAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"];
+const vehicleTypes = ["Car", "Truck", "Bus", "Motorcycle", "Bicycle", "Other"];
 const dateOptions = [
   { value: "all", label: "Any Date" },
   { value: "today", label: "Today" },
@@ -24,7 +22,7 @@ function VehicleFilters({ filters, onChange, cameras }) {
       <div className="relative min-w-[220px] flex-1 sm:flex-none">
         <SearchIcon
           size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black"
         />
         <input
           type="search"
@@ -66,34 +64,6 @@ function VehicleFilters({ filters, onChange, cameras }) {
 
       <select
         className={selectCls}
-        value={filters.direction}
-        onChange={(e) => set("direction", e.target.value)}
-        aria-label="Filter by direction"
-      >
-        <option value="all">All Directions</option>
-        {directions.map((d) => (
-          <option key={d} value={d}>
-            {d}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className={selectCls}
-        value={filters.risk}
-        onChange={(e) => set("risk", e.target.value)}
-        aria-label="Filter by risk level"
-      >
-        <option value="all">All Risk</option>
-        {risks.map((r) => (
-          <option key={r} value={r.toLowerCase()}>
-            {r.charAt(0) + r.slice(1).toLowerCase()}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className={selectCls}
         value={filters.date}
         onChange={(e) => set("date", e.target.value)}
         aria-label="Filter vehicles by date"
@@ -104,6 +74,12 @@ function VehicleFilters({ filters, onChange, cameras }) {
           </option>
         ))}
       </select>
+      {filters.date === "custom" && (
+        <>
+          <input type="date" className={selectCls} value={filters.startDate || ""} onChange={(e) => set("startDate", e.target.value)} aria-label="Vehicle start date" />
+          <input type="date" className={selectCls} value={filters.endDate || ""} onChange={(e) => set("endDate", e.target.value)} aria-label="Vehicle end date" />
+        </>
+      )}
     </div>
   );
 }

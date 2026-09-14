@@ -27,7 +27,7 @@ function AlertPopup({ alert, onViewAlert }) {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Risk Score:</span>
-          <span className="font-medium text-slate-700">{alert.riskScore} / 100</span>
+          <span className="font-medium text-slate-700">{alert.riskScore ?? "—"} / 100</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Time:</span>

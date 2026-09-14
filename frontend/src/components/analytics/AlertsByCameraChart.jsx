@@ -9,13 +9,11 @@ import {
   Tooltip,
 } from "recharts";
 import ChartCard from "./ChartCard";
-import { useChartTheme } from "../../hooks/useChartTheme";
 
 /**
  * Horizontal bar chart of alert counts per camera.
  */
 function AlertsByCameraChart({ data = [] }) {
-  const chart = useChartTheme();
   return (
     <ChartCard title="Alerts by Camera" subtitle="Active alerts attributed to each camera">
       <div className="h-64">
@@ -25,11 +23,11 @@ function AlertsByCameraChart({ data = [] }) {
             layout="vertical"
             margin={{ top: 5, right: 10, bottom: 0, left: 8 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} horizontal={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" horizontal={false} />
             <XAxis
               type="number"
               allowDecimals={false}
-              tick={{ fontSize: 12, fill: chart.tick }}
+              tick={{ fontSize: 12, fill: "#ffffff" }}
               axisLine={false}
               tickLine={false}
             />
@@ -37,20 +35,20 @@ function AlertsByCameraChart({ data = [] }) {
               type="category"
               dataKey="name"
               width={70}
-              tick={{ fontSize: 12, fill: chart.tick }}
-              axisLine={{ stroke: chart.axis }}
+              tick={{ fontSize: 12, fill: "#ffffff" }}
+              axisLine={{ stroke: "rgba(255,255,255,0.2)" }}
               tickLine={false}
             />
             <Tooltip
-              cursor={{ fill: chart.isDark ? "rgba(148,163,184,0.12)" : "rgba(15,42,79,0.05)" }}
+              cursor={{ fill: "rgba(148,163,184,0.12)" }}
               contentStyle={{
                 fontSize: 12,
                 borderRadius: 8,
-                border: `1px solid ${chart.tooltipBorder}`,
-                background: chart.tooltipBg,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(15,23,42,0.95)",
               }}
-              labelStyle={{ color: chart.tooltipText }}
-              itemStyle={{ color: chart.tooltipText }}
+              labelStyle={{ color: "#ffffff" }}
+              itemStyle={{ color: "#ffffff" }}
               formatter={(value) => [`${value} alerts`, "Alerts"]}
             />
             <Bar dataKey="alerts" fill="#2563eb" radius={[0, 4, 4, 0]} maxBarSize={18} />

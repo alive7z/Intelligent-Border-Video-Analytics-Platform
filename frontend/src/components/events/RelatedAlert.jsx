@@ -7,27 +7,30 @@ import AlertStatusBadge from "../alerts/AlertStatusBadge";
 import { AlertTriangleIcon } from "../common/Icons";
 
 /**
- * Links the event to the alert it generated (if any). Alert actions are kept
- * on the Alerts page; here we only surface the relationship.
+ * Links an event to its real alert. Alert workflow actions intentionally live
+ * only in the Alerts section.
  */
 function RelatedAlert({ event, alert }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <AlertTriangleIcon size={18} className="text-navy-700" />
-        <h3 className="text-sm font-semibold text-slate-800">Related Alert</h3>
+        <AlertTriangleIcon size={18} className="text-white" />
+        <h3 className="text-sm font-semibold text-slate-800">Associated Alert</h3>
       </div>
       {event.relatedAlertId ? (
         <div>
-          <Link
-            to={`/alerts/${event.relatedAlertId}`}
-            className="text-lg font-bold text-navy-700 hover:underline"
-          >
-            {event.relatedAlertId}
-          </Link>
           <div className="mt-2 space-y-3">
             {alert ? (
               <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-slate-500">Alert ID:</span>
+                  <Link
+                    to={`/alerts/${alert.id}`}
+                    className="font-semibold text-sky-400 hover:underline"
+                  >
+                    {alert.id}
+                  </Link>
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-500">Severity:</span>
                   <AlertSeverityBadge severity={alert.severity} />

@@ -1,7 +1,7 @@
 import React from "react";
 import { SearchIcon } from "../../common/Icons";
 
-const vehicleTypes = ["Car", "SUV", "Truck", "Bus", "Motorcycle", "Other"];
+const vehicleTypes = ["Car", "Truck", "Bus", "Motorcycle", "Bicycle", "Other"];
 const dateOptions = [
   { value: "all", label: "Any Date" },
   { value: "today", label: "Today" },
@@ -22,12 +22,12 @@ function ANPRFilters({ filters, onChange, cameras }) {
       <div className="relative min-w-[220px] flex-1 sm:flex-none">
         <SearchIcon
           size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black"
         />
         <input
           type="search"
-          className="input-field !pl-9"
-          placeholder="Search plate number, camera, location..."
+          className="input-field !pl-9 placeholder:text-black"
+          placeholder="Search plate number..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
           aria-label="Search ANPR events"
@@ -47,6 +47,12 @@ function ANPRFilters({ filters, onChange, cameras }) {
           </option>
         ))}
       </select>
+      {filters.date === "custom" && (
+        <>
+          <input type="date" className={selectCls} value={filters.startDate || ""} onChange={(e) => set("startDate", e.target.value)} aria-label="ANPR start date" />
+          <input type="date" className={selectCls} value={filters.endDate || ""} onChange={(e) => set("endDate", e.target.value)} aria-label="ANPR end date" />
+        </>
+      )}
 
       <select
         className={selectCls}

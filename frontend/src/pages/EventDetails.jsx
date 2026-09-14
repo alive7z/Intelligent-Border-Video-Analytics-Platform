@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Button from "../components/common/Button";
 import Loader from "../components/common/Loader";
 import EventTypeBadge from "../components/events/EventTypeBadge";
@@ -13,26 +13,41 @@ import ObjectInformation from "../components/events/ObjectInformation";
 import RelatedAlert from "../components/events/RelatedAlert";
 import RelatedEvents from "../components/events/RelatedEvents";
 import CameraLink from "../components/events/CameraLink";
-import AuditInformation from "../components/events/AuditInformation";
-import { ArrowLeftIcon, AlertTriangleIcon } from "../components/common/Icons";
-import { getEventById, getRelatedEvents } from "../services/eventApi";
+import { ArrowLeftIcon, AlertTriangleIcon, ShieldIcon } from "../components/common/Icons";
+import { getEventById, getRelatedEvents, getEventEvidence, protectEvent, unprotectEvent } from "../services/eventApi";
 import { getAlertById } from "../services/alertApi";
 import { getCameraById } from "../services/cameraApi";
 import { formatDateTime } from "../utils/date";
+import { useAuth } from "../context/AuthContext";
+import { useRealtime } from "../context/RealtimeContext";
+import { useToast } from "../components/common/Toast";
+import { SOCKET_EVENTS } from "../services/websocket";
 
 function EventDetails() {
   const { eventId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const push = useToast();
   const [event, setEvent] = useState(null);
   const [alert, setAlert] = useState(null);
   const [camera, setCamera] = useState(null);
   const [related, setRelated] = useState([]);
+  const [relatedUnavailable, setRelatedUnavailable] = useState(false);
+  const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [protecting, setProtecting] = useState(false);
+  const { subscribe } = useRealtime();
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(false);
+    setAlert(null);
+    setCamera(null);
+    setRelated([]);
+    setRelatedUnavailable(false);
+    setEvidence([]);
     getEventById(eventId)
       .then((res) => {
         if (!active) return;
@@ -40,19 +55,24 @@ function EventDetails() {
         setEvent(ev);
         if (!ev) return;
 
-        const jobs = [getRelatedEvents(ev.id).then((r) => setRelated(r.data || []))];
+        const jobs = [getRelatedEvents(ev.id).then((r) => active && setRelated(r.data || [])).catch(() => active && setRelatedUnavailable(true))];
+        jobs.push(
+          getEventEvidence(ev.id)
+            .then((r) => active && setEvidence(r.data || []))
+            .catch(() => active && setEvidence([]))
+        );
         if (ev.relatedAlertId) {
           jobs.push(
             getAlertById(ev.relatedAlertId)
-              .then((r) => setAlert(r.data))
-              .catch(() => setAlert(null))
+              .then((r) => active && setAlert(r.data))
+              .catch(() => active && setAlert(null))
           );
         }
         if (ev.cameraId) {
           jobs.push(
             getCameraById(ev.cameraId)
-              .then((c) => setCamera(c.data))
-              .catch(() => setCamera(null))
+              .then((c) => active && setCamera(c.data))
+              .catch(() => active && setCamera(null))
           );
         }
         return Promise.all(jobs).catch(() => {
@@ -65,6 +85,38 @@ function EventDetails() {
       active = false;
     };
   }, [eventId]);
+
+  useEffect(() => subscribe(SOCKET_EVENTS.EVENT_UPDATED, (payload) => {
+    const update = payload?.data;
+    if (update?.eventCode !== eventId) return;
+    if (update.deletedAt) {
+      navigate("/events", { replace: true });
+      return;
+    }
+    // Incident risk and ANPR enrich the same event row. Refetch its authoritative
+    // context so vehicle number, factors, evidence timeline and score update
+    // while the operator has this detail page open.
+    getEventById(eventId)
+      .then((res) => setEvent(res.data))
+      .catch(() => setEvent((current) => current ? {
+        ...current,
+        isProtected: Boolean(update.isProtected),
+      } : current));
+    getEventEvidence(eventId).then((res) => setEvidence(res.data || [])).catch(() => {});
+  }), [subscribe, eventId, navigate]);
+
+  const toggleProtection = async () => {
+    setProtecting(true);
+    try {
+      const res = event.isProtected ? await unprotectEvent(event.id) : await protectEvent(event.id);
+      setEvent(res.data);
+      push(event.isProtected ? "Event protection removed." : "Event protected from cleanup.", "success");
+    } catch (err) {
+      push(err?.message || "Unable to update event protection.", "error");
+    } finally {
+      setProtecting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,7 +150,7 @@ function EventDetails() {
     <div>
       <Link
         to="/events"
-        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-navy-700 hover:text-navy-900"
+        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-900"
       >
         <ArrowLeftIcon size={16} /> Back to Events
       </Link>
@@ -120,18 +172,22 @@ function EventDetails() {
             {formatDateTime(event.timestamp)}
           </p>
         </div>
-        {event.relatedAlertId && (
-          <EventTypeBadge
-            withIcon={false}
-            label={`Linked to ${event.relatedAlertId}`}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          {event.relatedAlertId && (
+            <EventTypeBadge withIcon={false} label={`Linked to ${event.relatedAlertId}`} />
+          )}
+          {user?.roleKey === "ADMINISTRATOR" && (
+            <Button variant={event.isProtected ? "secondary" : "success"} size="sm" loading={protecting} onClick={toggleProtection}>
+              <ShieldIcon size={15} /> {event.isProtected ? "Unprotect" : "Protect"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Evidence + Information */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
-          <EventEvidence event={event} />
+          <EventEvidence event={event} items={evidence} />
         </div>
         <div className="space-y-6">
           <EventDetailsCard event={event} />
@@ -150,14 +206,13 @@ function EventDetails() {
       </div>
 
       {/* Related data */}
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         <RelatedAlert event={event} alert={alert} />
         <CameraLink camera={camera} event={event} />
-        <AuditInformation event={event} />
       </div>
 
       <div className="mt-6">
-        <RelatedEvents events={related} />
+        <RelatedEvents events={related} unavailable={relatedUnavailable} />
       </div>
     </div>
   );

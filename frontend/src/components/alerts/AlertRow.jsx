@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import AlertSeverityBadge from "./AlertSeverityBadge";
 import AlertStatusBadge from "./AlertStatusBadge";
 import RiskScoreBar from "./RiskScoreBar";
-import { formatTime } from "../../utils/date";
+import Button from "../common/Button";
+import AcknowledgeAlertButton from "./AcknowledgeAlertButton";
+import { BookmarkIcon, TrashIcon } from "../common/Icons";
+import { formatDateTime, formatTime } from "../../utils/date";
 
 /**
  * Single row in the alerts table. Whole row is clickable and also has a
  * focused View link for keyboard users.
  */
-function AlertRow({ alert }) {
+function AlertRow({ alert, canDelete = false, showSave = false, savingId = null, onDelete, onAlertAcknowledged, onToggleSaved }) {
   return (
     <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
       <td className="px-5 py-3">
@@ -18,12 +21,24 @@ function AlertRow({ alert }) {
       <td className="px-5 py-3">
         <Link
           to={`/alerts/${alert.id}`}
-          className="font-medium text-navy-700 hover:underline"
+          className="font-medium text-sky-400 hover:underline"
         >
           {alert.id}
         </Link>
+        {alert.isSaved && (
+          <p className="mt-0.5 inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+            <BookmarkIcon size={11} filled /> Saved
+          </p>
+        )}
       </td>
-      <td className="px-5 py-3 text-slate-700">{alert.eventType}</td>
+      <td className="px-5 py-3 text-slate-700">{alert.eventType}
+        {alert.reasons?.[0] && <p className="mt-1 text-xs text-slate-500">{alert.reasons.slice(0, 2).map((reason) => reason.label).join(" · ")}</p>}
+        {alert.vehiclePlate && (
+          <p className="mt-1 inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-semibold tracking-wide text-slate-700">
+            {alert.vehiclePlate}
+          </p>
+        )}
+      </td>
       <td className="px-5 py-3 text-slate-600">{alert.camera}</td>
       <td className="px-5 py-3 text-slate-600">{alert.cameraName}</td>
       <td className="px-5 py-3">
@@ -34,14 +49,47 @@ function AlertRow({ alert }) {
       </td>
       <td className="px-5 py-3">
         <AlertStatusBadge status={alert.status} />
+        {alert.acknowledgedBy && (
+          <p className="mt-1 max-w-44 text-xs text-slate-500">
+            {alert.acknowledgedBy} · {formatDateTime(alert.acknowledgedAt)}
+          </p>
+        )}
       </td>
       <td className="px-5 py-3 text-right">
-        <Link
-          to={`/alerts/${alert.id}`}
-          className="btn-focus inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-        >
-          View
-        </Link>
+        <div className="flex items-center justify-end gap-2">
+          <AcknowledgeAlertButton
+            alert={alert}
+            onAcknowledged={onAlertAcknowledged}
+          />
+          {canDelete && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onDelete(alert)}
+              aria-label={`Delete alert ${alert.id}`}
+            >
+              <TrashIcon size={14} />
+            </Button>
+          )}
+          <Link
+            to={`/alerts/${alert.id}`}
+            className="btn-focus inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            View
+          </Link>
+          {showSave && (
+            <Button
+              variant={alert.isSaved ? "success" : "secondary"}
+              size="sm"
+              loading={alert.id === savingId}
+              disabled={savingId !== null && alert.id !== savingId}
+              onClick={() => onToggleSaved(alert)}
+              aria-label={alert.isSaved ? `Remove alert ${alert.id} from Saved Alerts` : `Save alert ${alert.id}`}
+            >
+              <BookmarkIcon size={14} filled={Boolean(alert.isSaved)} />
+            </Button>
+          )}
+        </div>
       </td>
     </tr>
   );

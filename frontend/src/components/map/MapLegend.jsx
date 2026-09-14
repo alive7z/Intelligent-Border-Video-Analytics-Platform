@@ -4,8 +4,9 @@ const legendItems = [
   { swatch: "bg-green-600", label: "Camera Online" },
   { swatch: "bg-slate-400", label: "Camera Offline" },
   { swatch: "bg-red-600", label: "Active Alert" },
+  { swatch: "bg-blue-600 !rounded-full", label: "My Location" },
   { swatch: "bg-orange-500", label: "Warning" },
-  { swatch: "bg-navy-700/30 border border-dashed border-navy-700/60", label: "Restricted Zone" },
+  { swatch: "bg-blue-700/30 border border-dashed border-blue-700/60", label: "Restricted Zone" },
   { swatch: "border-t-2 border-dashed border-indigo-500", label: "Virtual Fence" },
 ];
 

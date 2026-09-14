@@ -1,5 +1,5 @@
 import React from "react";
-import RiskBadge from "./RiskBadge";
+import ConfidenceBadge from "../ConfidenceBadge";
 import { formatTime } from "../../../utils/date";
 
 function ActionButton({ onClick }) {
@@ -7,7 +7,7 @@ function ActionButton({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="btn-focus inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      className="btn-focus inline-flex items-center rounded-lg border border-green-500 bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 hover:border-green-600"
     >
       View
     </button>
@@ -28,27 +28,27 @@ function VehicleTable({ events, onView }) {
                 <th className="px-5 py-3">Track ID</th>
                 <th className="px-5 py-3">Vehicle Type</th>
                 <th className="px-5 py-3">Camera</th>
-                <th className="px-5 py-3">Direction</th>
                 <th className="px-5 py-3">Plate</th>
-                <th className="px-5 py-3">Risk</th>
+                <th className="px-5 py-3">Detection Confidence</th>
                 <th className="px-5 py-3">Timestamp</th>
+                <th className="px-5 py-3">Related Event</th>
                 <th className="px-5 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
               {events.map((v) => (
-                <tr key={v.trackId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium text-navy-700">{v.trackId}</td>
+                <tr key={v.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                  <td className="px-5 py-3 font-medium text-blue-700">{v.trackId}</td>
                   <td className="px-5 py-3 text-slate-700">{v.vehicleType}</td>
                   <td className="px-5 py-3 text-slate-600">{v.cameraId}</td>
-                  <td className="px-5 py-3 text-slate-600">{v.direction}</td>
                   <td className="px-5 py-3 text-slate-700">{v.plateNumber || "—"}</td>
                   <td className="px-5 py-3">
-                    <RiskBadge risk={v.risk} />
+                    <ConfidenceBadge value={v.confidence} />
                   </td>
                   <td className="whitespace-nowrap px-5 py-3 text-slate-500">
                     {formatTime(v.timestamp)}
                   </td>
+                  <td className="px-5 py-3 text-slate-600">{v.relatedEventId || "—"}</td>
                   <td className="px-5 py-3 text-right">
                     <ActionButton onClick={() => onView(v)} />
                   </td>
@@ -61,23 +61,22 @@ function VehicleTable({ events, onView }) {
 
       <div className="space-y-3 md:hidden">
         {events.map((v) => (
-          <div key={v.trackId} className="card p-4">
+          <div key={v.id} className="card p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-semibold text-navy-700">{v.trackId}</p>
+                <p className="font-semibold text-blue-700">{v.trackId}</p>
                 <p className="text-sm text-slate-700">
                   {v.vehicleType} · {v.cameraId}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">
-                  {v.direction} · {formatTime(v.timestamp)}
-                </p>
+                <p className="mt-0.5 text-xs text-slate-400">{formatTime(v.timestamp)}</p>
+                <p className="mt-0.5 text-xs text-slate-500">Plate: {v.plateNumber || "—"}</p>
               </div>
-              <RiskBadge risk={v.risk} />
+              <ConfidenceBadge value={v.confidence} />
             </div>
             <button
               type="button"
               onClick={() => onView(v)}
-              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-green-500 bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600 hover:border-green-600"
             >
               View
             </button>

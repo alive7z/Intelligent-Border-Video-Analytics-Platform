@@ -17,7 +17,7 @@ function ZonePopup({ zone }) {
   return (
     <div className="min-w-[220px]">
       <div className="flex items-center gap-2">
-        <ShieldIcon size={15} className="text-navy-700" />
+        <ShieldIcon size={15} className="text-blue-700" />
         <p className="text-sm font-bold text-slate-900">{zone.name}</p>
       </div>
       <div className="mt-2 space-y-1 text-xs">

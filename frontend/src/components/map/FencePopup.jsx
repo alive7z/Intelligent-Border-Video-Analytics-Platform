@@ -9,7 +9,7 @@ function FencePopup({ fence }) {
   return (
     <div className="min-w-[220px]">
       <div className="flex items-center gap-2">
-        <LayersIcon size={15} className="text-navy-700" />
+        <LayersIcon size={15} className="text-blue-700" />
         <p className="text-sm font-bold text-slate-900">{fence.id}</p>
       </div>
       <p className="text-sm text-slate-600">{fence.name}</p>

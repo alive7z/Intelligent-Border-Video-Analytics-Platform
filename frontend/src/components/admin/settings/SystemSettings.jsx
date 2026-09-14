@@ -19,7 +19,7 @@ function ToggleField({ label, value, disabled, onChange }) {
         checked={!!value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-slate-300 text-navy-700"
+        className="h-4 w-4 rounded border-slate-300 text-blue-700"
       />
     </label>
   );

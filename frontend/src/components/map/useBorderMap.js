@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
+import { geographicPoint } from "../../utils/mapData.mjs";
 import {
   cameraIcon,
   alertIcon,
+  myLocationIcon,
   openReactPopup,
 } from "./leafletUtils";
 
@@ -10,6 +12,19 @@ const ZONE_FILL = "rgba(15, 42, 79, 0.10)";
 const ZONE_BORDER = "rgba(15, 42, 79, 0.55)";
 const FENCE_COLOR = "#6366f1";
 const GRID_SIZE = 256;
+
+// Only pass finite, number-like coords to Leaflet. Returns a clean [lat,lng] or
+// null so every record is validated before a marker/line/polygon is created.
+function toLatLng(lat, lng) {
+  const point = geographicPoint({ lat, lng });
+  return point.lat === null ? null : [point.lat, point.lng];
+}
+
+function validLatLngArr(arr) {
+  return Array.isArray(arr) && arr.length > 0 && arr.every(
+    (point) => Array.isArray(point) && Boolean(toLatLng(point[0], point[1]))
+  );
+}
 
 const GRATICULE_TILE_URL = (() => {
   const canvas = typeof document === "undefined" ? null : document.createElement("canvas");
@@ -45,18 +60,19 @@ const GRATICULE_TILE_URL = (() => {
 })();
 
 // Creates the Leaflet map once per mount.
-export function useMapInstance(containerRef) {
+export function useMapInstance(containerRef, compact = false) {
   const mapRef = useRef(null);
   const tileRef = useRef(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, {
-      center: [28.66, 77.42],
-      zoom: 9,
-      minZoom: 7,
+      center: [0, 0],
+      zoom: 2,
+      minZoom: 2,
       maxZoom: 17,
-      zoomControl: true,
+      zoomControl: !compact,
+      scrollWheelZoom: !compact,
     });
 
     // Layer groups
@@ -66,15 +82,16 @@ export function useMapInstance(containerRef) {
       fences: L.layerGroup().addTo(map),
       cameras: L.layerGroup().addTo(map),
       alerts: L.layerGroup().addTo(map),
+      location: L.layerGroup().addTo(map),
     };
 
-    mapRef.current = { map, groups, markerIndex: { cameras: {}, alerts: {} } };
+    mapRef.current = { map, groups, markerIndex: { cameras: {}, alerts: {}, zones: {}, fences: {} } };
     return () => {
       map.remove();
       mapRef.current = null;
       tileRef.current = null;
     };
-  }, [containerRef]);
+  }, [containerRef, compact]);
 
   // Base light tiles.
   useEffect(() => {
@@ -110,12 +127,20 @@ export function useBorderMapLayers({
   selectedRef,
   onSelect,
   renderPopup,
+  location = null,
+  autoFit = true,
 }) {
   const apiRef = useRef({});
+  const fittedRef = useRef(false);
 
   useEffect(() => {
     if (!mapRef.current) return;
     const { map, groups, markerIndex } = mapRef.current;
+    // Data refreshes replace Leaflet layers; restore an open popup on its new
+    // layer so heartbeats cannot dismiss what the operator is reading.
+    const openItem = Object.entries(markerIndex).flatMap(([kind, entries]) =>
+      Object.entries(entries).filter(([, layer]) => layer.isPopupOpen?.()).map(([id]) => ({ kind, id }))
+    )[0];
 
     const sectorFilter = (sector) => filters.sector === "all" || sector === filters.sector;
 
@@ -123,50 +148,72 @@ export function useBorderMapLayers({
     groups.sectors.clearLayers();
     (data.sectors || []).forEach((s) => {
       if (!sectorFilter(s.name)) return;
-      L.polygon(s.coordinates, {
-        color: "transparent",
-        fillColor: s.color,
-        fillOpacity: 1,
-        weight: 0,
-        interactive: false,
-        className: "ibvap-sector",
-      }).addTo(groups.sectors);
+      if (!validLatLngArr(s.coordinates)) return;
+      try {
+        L.polygon(s.coordinates, {
+          color: "transparent",
+          fillColor: s.color,
+          fillOpacity: 1,
+          weight: 0,
+          interactive: false,
+          className: "ibvap-sector",
+        }).addTo(groups.sectors);
+      } catch (e) {
+        /* skip malformed sector geometry */
+      }
     });
 
     // Zones
     groups.zones.clearLayers();
+    markerIndex.zones = {};
     if (layers.zones) {
       (data.zones || []).forEach((z) => {
         if (!sectorFilter(z.sector)) return;
-        const poly = L.polygon(z.coordinates, {
-          color: ZONE_BORDER,
-          weight: 1.5,
-          dashArray: "6 6",
-          fillColor: ZONE_FILL,
-          fillOpacity: 1,
-        })
-          .addTo(groups.zones)
-          .on("click", () => {
-            onSelect({ kind: "zone", ...z });
-            openReactPopup(poly, renderPopup({ kind: "zone", ...z }), () => {});
-          });
+        if (!validLatLngArr(z.coordinates)) return;
+        try {
+          const poly = L.polygon(z.coordinates, {
+            color: ZONE_BORDER,
+            weight: 1.5,
+            dashArray: "6 6",
+            fillColor: ZONE_FILL,
+            fillOpacity: 1,
+          })
+            .addTo(groups.zones)
+            .on("click", () => {
+              onSelect({ kind: "zone", ...z });
+              const popup = renderPopup?.({ kind: "zone", ...z });
+              if (popup) openReactPopup(poly, popup, () => {});
+            });
+          markerIndex.zones[z.id] = poly;
+        } catch (e) {
+          /* skip malformed zone geometry */
+        }
       });
     }
 
     // Virtual fences
     groups.fences.clearLayers();
+    markerIndex.fences = {};
     if (layers.fences) {
       (data.fences || []).forEach((f) => {
-        const line = L.polyline(f.coordinates, {
-          color: FENCE_COLOR,
-          weight: 2.5,
-          dashArray: "8 8",
-        })
-          .addTo(groups.fences)
-          .on("click", () => {
-            onSelect({ kind: "fence", ...f });
-            openReactPopup(line, renderPopup({ kind: "fence", ...f }), () => {});
-          });
+        if (!sectorFilter(f.sector)) return;
+        if (!validLatLngArr(f.coordinates)) return;
+        try {
+          const line = L.polyline(f.coordinates, {
+            color: FENCE_COLOR,
+            weight: 2.5,
+            dashArray: "8 8",
+          })
+            .addTo(groups.fences)
+            .on("click", () => {
+              onSelect({ kind: "fence", ...f });
+              const popup = renderPopup?.({ kind: "fence", ...f });
+              if (popup) openReactPopup(line, popup, () => {});
+            });
+          markerIndex.fences[f.id] = line;
+        } catch (e) {
+          /* skip malformed fence geometry */
+        }
       });
     }
 
@@ -175,6 +222,8 @@ export function useBorderMapLayers({
     markerIndex.cameras = {};
     if (layers.cameras) {
       (data.cameras || []).forEach((cam) => {
+        const ll = toLatLng(cam.lat, cam.lng);
+        if (!ll) return;
         if (!sectorFilter(cam.sector)) return;
         const show =
           filters.status === "all" ||
@@ -183,7 +232,7 @@ export function useBorderMapLayers({
           (filters.status === "alert" && Boolean(cam.activeAlert));
         if (!show) return;
 
-        const m = L.marker([cam.lat, cam.lng], {
+        const m = L.marker(ll, {
           icon: cameraIcon(cam, selectedRef.current?.kind === "camera" && selectedRef.current.id === cam.id),
           title: `${cam.id} · ${cam.name}`,
           alt: `${cam.id} camera ${cam.status}`,
@@ -191,7 +240,8 @@ export function useBorderMapLayers({
           .addTo(groups.cameras)
           .on("click", () => {
             onSelect({ kind: "camera", ...cam });
-            openReactPopup(m, renderPopup({ kind: "camera", ...cam }), () => {});
+            const popup = renderPopup?.({ kind: "camera", ...cam });
+            if (popup) openReactPopup(m, popup, () => {});
           });
         markerIndex.cameras[cam.id] = m;
       });
@@ -202,9 +252,11 @@ export function useBorderMapLayers({
     markerIndex.alerts = {};
     if (layers.alerts) {
       (data.alerts || []).forEach((a) => {
+        const ll = toLatLng(a.lat, a.lng);
+        if (!ll) return;
         if (!sectorFilter(a.sector)) return;
         if (filters.severity !== "all" && String(a.severity).toLowerCase() !== filters.severity) return;
-        const m = L.marker([a.lat, a.lng], {
+        const m = L.marker(ll, {
           icon: alertIcon(a, selectedRef.current?.kind === "alert" && selectedRef.current.id === a.id),
           title: `${a.id} · ${a.type}`,
           alt: `${a.id} active alert`,
@@ -212,38 +264,90 @@ export function useBorderMapLayers({
           .addTo(groups.alerts)
           .on("click", () => {
             onSelect({ kind: "alert", ...a });
-            openReactPopup(m, renderPopup({ kind: "alert", ...a }), () => {});
+            const popup = renderPopup?.({ kind: "alert", ...a });
+            if (popup) openReactPopup(m, popup, () => {});
           });
         markerIndex.alerts[a.id] = m;
       });
     }
 
+    groups.location.clearLayers();
+    const locationLatLng = toLatLng(location?.lat, location?.lng);
+    if (locationLatLng) {
+      const popup = document.createElement("div");
+      const title = document.createElement("p");
+      title.className = "text-sm font-semibold";
+      title.textContent = "My Current Location";
+      const coordinates = document.createElement("p");
+      coordinates.className = "mt-1 text-xs";
+      coordinates.textContent = `Latitude: ${location.lat.toFixed(5)} · Longitude: ${location.lng.toFixed(5)}`;
+      popup.append(title, coordinates);
+      L.marker(locationLatLng, {
+        icon: myLocationIcon(),
+        title: "My Location",
+        alt: "My Location",
+        zIndexOffset: 1000,
+      })
+        .addTo(groups.location)
+        .bindTooltip("My Location", { direction: "top", offset: [0, -10] })
+        .bindPopup(popup);
+    }
+
+    const dataBounds = [];
+    (data.cameras || []).forEach((item) => {
+      const point = toLatLng(item.lat, item.lng);
+      if (point) dataBounds.push(point);
+    });
+    (data.alerts || []).forEach((item) => {
+      const point = toLatLng(item.lat, item.lng);
+      if (point) dataBounds.push(point);
+    });
+    [...(data.zones || []), ...(data.fences || []), ...(data.sectors || [])]
+      .forEach((item) => {
+        if (validLatLngArr(item.coordinates)) dataBounds.push(...item.coordinates);
+      });
+    if (autoFit && !fittedRef.current && dataBounds.length > 0) {
+      map.fitBounds(L.latLngBounds(dataBounds), { padding: [28, 28], maxZoom: 14 });
+      fittedRef.current = true;
+    } else if (autoFit && !fittedRef.current && locationLatLng) {
+      map.setView(locationLatLng, 14);
+      fittedRef.current = true;
+    }
+
     apiRef.current.locateCamera = (id) => {
       const m = markerIndex.cameras[id];
       const cam = (data.cameras || []).find((c) => c.id === id);
-      if (cam) {
-        map.setView([cam.lat, cam.lng], 14);
+      const ll = toLatLng(cam?.lat, cam?.lng);
+      if (ll) {
+        map.setView(ll, 14);
         if (m) {
           onSelect({ kind: "camera", ...cam });
-          openReactPopup(m, renderPopup({ kind: "camera", ...cam }), () => {});
+          const popup = renderPopup?.({ kind: "camera", ...cam });
+          if (popup) openReactPopup(m, popup, () => {});
         }
       }
     };
     apiRef.current.locateAlert = (id) => {
       const a = (data.alerts || []).find((x) => x.id === id);
-      if (a) {
-        map.setView([a.lat, a.lng], 13);
+      if (a) onSelect({ kind: "alert", ...a });
+      const ll = toLatLng(a?.lat, a?.lng);
+      if (ll) {
+        map.setView(ll, 13);
         const m = markerIndex.alerts[id];
-        onSelect({ kind: "alert", ...a });
-        if (m) openReactPopup(m, renderPopup({ kind: "alert", ...a }), () => {});
+        const popup = renderPopup?.({ kind: "alert", ...a });
+        if (m && popup) openReactPopup(m, popup, () => {});
       }
     };
     apiRef.current.locateZone = (id) => {
       const z = (data.zones || []).find((x) => x.id === id);
-      if (z) {
-        const bounds = L.latLngBounds(z.coordinates);
-        map.fitBounds(bounds, { padding: [30, 30] });
-        onSelect({ kind: "zone", ...z });
+      if (z && validLatLngArr(z.coordinates)) {
+        try {
+          const bounds = L.latLngBounds(z.coordinates);
+          map.fitBounds(bounds, { padding: [30, 30] });
+          onSelect({ kind: "zone", ...z });
+        } catch (e) {
+          /* invalid zone bounds */
+        }
       }
     };
     apiRef.current.search = (term) => {
@@ -251,28 +355,78 @@ export function useBorderMapLayers({
       if (!q) return false;
       const cam = (data.cameras || []).find(
         (c) =>
-          c.id.toLowerCase().includes(q) ||
-          c.name.toLowerCase().includes(q) ||
-          c.sector.toLowerCase().includes(q)
+          String(c.id || "").toLowerCase().includes(q) ||
+          String(c.name || "").toLowerCase().includes(q) ||
+          String(c.sector || "").toLowerCase().includes(q)
       );
       if (cam) {
         apiRef.current.locateCamera(cam.id);
         return true;
       }
-      const alert = (data.alerts || []).find((a) => a.id.toLowerCase().includes(q));
+      const alert = (data.alerts || []).find((a) => String(a.id || "").toLowerCase().includes(q));
       if (alert) {
         apiRef.current.locateAlert(alert.id);
         return true;
       }
-      const sector = (data.cameras || []).find((c) => c.sector.toLowerCase() === q);
-      if (sector) {
-        map.setView([sector.lat, sector.lng], 11);
+      const sector = (data.cameras || []).find((c) => String(c.sector || "").toLowerCase() === q);
+      const ll = toLatLng(sector?.lat, sector?.lng);
+      if (sector && ll) {
+        map.setView(ll, 11);
         return true;
       }
       return false;
     };
     apiRef.current.invalidate = () => map.invalidateSize();
-  }, [mapRef, data, layers, filters, selectedRef, onSelect, renderPopup]);
+    apiRef.current.centerOnLocation = () => {
+      if (locationLatLng) map.setView(locationLatLng, 15);
+    };
+    if (openItem) {
+      const layer = markerIndex[openItem.kind]?.[openItem.id];
+      const item = data[openItem.kind]?.find((record) => String(record.id) === openItem.id);
+      const kind = { cameras: "camera", alerts: "alert", zones: "zone", fences: "fence" }[openItem.kind];
+      const popup = item && renderPopup?.({ ...item, kind });
+      if (layer && popup) openReactPopup(layer, popup, () => {}, { autoPan: false });
+    }
+  }, [mapRef, data, layers, filters, selectedRef, onSelect, renderPopup, location, autoFit]);
+
+  useEffect(() => {
+    const index = mapRef.current?.markerIndex;
+    if (!index) return;
+    for (const camera of data.cameras || []) index.cameras[camera.id]?.setIcon(cameraIcon(camera, selected?.kind === "camera" && selected.id === camera.id));
+    for (const alert of data.alerts || []) index.alerts[alert.id]?.setIcon(alertIcon(alert, selected?.kind === "alert" && selected.id === alert.id));
+  }, [mapRef, data, selected]);
 
   return apiRef;
+}
+
+export function useMapResize(containerRef, apiRef, resizeKey = null) {
+  useEffect(() => {
+    let frame = 0;
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => apiRef.current?.invalidate?.());
+    };
+    const first = setTimeout(schedule, 80);
+    const second = setTimeout(schedule, 260);
+    const element = containerRef.current;
+    const observer = element && typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(schedule)
+      : null;
+    observer?.observe(element);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(first);
+      clearTimeout(second);
+      observer?.disconnect();
+    };
+  }, [containerRef, apiRef, resizeKey]);
+}
+
+export function hasGeographicMapData(data) {
+  return Boolean(
+    (data.cameras || []).some((item) => toLatLng(item.lat, item.lng)) ||
+    (data.alerts || []).some((item) => toLatLng(item.lat, item.lng)) ||
+    [...(data.zones || []), ...(data.fences || []), ...(data.sectors || [])]
+      .some((item) => validLatLngArr(item.coordinates))
+  );
 }

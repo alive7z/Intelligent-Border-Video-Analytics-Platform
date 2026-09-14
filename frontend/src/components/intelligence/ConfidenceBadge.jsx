@@ -1,7 +1,6 @@
 import React from "react";
 import Badge from "../common/Badge";
 
-// UI demonstration categories only — backend thresholds may differ.
 export function ocrQuality(pct) {
   if (pct >= 90) return "high";
   if (pct >= 75) return "medium";
@@ -21,6 +20,9 @@ const toneMap = { high: "success", medium: "warning", low: "info" };
  * Confidence badge with an explicit text label (High / Medium / Low).
  */
 function ConfidenceBadge({ value, lowLabel = "Low confidence" }) {
+  if (value === null || value === undefined || value === "") {
+    return <Badge tone="default">—</Badge>;
+  }
   const pct = confidencePercent(value);
   const q = ocrQuality(pct);
   const label = q === "high" ? "High" : q === "medium" ? "Medium" : lowLabel;

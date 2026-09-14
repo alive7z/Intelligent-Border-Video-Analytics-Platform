@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Card from "../components/common/Card";
 import Button from "../components/common/Button";
 import Loader from "../components/common/Loader";
@@ -14,16 +14,40 @@ import RelatedCamera from "../components/alerts/RelatedCamera";
 import RelatedEvidence from "../components/alerts/RelatedEvidence";
 import RelatedEvents from "../components/alerts/RelatedEvents";
 import { ArrowLeftIcon, AlertTriangleIcon } from "../components/common/Icons";
-import { getAlertById } from "../services/alertApi";
+import { getAlertById, getIncidentPackage } from "../services/alertApi";
 import { getCameraById } from "../services/cameraApi";
 import { formatDateTime } from "../utils/date";
+import { useRealtime } from "../context/RealtimeContext";
+import { fromSocketAlert } from "../services/alertApi";
+import { SOCKET_EVENTS } from "../services/websocket";
 
 function AlertDetails() {
   const { alertId } = useParams();
+  const navigate = useNavigate();
   const [alert, setAlert] = useState(null);
   const [camera, setCamera] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [incident, setIncident] = useState(null);
+  const [packageUnavailable, setPackageUnavailable] = useState(false);
+  useEffect(() => {
+    let active = true;
+    let fetching = false;
+    setIncident(null);
+    setPackageUnavailable(false);
+    const refresh = async () => {
+      if (fetching) return;
+      fetching = true;
+      try {
+        const res = await getIncidentPackage(alertId);
+        if (active) { setIncident(res.data); setPackageUnavailable(false); }
+      } catch (_) { if (active) setPackageUnavailable(true); }
+      finally { fetching = false; }
+    };
+    refresh();
+    const timer = setInterval(refresh, 15000);
+    return () => { active = false; clearInterval(timer); };
+  }, [alertId, alert?.status, alert?.severity]);
 
   useEffect(() => {
     let active = true;
@@ -46,6 +70,30 @@ function AlertDetails() {
       active = false;
     };
   }, [alertId]);
+
+  const { subscribe } = useRealtime();
+
+  // Realtime: reflect ack/resolve/update for the visible alert without refresh.
+  useEffect(() => {
+    let active = true;
+    const onAlert = (payload) => {
+      const item = fromSocketAlert(payload?.data);
+      if (!item?.id || item.id !== alertId) return;
+      if (item.deletedAt) {
+        navigate("/alerts", { replace: true });
+        return;
+      }
+      // Socket updates omit detailed reasons and lifecycle fields. Refetch the
+      // authoritative detail instead of wiping them with adapter defaults.
+      getAlertById(alertId).then((res) => active && setAlert(res.data)).catch(() => {});
+    };
+    const offs = [
+      subscribe(SOCKET_EVENTS.ALERT_ACKNOWLEDGED, onAlert),
+      subscribe(SOCKET_EVENTS.ALERT_RESOLVED, onAlert),
+      subscribe(SOCKET_EVENTS.ALERT_UPDATED, onAlert),
+    ];
+    return () => { active = false; offs.forEach((off) => off()); };
+  }, [subscribe, alertId, navigate]);
 
   if (loading) {
     return (
@@ -79,7 +127,7 @@ function AlertDetails() {
     <div>
       <Link
         to="/alerts"
-        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-navy-700 hover:text-navy-900"
+        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-900"
       >
         <ArrowLeftIcon size={16} /> Back to Alerts
       </Link>
@@ -112,9 +160,11 @@ function AlertDetails() {
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* Left: evidence + timeline */}
         <div className="space-y-6 xl:col-span-2">
-          <AlertEvidence alert={alert} />
-          <IncidentTimeline alert={alert} />
-          <RelatedEvents alert={alert} />
+          {packageUnavailable && <p className="text-sm text-amber-700">Incident package could not be loaded; showing available alert details.</p>}
+          {incident?.truncated && <p className="text-sm text-amber-700">Incident history is truncated. Use Event History for older records.</p>}
+          <AlertEvidence alert={alert} items={incident?.evidence} />
+          <IncidentTimeline alert={{ ...alert, timeline: incident?.timeline || alert.timeline }} />
+          <RelatedEvents alert={{ ...alert, relatedEvents: incident?.events?.map((event) => ({ id: event.event_code, time: formatDateTime(event.occurred_at), type: event.event_type, severity: event.severity })) || [] }} />
         </div>
 
         {/* Right: information / risk / actions */}
@@ -123,10 +173,13 @@ function AlertDetails() {
           <RiskReasons alert={alert} />
           <OperatorActions
             alert={alert}
-            onAlertUpdate={(updated) => setAlert((prev) => ({ ...prev, ...updated }))}
+            onAlertUpdate={(updated) => {
+              if (updated?.deletedAt) navigate("/alerts", { replace: true });
+              else setAlert((prev) => ({ ...prev, ...updated }));
+            }}
           />
           <RelatedCamera camera={camera} alert={alert} />
-          <RelatedEvidence alert={alert} />
+          <RelatedEvidence items={incident?.evidence || []} />
         </div>
       </div>
     </div>

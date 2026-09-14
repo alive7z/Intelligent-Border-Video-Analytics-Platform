@@ -14,6 +14,8 @@ export const statusTone = {
   active: "active",
   acknowledged: "acknowledged",
   resolved: "resolved",
+  investigating: "investigating",
+  false_positive: "falsePositive",
   open: "active",
   reviewed: "acknowledged",
   closed: "resolved",

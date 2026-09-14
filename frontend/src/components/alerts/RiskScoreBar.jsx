@@ -22,6 +22,10 @@ const barColor = {
  * Risk score number plus a small progress bar.
  */
 function RiskScoreBar({ score }) {
+  const hasScore = score != null && !Number.isNaN(Number(score));
+  if (!hasScore) {
+    return <span className="text-sm text-slate-400">—</span>;
+  }
   const cat = riskCategory(score);
   const pct = Math.max(0, Math.min(100, score));
   return (

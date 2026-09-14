@@ -5,10 +5,8 @@ import { SearchIcon } from "../common/Icons";
  * Compact filters above/beside the map: search + sector + camera status +
  * alert severity.
  */
-const DEFAULT_SECTORS = ["North Sector", "East Sector", "Central Sector", "South Sector", "West Sector"];
-
 function MapFilters({ filters, onChange, sectors, onSearch, actions }) {
-  const sectorOptions = sectors && sectors.length ? sectors : DEFAULT_SECTORS;
+  const sectorOptions = sectors || [];
   const set = (key, value) => onChange({ ...filters, [key]: value });
   const selectCls = "input-field w-auto min-w-[150px] shrink-0 !py-1.5 pr-7 text-xs";
 
@@ -17,11 +15,11 @@ function MapFilters({ filters, onChange, sectors, onSearch, actions }) {
       <div className="relative flex min-w-[260px] flex-1 items-center gap-1">
         <SearchIcon
           size={14}
-          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 shrink-0 text-slate-400"
+          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 shrink-0 text-black"
         />
         <input
           type="search"
-          className="input-field min-w-0 flex-1 !py-1.5 !pl-8 text-xs"
+          className="input-field min-w-0 flex-1 !py-1.5 !pl-8 text-xs placeholder:text-black"
           placeholder="Search camera, sector, alert..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}

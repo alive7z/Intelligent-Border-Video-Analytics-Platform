@@ -24,7 +24,7 @@ function CameraInfoPanel({ camera }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <CameraIcon size={18} className="text-navy-700" />
+        <CameraIcon size={18} className="text-white" />
         <h3 className="text-sm font-semibold text-slate-800">Camera Information</h3>
       </div>
       <dl className="divide-y divide-slate-100 text-sm">
@@ -37,8 +37,8 @@ function CameraInfoPanel({ camera }) {
           status
           statusTone={isOnline ? "success" : "offline"}
         />
-        <Row label="FPS" value={isOnline ? camera.fps : "—"} />
-        <Row label="Latency" value={isOnline ? `${camera.latency} ms` : "—"} />
+        <Row label="FPS" value={isOnline && camera.fps != null ? camera.fps : "—"} />
+        <Row label="Latency" value={isOnline && camera.latency != null ? `${camera.latency} ms` : "—"} />
         <Row label="Active Tracks" value={camera.detections?.length || 0} />
         <Row label="Stream" value={isOnline ? "Connected" : "Disconnected"} />
       </dl>

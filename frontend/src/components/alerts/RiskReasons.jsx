@@ -19,19 +19,21 @@ function RiskReasons({ alert }) {
           <li key={i}>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-700">{r.label}</span>
-              <span className="font-medium text-slate-800">+{r.score}</span>
+              <span className="font-medium text-slate-800">{Number.isFinite(r.score) ? `+${r.score}` : "Recorded"}</span>
             </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            {Number.isFinite(r.score) && <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-navy-500"
+                className="h-full rounded-full bg-blue-500"
                 style={{
                   width: `${Math.min(100, (r.score / Math.max(60, total)) * 100)}%`,
                 }}
               />
-            </div>
+            </div>}
           </li>
         ))}
       </ul>
+      {!reasons.length && <p className="text-sm text-slate-500">No reason breakdown was stored for this alert.</p>}
+      {reasons.some((reason) => Number.isFinite(reason.score)) && <p className="mt-3 text-xs text-slate-500">Recorded normalized factors plus duration contributions; the final score is capped at 100. Severity also follows confirmation rules.</p>}
       <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3">
         <span className="text-sm font-medium text-slate-600">
           Total Risk Score

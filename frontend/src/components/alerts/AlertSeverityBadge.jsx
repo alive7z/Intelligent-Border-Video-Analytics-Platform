@@ -7,7 +7,7 @@ import { severityTone } from "../../utils/severity";
  * value is expected lowercase; it is uppercased for display.
  */
 function AlertSeverityBadge({ severity, className = "" }) {
-  const tone = severityTone[severity] || "info";
+  const tone = severityTone[String(severity || "").toLowerCase()] || "info";
   return (
     <Badge tone={tone} dot className={className}>
       {(severity || "info").toUpperCase()}

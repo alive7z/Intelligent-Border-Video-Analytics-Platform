@@ -28,13 +28,13 @@ function SelectedMapItem({ item, onClose, actions }) {
 
   const icon =
     item.kind === "camera" ? (
-      <CameraIcon size={16} className="text-navy-700" />
+      <CameraIcon size={16} className="text-blue-700" />
     ) : item.kind === "alert" ? (
       <AlertTriangleIcon size={16} className="text-red-600" />
     ) : item.kind === "zone" ? (
-      <ShieldIcon size={16} className="text-navy-700" />
+      <ShieldIcon size={16} className="text-blue-700" />
     ) : (
-      <LayersIcon size={16} className="text-navy-700" />
+      <LayersIcon size={16} className="text-blue-700" />
     );
 
   return (
@@ -56,7 +56,7 @@ function SelectedMapItem({ item, onClose, actions }) {
 
       {item.kind === "camera" && (
         <>
-          <p className="text-base font-bold text-navy-700">{item.id}</p>
+          <p className="text-base font-bold text-blue-700">{item.id}</p>
           <p className="text-sm text-slate-600">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Sector" value={item.sector} />
@@ -99,7 +99,7 @@ function SelectedMapItem({ item, onClose, actions }) {
             <Section label="Severity" value={<AlertSeverityBadge severity={item.severity} />} />
             <Section label="Camera" value={item.cameraId} />
             <Section label="Sector" value={item.sector} />
-            <Section label="Risk Score" value={`${item.riskScore} / 100`} />
+            <Section label="Risk Score" value={`${item.riskScore ?? "—"} / 100`} />
             <Section label="Timestamp" value={formatDateTime(item.timestamp)} />
           </div>
           {actions.onViewAlert && (
@@ -112,7 +112,7 @@ function SelectedMapItem({ item, onClose, actions }) {
 
       {item.kind === "zone" && (
         <>
-          <p className="text-base font-bold text-navy-700">{item.name}</p>
+          <p className="text-base font-bold text-blue-700">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Zone ID" value={item.id} />
             <Section label="Type" value={<Badge tone="new">{item.type}</Badge>} />
@@ -129,7 +129,7 @@ function SelectedMapItem({ item, onClose, actions }) {
 
       {item.kind === "fence" && (
         <>
-          <p className="text-base font-bold text-navy-700">{item.id}</p>
+          <p className="text-base font-bold text-blue-700">{item.id}</p>
           <p className="text-sm text-slate-600">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Camera" value={item.cameraId} />

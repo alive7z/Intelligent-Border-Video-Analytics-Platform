@@ -2,26 +2,30 @@ import React from "react";
 import { SearchIcon } from "../common/Icons";
 
 const eventTypeOptions = [
-  "Person Detection",
-  "Vehicle Detection",
-  "ANPR Detection",
-  "Face Detection",
-  "Night Movement",
-  "Loitering",
-  "Restricted Zone Intrusion",
-  "Virtual Fence Crossing",
-  "Vehicle in Restricted Zone",
-  "Suspicious Activity",
+  ["PERSON_DETECTED", "Person Detection"],
+  ["VEHICLE_DETECTED", "Vehicle Detection"],
+  ["PLATE_DETECTED", "ANPR Detection"],
+  ["FACE_DETECTED", "Face Detection"],
+  ["NIGHT_MOVEMENT", "Night Movement"],
+  ["LOITERING", "Loitering"],
+  ["RESTRICTED_ZONE_ENTRY", "Restricted Zone Intrusion"],
+  ["VIRTUAL_FENCE_CROSSING", "Virtual Fence Crossing"],
+  ["VEHICLE_IN_RESTRICTED_ZONE", "Vehicle in Restricted Zone"],
+  ["SUSPICIOUS_ACTIVITY", "Suspicious Activity"],
 ];
 
 const severityOptions = ["info", "low", "medium", "high", "critical"];
-const statusOptions = ["Logged", "Active", "Acknowledged", "Resolved"];
+const statusOptions = [
+  ["NEW", "New"],
+  ["ACTIVE", "Active"],
+  ["ACKNOWLEDGED", "Acknowledged"],
+  ["RESOLVED", "Resolved"],
+];
 const dateOptions = [
   { value: "all", label: "Any Date" },
   { value: "today", label: "Today" },
   { value: "24h", label: "Last 24 Hours" },
   { value: "7d", label: "Last 7 Days" },
-  { value: "custom", label: "Custom Range" },
 ];
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -38,11 +42,11 @@ function EventFilters({ filters, onChange, cameras }) {
       <div className="relative min-w-[220px] flex-1 sm:flex-none">
         <SearchIcon
           size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black"
         />
         <input
           type="search"
-          className="input-field !pl-9"
+          className="input-field !pl-9 placeholder:text-black"
           placeholder="Search event ID, camera, object, plate..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
@@ -57,9 +61,9 @@ function EventFilters({ filters, onChange, cameras }) {
         aria-label="Filter by event type"
       >
         <option value="all">All Events</option>
-        {eventTypeOptions.map((t) => (
-          <option key={t} value={t}>
-            {t}
+        {eventTypeOptions.map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
           </option>
         ))}
       </select>
@@ -77,6 +81,30 @@ function EventFilters({ filters, onChange, cameras }) {
           </option>
         ))}
       </select>
+
+      <select
+        className={selectCls}
+        value={filters.objectType}
+        onChange={(e) => set("objectType", e.target.value)}
+        aria-label="Filter by object type"
+      >
+        <option value="all">All Objects</option>
+        <option value="PERSON">Person</option>
+        <option value="VEHICLE">Vehicle</option>
+        <option value="FACE">Face</option>
+        <option value="PLATE">Plate</option>
+      </select>
+
+      <input
+        type="number"
+        min="0"
+        max="100"
+        className="input-field w-32 !py-2 text-sm"
+        placeholder="Min risk"
+        value={filters.minRisk}
+        onChange={(e) => set("minRisk", e.target.value)}
+        aria-label="Minimum risk score"
+      />
 
       <select
         className={selectCls}
@@ -99,9 +127,9 @@ function EventFilters({ filters, onChange, cameras }) {
         aria-label="Filter by status"
       >
         <option value="all">All Status</option>
-        {statusOptions.map((s) => (
-          <option key={s} value={s}>
-            {s}
+        {statusOptions.map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
           </option>
         ))}
       </select>

@@ -32,6 +32,15 @@ function RuleForm({ open, onClose, onSubmit, rule, canManage }) {
     );
   }, [open, rule]);
 
+  // Rules without an AI-engine producer cannot produce runtime evidence; they
+  // must stay disabled (the backend also rejects enabling them).
+  const unsupported = rule && rule.runtimeSupported === false;
+
+  const toggleEnabled = (e) => {
+    if (unsupported) return;
+    setForm((f) => ({ ...f, enabled: e.target.checked }));
+  };
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = () => {
@@ -108,11 +117,17 @@ function RuleForm({ open, onClose, onSubmit, rule, canManage }) {
           <input
             type="checkbox"
             checked={form.enabled}
-            disabled={!canManage}
-            onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
-            className="h-4 w-4 rounded border-slate-300 text-navy-700"
+            disabled={!canManage || unsupported}
+            onChange={toggleEnabled}
+            className="h-4 w-4 rounded border-slate-300 text-blue-700"
           />
         </label>
+        {unsupported && (
+          <p className="text-xs text-amber-600">
+            This rule has no runtime producer in the AI engine — it can never
+            generate evidence, so it stays disabled.
+          </p>
+        )}
         {!canManage && <p className="text-xs text-slate-400">Read-only access.</p>}
       </div>
     </Modal>

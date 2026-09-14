@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { getZones, createZone, updateZone, deleteZone } from "../../../services/adminApi";
+import {
+  getZones,
+  createZone,
+  updateZone,
+  getCameras as getAdminCameras,
+} from "../../../services/adminApi";
 import Card from "../../common/Card";
 import Button from "../../common/Button";
 import Badge from "../../common/Badge";
@@ -9,6 +14,7 @@ import { PlusIcon, EditIcon, LayersIcon, MapPinIcon } from "../../common/Icons";
 import { useToast } from "../../common/Toast";
 import { useAdminAccess } from "../useAdminAccess";
 import ZoneForm from "./ZoneForm";
+import ZoneBoundaryEditor from "./ZoneBoundaryEditor";
 
 const riskTone = { Low: "low", Medium: "medium", High: "high", Critical: "critical" };
 
@@ -17,20 +23,24 @@ function ZoneManagement() {
   const toast = useToast();
 
   const [zones, setZones] = useState([]);
+  const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await getZones();
-      setZones(Array.isArray(data) ? data : []);
+      const [zoneResponse, cameraResponse] = await Promise.all([
+        getZones(),
+        getAdminCameras(),
+      ]);
+      setZones(Array.isArray(zoneResponse.data) ? zoneResponse.data : []);
+      setCameras(Array.isArray(cameraResponse.data) ? cameraResponse.data : []);
     } catch (e) {
       setError(e);
     } finally {
@@ -57,8 +67,8 @@ function ZoneManagement() {
         const { data } = await updateZone(editingZone.id, {
           name: form.name,
           type: form.type,
-          sector: form.sector,
           riskLevel: form.riskLevel,
+          coordinates: form.coordinates,
         });
         setZones((zs) => zs.map((z) => (z.id === editingZone.id ? data : z)));
         toast(`${editingZone.id} updated`, "success");
@@ -71,20 +81,6 @@ function ZoneManagement() {
       setEditing(null);
     } catch (e) {
       toast(e.message || "Save failed", "error");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      await deleteZone(deleteTarget.id);
-      setZones((zs) => zs.filter((z) => z.id !== deleteTarget.id));
-      toast(`${deleteTarget.id} deleted`, "success");
-    } catch (e) {
-      toast(e.message || "Delete failed", "error");
-    } finally {
-      setDeleteTarget(null);
-      setPreview(null);
     }
   };
 
@@ -104,7 +100,12 @@ function ZoneManagement() {
       </div>
 
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-slate-500">Manage surveillance zones and virtual fences.</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-white">Manage surveillance zones and virtual fences.</p>
+          <span className="hidden rounded bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700 sm:inline">
+            Engine picks up zone changes on its config refresh (~30s)
+          </span>
+        </div>
         {canManage && (
           <Button
             onClick={() => {
@@ -136,7 +137,7 @@ function ZoneManagement() {
                 <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <th className="px-4 py-3 font-semibold">Zone</th>
                   <th className="px-4 py-3 font-semibold">Type</th>
-                  <th className="px-4 py-3 font-semibold">Sector</th>
+                  <th className="px-4 py-3 font-semibold">Camera</th>
                   <th className="px-4 py-3 font-semibold">Risk</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3 text-right font-semibold">Actions</th>
@@ -154,13 +155,18 @@ function ZoneManagement() {
                   <tr key={z.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 font-medium text-slate-800">
-                        <MapPinIcon size={16} className="text-navy-600" />
+                        <MapPinIcon size={16} className="text-white" />
                         {z.id}
                       </div>
                       <p className="text-xs text-slate-400">{z.name}</p>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{z.type}</td>
-                    <td className="px-4 py-3 text-slate-600">{z.sector || "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      <p className="font-medium">{z.cameraId || "—"}</p>
+                      <p className="text-xs text-slate-400">
+                        {cameras.find((camera) => camera.id === z.cameraId)?.sector || "—"}
+                      </p>
+                    </td>
                     <td className="px-4 py-3">
                       <Badge tone={riskTone[z.riskLevel] || "default"}>{z.riskLevel}</Badge>
                     </td>
@@ -173,13 +179,13 @@ function ZoneManagement() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setPreview(z)}>
+                        <Button variant="info" size="sm" onClick={() => setPreview(z)}>
                           <LayersIcon size={14} /> Preview
                         </Button>
                         {canManage && (
                           <>
                             <Button
-                              variant="ghost"
+                              variant="success"
                               size="sm"
                               onClick={() => {
                                 setEditing(z);
@@ -187,14 +193,6 @@ function ZoneManagement() {
                               }}
                             >
                               <EditIcon size={14} /> Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:bg-red-50"
-                              onClick={() => setDeleteTarget(z)}
-                            >
-                              Delete
                             </Button>
                           </>
                         )}
@@ -217,6 +215,8 @@ function ZoneManagement() {
         onSubmit={handleSave}
         editing={editing}
         canManage={canManage}
+        cameras={cameras}
+        zones={zones}
       />
 
       {/* Preview */}
@@ -224,7 +224,7 @@ function ZoneManagement() {
         open={!!preview}
         onClose={() => setPreview(null)}
         title={preview ? `Preview — ${preview.id}` : ""}
-        size="lg"
+        size="xl"
         footer={
           <Button variant="ghost" onClick={() => setPreview(null)}>
             Close
@@ -233,20 +233,18 @@ function ZoneManagement() {
       >
         {preview && (
           <div className="space-y-4">
-            <div className="relative h-56 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-              <svg viewBox="0 0 400 220" className="h-full w-full" aria-hidden="true">
-                <polygon
-                  points="60,160 130,70 300,80 340,150 220,190"
-                  fill="rgba(24,53,94,0.12)"
-                  stroke="#18355e"
-                  strokeWidth="2"
-                  strokeDasharray={preview.type === "Virtual Fence" ? "6 4" : "0"}
-                />
-              </svg>
-              <span className="absolute bottom-2 left-2 rounded bg-navy-700/80 px-2 py-0.5 text-[11px] text-white">
-                {preview.name || preview.id} · {preview.type}
-              </span>
-            </div>
+            {cameras.find((camera) => camera.id === preview.cameraId) ? (
+              <ZoneBoundaryEditor
+                camera={cameras.find((camera) => camera.id === preview.cameraId)}
+                zone={preview}
+                zones={zones}
+                coordinates={preview.coordinates}
+              />
+            ) : (
+              <div className="flex aspect-video items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
+                Camera information is unavailable for this zone.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-md bg-slate-50 px-3 py-2">
                 <p className="text-xs text-slate-400">Type</p>
@@ -257,8 +255,8 @@ function ZoneManagement() {
                 <Badge tone={riskTone[preview.riskLevel] || "default"}>{preview.riskLevel}</Badge>
               </div>
               <div className="rounded-md bg-slate-50 px-3 py-2">
-                <p className="text-xs text-slate-400">Sector</p>
-                <p className="font-medium text-slate-700">{preview.sector || "—"}</p>
+                <p className="text-xs text-slate-400">Camera</p>
+                <p className="font-medium text-slate-700">{preview.cameraId || "—"}</p>
               </div>
               <div className="rounded-md bg-slate-50 px-3 py-2">
                 <p className="text-xs text-slate-400">Coordinates</p>
@@ -267,30 +265,6 @@ function ZoneManagement() {
             </div>
           </div>
         )}
-      </Modal>
-
-      {/* Delete confirmation */}
-      <Modal
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        title={`Delete ${deleteTarget?.id || ""}?`}
-        size="sm"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
-              Cancel
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Delete Zone
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-slate-600">
-          Delete <span className="font-medium">{deleteTarget?.name || deleteTarget?.id}</span>?
-          This removes the zone boundary and its association with rules. This action cannot be
-          undone.
-        </p>
       </Modal>
     </>
   );

@@ -5,12 +5,14 @@ import EventTypeBadge from "./EventTypeBadge";
 import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import AlertStatusBadge from "../alerts/AlertStatusBadge";
 import RiskScoreBar from "../alerts/RiskScoreBar";
-import { formatTime } from "../../utils/date";
+import Button from "../common/Button";
+import { TrashIcon } from "../common/Icons";
+import { formatDateTime } from "../../utils/date";
 
 /**
  * Events table for desktop/tablet plus stacked cards for mobile.
  */
-function EventTable({ events }) {
+function EventTable({ events, canDelete = false, onDelete }) {
   return (
     <>
       {/* Desktop / tablet table */}
@@ -32,7 +34,12 @@ function EventTable({ events }) {
             </thead>
             <tbody>
               {events.map((e) => (
-                <EventRow key={e.id} event={e} />
+                <EventRow
+                  key={e.id}
+                  event={e}
+                  canDelete={canDelete}
+                  onDelete={onDelete}
+                />
               ))}
             </tbody>
           </table>
@@ -47,7 +54,7 @@ function EventTable({ events }) {
               <div>
                 <Link
                   to={`/events/${e.id}`}
-                  className="font-semibold text-navy-700 hover:underline"
+                  className="font-semibold text-sky-400 hover:underline"
                 >
                   {e.id}
                 </Link>
@@ -56,7 +63,7 @@ function EventTable({ events }) {
                 </div>
                 <p className="mt-0.5 text-xs text-slate-400">
                   {e.camera} · {e.objectType}
-                  {e.trackId ? ` #${e.trackId.split("-").pop()}` : ""} · {formatTime(e.timestamp)}
+                  {e.trackId ? ` #${e.trackId.split("-").pop()}` : ""} · {formatDateTime(e.timestamp)}
                 </p>
               </div>
               <AlertSeverityBadge severity={e.severity} />
@@ -65,12 +72,24 @@ function EventTable({ events }) {
               <RiskScoreBar score={e.riskScore} />
               <AlertStatusBadge status={e.status} />
             </div>
-            <Link
-              to={`/events/${e.id}`}
-              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              View
-            </Link>
+            <div className="mt-3 flex items-center gap-2">
+              <Link
+                to={`/events/${e.id}`}
+                className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-green-500 bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600 hover:border-green-600"
+              >
+                View
+              </Link>
+              {canDelete && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => onDelete(e)}
+                  aria-label={`Delete event ${e.id}`}
+                >
+                  <TrashIcon size={14} />
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>

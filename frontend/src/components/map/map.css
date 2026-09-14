@@ -76,6 +76,32 @@
   outline: 3px solid rgba(15, 42, 79, 0.5);
 }
 
+/* Current device location: blue dot + soft accuracy-style pulse. */
+.ibvap-my-location {
+  position: relative;
+}
+.ibvap-my-location__pulse,
+.ibvap-my-location__dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+}
+.ibvap-my-location__pulse {
+  width: 28px;
+  height: 28px;
+  background: rgba(37, 99, 235, 0.22);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+}
+.ibvap-my-location__dot {
+  width: 13px;
+  height: 13px;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.55);
+}
+
 /* Leaflet popup theming to match IBVAP design */
 .leaflet-popup-content-wrapper {
   border-radius: 12px;
@@ -85,6 +111,7 @@
   margin: 14px 16px;
 }
 
+.ibvap-map-container.leaflet-container,
 .ibvap-map-container .leaflet-container {
   font-family: Inter, system-ui, sans-serif;
   background: #e7ecf3;

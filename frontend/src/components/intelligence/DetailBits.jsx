@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Badge from "../common/Badge";
 import { CameraIcon, ImageIcon } from "../common/Icons";
+import { getEvidenceBlob } from "../../services/intelligenceApi";
 
 export function DetailRow({ label, value }) {
   return (
@@ -53,18 +54,10 @@ export function EventButton({ eventId, eventType }) {
  */
 export function Snapshot({ label = "Snapshot", sublabel = "" }) {
   return (
-    <div           className="relative aspect-video w-full overflow-hidden rounded-lg bg-slate-900 dark:bg-[#0b101a]">
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+    <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50">
+      <div className="text-center text-slate-400">
         <ImageIcon size={32} />
-        <p className="mt-2 text-xs">{label}</p>
+        <p className="mt-2 text-xs">No {label.toLowerCase()} available</p>
         {sublabel && <p className="text-[10px] text-slate-600">{sublabel}</p>}
       </div>
     </div>
@@ -76,10 +69,46 @@ export function CroppedImage({ label = "Crop", sublabel = "" }) {
     <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 py-6">
       <div className="text-center text-slate-400">
         <ImageIcon size={24} className="mx-auto" />
-        <p className="mt-1 text-xs">{label}</p>
+        <p className="mt-1 text-xs">No {label.toLowerCase()} available</p>
         {sublabel && <p className="text-[10px] text-slate-400">{sublabel}</p>}
       </div>
     </div>
+  );
+}
+
+export function EvidenceImage({ evidenceId, alt = "Face snapshot", compact = false }) {
+  const [src, setSrc] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl = null;
+    setSrc(null);
+    setFailed(false);
+    if (!evidenceId) return undefined;
+    getEvidenceBlob(evidenceId)
+      .then((blob) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setSrc(objectUrl);
+      })
+      .catch(() => active && setFailed(true));
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [evidenceId]);
+
+  if (!evidenceId || failed) {
+    return <span className="text-xs text-slate-400">No face snapshot available</span>;
+  }
+  if (!src) return <span className="text-xs text-slate-400">Loading snapshot…</span>;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={compact ? "h-12 w-12 rounded object-cover" : "max-h-80 w-full rounded-lg bg-slate-950 object-contain"}
+    />
   );
 }
 

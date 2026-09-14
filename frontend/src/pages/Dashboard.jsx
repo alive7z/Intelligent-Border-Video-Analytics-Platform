@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PageHeader from "../components/common/PageHeader";
+import EmptyState from "../components/common/EmptyState";
+import { AlertTriangleIcon } from "../components/common/Icons";
 import { KpiSkeleton } from "../components/common/Skeleton";
 import StatCard from "../components/dashboard/StatCard";
 import LiveSurveillance from "../components/dashboard/LiveSurveillance";
@@ -11,21 +13,71 @@ import SystemHealth from "../components/dashboard/SystemHealth";
 import IntelligenceSummary from "../components/dashboard/IntelligenceSummary";
 import QuickActions from "../components/dashboard/QuickActions";
 import { getSummary } from "../services/analyticsApi";
+import { useRealtime } from "../context/RealtimeContext";
+import { SOCKET_EVENTS } from "../services/websocket";
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { subscribe, operationalDataEpoch } = useRealtime();
 
   useEffect(() => {
     let active = true;
     getSummary()
-      .then((res) => active && setSummary(res.data))
-      .catch(() => active && setSummary(null));
+      .then((res) => {
+        if (!active) return;
+        setSummary(res.data);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setError(true);
+        setLoading(false);
+      });
     return () => {
       active = false;
     };
-  }, []);
+  }, [operationalDataEpoch]);
 
-  if (!summary) {
+  // Realtime: keep KPI counters live without refetching the dashboard.
+  useEffect(() => {
+    const onAlertNew = (payload) => {
+      const s = payload?.data?.status;
+      if (!s || !["NEW", "ACTIVE"].includes(s)) return;
+      setSummary((prev) =>
+        prev ? { ...prev, activeAlerts: prev.activeAlerts + 1 } : prev
+      );
+    };
+    const onAlertClosed = (payload) => {
+      const s = payload?.data?.status;
+      if (s !== "RESOLVED") return;
+      setSummary((prev) =>
+        prev ? { ...prev, activeAlerts: Math.max(0, prev.activeAlerts - 1) } : prev
+      );
+    };
+    const onCameraStatus = (payload) => {
+      const st = payload?.data?.streamStatus;
+      if (!st) return;
+      setSummary((prev) => {
+        if (!prev) return prev;
+        if (st === "ONLINE") return { ...prev, camerasOnline: prev.camerasOnline + 1 };
+        if (st === "OFFLINE")
+          return { ...prev, camerasOnline: Math.max(0, prev.camerasOnline - 1) };
+        return prev;
+      });
+    };
+
+    const offs = [
+      subscribe(SOCKET_EVENTS.ALERT_NEW, onAlertNew),
+      subscribe(SOCKET_EVENTS.ALERT_ACKNOWLEDGED, onAlertClosed),
+      subscribe(SOCKET_EVENTS.ALERT_RESOLVED, onAlertClosed),
+      subscribe(SOCKET_EVENTS.CAMERA_STATUS, onCameraStatus),
+    ];
+    return () => offs.forEach((off) => off());
+  }, [subscribe]);
+
+  if (loading) {
     return (
       <div>
         <div className="mb-6">
@@ -46,8 +98,25 @@ function Dashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div>
+        <PageHeader
+          title="Overview"
+          subtitle="Command dashboard – real-time border surveillance status"
+        />
+        <EmptyState
+          icon={<AlertTriangleIcon size={22} />}
+          tone="error"
+          title="Could not load dashboard data"
+          description="The backend API is unavailable. Check the service and try again."
+        />
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div key={operationalDataEpoch}>
       <PageHeader
         title="Overview"
         subtitle="Command dashboard – real-time border surveillance status"
@@ -84,20 +153,20 @@ function Dashboard() {
           value={summary.systemHealth}
           label="System Health"
           sub={`Uptime ${summary.uptime}`}
-          status="healthy"
-          statusText="Healthy"
+          status={summary.systemHealth === "healthy" ? "healthy" : summary.systemHealth === "degraded" ? "warning" : "critical"}
+          statusText={String(summary.systemHealth || "unknown").replace(/_/g, " ")}
         />
       </div>
 
       {/* Surveillance / map / trend */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-1">
+        <div className="min-w-0 xl:col-span-1">
           <LiveSurveillance />
         </div>
-        <div className="xl:col-span-1">
+        <div className="min-w-0 xl:col-span-1">
           <BorderMapPreview />
         </div>
-        <div className="xl:col-span-1">
+        <div className="min-w-0 xl:col-span-1">
           <AlertTrend />
         </div>
       </div>

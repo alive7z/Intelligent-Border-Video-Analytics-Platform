@@ -1,18 +1,27 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/common/PageHeader";
 import Button from "../components/common/Button";
 import Loader from "../components/common/Loader";
+import Modal from "../components/common/Modal";
+import Input from "../components/common/Input";
 import EventFilters from "../components/events/EventFilters";
 import EventTable from "../components/events/EventTable";
-import { FileTextIcon, DownloadIcon, ChevronDownIcon, RefreshIcon, AlertTriangleIcon } from "../components/common/Icons";
-import { getEvents } from "../services/eventApi";
+import { FileTextIcon, DownloadIcon, ChevronDownIcon, RefreshIcon, AlertTriangleIcon, TrashIcon } from "../components/common/Icons";
+import { getEvents, getEventsSummary, deleteEvent } from "../services/eventApi";
+import { getAllCameras } from "../services/cameraApi";
+import { useRealtime } from "../context/RealtimeContext";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../components/common/Toast";
+import { SOCKET_EVENTS } from "../services/websocket";
 
-const PAGE_SIZE = 20;
+const PAGE_OPTIONS = [20, 50, 100];
 
 const defaultFilters = {
   search: "",
   type: "all",
   severity: "all",
+  objectType: "all",
+  minRisk: "",
   camera: "all",
   status: "all",
   date: "all",
@@ -21,7 +30,7 @@ const defaultFilters = {
 function SummaryCard({ label, value }) {
   return (
     <div className="card flex items-center gap-4 p-4">
-      <p className="text-3xl font-bold text-slate-900">{value}</p>
+      <p className="text-3xl font-bold text-slate-900">{value ?? "—"}</p>
       <p className="text-sm font-medium text-slate-600">{label}</p>
     </div>
   );
@@ -33,80 +42,81 @@ function Events() {
   const [error, setError] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
+  const [cameras, setCameras] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const { user } = useAuth();
+  const { subscribe, operationalDataEpoch } = useRealtime();
+  const push = useToast();
+  const canDelete = user?.roleKey === "ADMINISTRATOR";
 
-  const load = () => {
-    setLoading(true);
-    setError(false);
-    // Fetch the full history once; filtering and pagination are done
-    // client-side for snappy interaction. A real backend would paginate.
-    getEvents({ pageSize: 1000 })
-      .then((res) => {
-        const list = Array.isArray(res.data) ? res.data : [];
-        setEvents(
-          [...list].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        );
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteEvent(deleteTarget.id, { reason: deleteReason });
+      setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setDeleteReason("");
+      push("Event deleted.", "success");
+      load(false);
+    } catch (err) {
+      push(err?.message || "Failed to delete event.", "error");
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  useEffect(load, []);
+  const load = useCallback((showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setError(false);
+    const params = { page, limit, sort: "occurred_at:desc" };
+    if (filters.search.trim()) params.search = filters.search.trim();
+    if (filters.type !== "all") params.eventType = filters.type;
+    if (filters.severity !== "all") params.severity = filters.severity.toUpperCase();
+    if (filters.objectType !== "all") params.objectType = filters.objectType;
+    if (filters.minRisk !== "") params.minRiskScore = filters.minRisk;
+    if (filters.camera !== "all") params.cameraId = filters.camera;
+    if (filters.status !== "all") params.status = filters.status.toUpperCase();
+    if (filters.date !== "all") {
+      const start = new Date();
+      if (filters.date === "today") start.setHours(0, 0, 0, 0);
+      if (filters.date === "24h") start.setTime(Date.now() - 24 * 60 * 60 * 1000);
+      if (filters.date === "7d") start.setTime(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      params.startDate = start.toISOString();
+    }
+    Promise.all([getEvents(params), getEventsSummary(), getAllCameras()])
+      .then(([res, summaryRes, cameraRes]) => {
+        setEvents(Array.isArray(res.data) ? res.data : []);
+        setPagination(res.pagination || {});
+        setSummary(summaryRes.data);
+        setCameras((cameraRes.data || []).map((c) => c.cameraCode));
+      })
+      .catch(() => { setSummary(null); setError(true); })
+      .finally(() => setLoading(false));
+  }, [page, limit, filters]);
 
-  const cameras = useMemo(
-    () => [...new Set(events.map((e) => e.camera).filter(Boolean))].sort(),
-    [events]
-  );
+  useEffect(() => { load(); }, [load, operationalDataEpoch]);
 
-  const summary = useMemo(() => {
-    const today = new Date().toDateString();
-    const typeContains = (label) =>
-      events.filter((e) => (e.type || "").toLowerCase().includes(label)).length;
-    return {
-      totalToday: events.filter((e) => new Date(e.timestamp).toDateString() === today).length,
-      security: events.filter((e) => ["high", "critical"].includes(e.severity)).length,
-      anpr: typeContains("anpr") + typeContains("plate"),
-      acknowledged: events.filter(
-        (e) => (e.status || "").toLowerCase() === "acknowledged"
-      ).length,
-    };
-  }, [events]);
+  // Keep server-side filters, totals and pagination authoritative after socket
+  // changes, while updating without a browser refresh.
+  useEffect(() => {
+    const offs = [
+      subscribe(SOCKET_EVENTS.EVENT_NEW, () => load(false)),
+      subscribe(SOCKET_EVENTS.EVENT_UPDATED, () => load(false)),
+    ];
+    return () => offs.forEach((off) => off());
+  }, [subscribe, load]);
 
-  const filtered = useMemo(() => {
-    const q = filters.search.trim().toLowerCase();
-    return events.filter((e) => {
-      if (filters.type !== "all" && e.type !== filters.type) return false;
-      if (filters.severity !== "all" && e.severity !== filters.severity) return false;
-      if (filters.camera !== "all" && e.camera !== filters.camera) return false;
-      if (filters.status !== "all" && (e.status || "").toLowerCase() !== filters.status.toLowerCase()) return false;
-      if (filters.date === "today" && new Date(e.timestamp).toDateString() !== new Date().toDateString()) return false;
-      if (
-        filters.date === "24h" &&
-        Date.now() - new Date(e.timestamp).getTime() > 24 * 60 * 60 * 1000
-      )
-        return false;
-      if (
-        filters.date === "7d" &&
-        Date.now() - new Date(e.timestamp).getTime() > 7 * 24 * 60 * 60 * 1000
-      )
-        return false;
-      if (
-        q &&
-        !`${e.id} ${e.type} ${e.camera} ${e.cameraName} ${e.objectType} ${e.trackId} ${e.anpr?.plate || ""}`
-          .toLowerCase()
-          .includes(q)
-      )
-        return false;
-      return true;
-    });
-  }, [events, filters]);
-
-  useEffect(() => setPage(1), [filters]);
-
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageCount = Math.max(1, pagination.totalPages || 0);
   const safePage = Math.min(page, pageCount);
-  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const from = filtered.length ? (safePage - 1) * PAGE_SIZE + 1 : 0;
-  const to = Math.min(safePage * PAGE_SIZE, filtered.length);
+  const visible = events;
+  const from = pagination.total ? (safePage - 1) * limit + 1 : 0;
+  const to = Math.min(safePage * limit, pagination.total || 0);
 
   const pageNumbers = useMemo(() => {
     const nums = [];
@@ -131,39 +141,38 @@ function Events() {
         subtitle="Search and review surveillance events, detections, and security incidents."
       >
         <div className="relative">
-          <Button variant="secondary" size="sm" disabled>
+          <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" disabled>
             <DownloadIcon size={15} /> Export <ChevronDownIcon size={14} />
           </Button>
         </div>
-        <Button variant="secondary" size="sm" onClick={load}>
+        <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" onClick={load}>
           <RefreshIcon size={15} /> Refresh
         </Button>
       </PageHeader>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <SummaryCard label="Total Events Today" value={summary.totalToday} />
-        <SummaryCard label="Security Events" value={summary.security} />
-        <SummaryCard label="ANPR Events" value={summary.anpr} />
-        <SummaryCard label="Acknowledged Incidents" value={summary.acknowledged} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SummaryCard label="Total Events Today" value={summary?.totalToday} />
+        <SummaryCard label="Security Events" value={summary?.securityEvents} />
+        <SummaryCard label="ANPR Events" value={summary?.anprEvents} />
       </div>
 
       {/* Filter bar */}
       <div className="card mt-6 p-4">
-        <EventFilters filters={filters} onChange={setFilters} cameras={cameras} />
+        <EventFilters filters={filters} onChange={(next) => { setFilters(next); setPage(1); }} cameras={cameras} />
       </div>
 
       {/* Event history */}
       <div className="mt-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-slate-800">Event History</h2>
+          <h2 className="text-base font-semibold text-white">Event History</h2>
           {!loading && !error && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-white">
               Showing{" "}
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-white">
                 {from}–{to}
               </span>{" "}
-              of {filtered.length} events
+              of {pagination.total || 0} events
             </p>
           )}
         </div>
@@ -184,7 +193,11 @@ function Events() {
           </div>
         ) : visible.length ? (
           <>
-            <EventTable events={visible} />
+            <EventTable
+              events={visible}
+              canDelete={canDelete}
+              onDelete={setDeleteTarget}
+            />
             {pageCount > 1 && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-500">
@@ -209,7 +222,7 @@ function Events() {
                         onClick={() => setPage(n)}
                         className={`btn-focus rounded-lg border px-3 py-1.5 text-xs font-medium ${
                           n === safePage
-                            ? "border-navy-700 bg-navy-700 text-white"
+                            ? "border-blue-700 bg-blue-700 text-white"
                             : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                         }`}
                       >
@@ -227,6 +240,11 @@ function Events() {
                 </div>
               </div>
             )}
+            <div className="mt-3 flex justify-end">
+              <select className="input-field w-auto" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
+                {PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n} per page</option>)}
+              </select>
+            </div>
           </>
         ) : (
           <div className="card flex flex-col items-center justify-center gap-2 p-10 text-center">
@@ -238,6 +256,32 @@ function Events() {
           </div>
         )}
       </div>
+
+      <Modal open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} title="Delete Event">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">
+            Delete event{" "}
+            <span className="font-semibold text-slate-700">{deleteTarget?.id}</span>? This is a
+            soft delete — the event is hidden from listings and its audit trail is preserved.
+            Protected events must be unprotected first.
+          </p>
+          <Input
+            id="event-delete-reason"
+            label="Deletion reason"
+            placeholder="e.g. Incorrectly classified detection"
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>
+              <TrashIcon size={14} /> Delete Event
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -18,7 +18,7 @@ function RelatedCamera({ camera, alert }) {
   return (
     <Card>
       <div className="mb-3 flex items-center gap-2">
-        <VideoIcon size={18} className="text-navy-700" />
+        <VideoIcon size={18} className="text-white" />
         <h3 className="text-sm font-semibold text-slate-800">Related Camera</h3>
       </div>
       <div className="flex items-center gap-3">
@@ -50,7 +50,7 @@ function RelatedCamera({ camera, alert }) {
         to={`/surveillance/${id}`}
         className="btn-focus mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
       >
-        <VideoIcon size={16} className="text-navy-700" /> Open Live Camera
+        <VideoIcon size={16} className="text-blue-700" /> Open Live Camera
       </Link>
     </Card>
   );

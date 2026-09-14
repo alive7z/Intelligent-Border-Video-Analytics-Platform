@@ -3,21 +3,21 @@ import { SearchIcon } from "../common/Icons";
 
 const severityOptions = ["critical", "high", "medium", "low", "info"];
 const eventTypeOptions = [
-  "Restricted Zone Intrusion",
-  "Virtual Fence Crossing",
-  "Night Movement",
-  "Loitering",
-  "Vehicle in Restricted Zone",
-  "Suspicious Movement",
+  ["SUSPICIOUS_ACTIVITY", "Suspicious Activity"],
+  ["RESTRICTED_ZONE_ENTRY", "Restricted Zone Intrusion"],
+  ["VIRTUAL_FENCE_CROSSING", "Virtual Fence Crossing"],
+  ["NIGHT_MOVEMENT", "Night Movement"],
+  ["LOITERING", "Loitering"],
+  ["VEHICLE_IN_RESTRICTED_ZONE", "Vehicle in Restricted Zone"],
 ];
-const dateOptions = ["today", "24h", "7d", "custom"];
+const dateOptions = ["today", "24h", "7d"];
 
 const placeholderSeverity = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * Compact filter bar for the alerts list.
  */
-function AlertFilters({ filters, onChange, cameras }) {
+function AlertFilters({ filters, onChange, cameras, operators = [] }) {
   const set = (key, value) => onChange({ ...filters, [key]: value });
   const selectCls = "input-field w-auto !py-2 pr-8 text-sm";
 
@@ -26,11 +26,11 @@ function AlertFilters({ filters, onChange, cameras }) {
       <div className="relative min-w-[220px] flex-1 sm:flex-none">
         <SearchIcon
           size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black"
         />
         <input
           type="search"
-          className="input-field !pl-9"
+          className="input-field !pl-9 placeholder:text-black"
           placeholder="Search alert ID, camera, location..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
@@ -52,6 +52,22 @@ function AlertFilters({ filters, onChange, cameras }) {
         ))}
       </select>
 
+      {operators.length > 0 && (
+        <select
+          className={selectCls}
+          value={filters.operator}
+          onChange={(e) => set("operator", e.target.value)}
+          aria-label="Filter by operator"
+        >
+          <option value="all">All Operators</option>
+          {operators.map((operator) => (
+            <option key={operator.id} value={operator.id}>
+              {operator.fullName || operator.email}
+            </option>
+          ))}
+        </select>
+      )}
+
       <select
         className={selectCls}
         value={filters.status}
@@ -62,6 +78,7 @@ function AlertFilters({ filters, onChange, cameras }) {
         <option value="new">New</option>
         <option value="active">Active</option>
         <option value="acknowledged">Acknowledged</option>
+        <option value="investigating">Investigating</option>
         <option value="resolved">Resolved</option>
       </select>
 
@@ -72,9 +89,9 @@ function AlertFilters({ filters, onChange, cameras }) {
         aria-label="Filter by event type"
       >
         <option value="all">All Events</option>
-        {eventTypeOptions.map((t) => (
-          <option key={t} value={t}>
-            {t}
+        {eventTypeOptions.map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
           </option>
         ))}
       </select>

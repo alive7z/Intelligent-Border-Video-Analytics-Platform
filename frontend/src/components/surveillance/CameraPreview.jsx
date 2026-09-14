@@ -1,41 +1,52 @@
 import React from "react";
 import DetectionOverlay from "./DetectionOverlay";
 import { CameraIcon, VideoIcon } from "../common/Icons";
+import useCameraPreviewUrl from "../../hooks/useCameraPreviewUrl";
 
 /**
- * Surveillance preview for a camera card. Shows the live frame with AI
- * detection overlay, or a neutral offline placeholder. It never renders
- * fake imagery for offline cameras.
+ * Surveillance preview for a camera card. Shows the live browser-compatible
+ * MJPEG preview (proxied by the backend — never raw RTSP) with the AI detection
+ * overlay, or a neutral placeholder when offline/unavailable. It never renders
+ * fake imagery.
  */
 function CameraPreview({ camera, showTrackId = false, showAlertBanner = false }) {
   const isOnline = camera.status === "online";
+  const isTransitioning = ["connecting", "degraded", "reconnecting"].includes(
+    camera.status
+  );
+  const canPreview = isOnline || isTransitioning;
+  const cameraCode = camera.cameraCode || camera.id;
+  const { previewUrl, reportImageError } = useCameraPreviewUrl(
+    cameraCode,
+    camera.enabled !== false && canPreview
+  );
 
   return (
     <div
       className="relative aspect-video w-full overflow-hidden bg-slate-900 dark:bg-[#0b101a]"
       role="img"
-      aria-label={`${camera.id} preview`}
+      aria-label={`${cameraCode} preview`}
     >
-      {isOnline ? (
+      {canPreview ? (
         <>
-          <div
-            className="absolute inset-0 opacity-[0.06]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
-              backgroundSize: "28px 28px",
-            }}
-            aria-hidden="true"
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
-            <VideoIcon size={30} />
-            <p className="mt-1.5 text-[11px] font-medium">{camera.id}</p>
-          </div>
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt={`Live preview for ${cameraCode}`}
+              onError={reportImageError}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+              <VideoIcon size={30} />
+              <p className="mt-1.5 text-[11px] font-medium">{cameraCode}</p>
+            </div>
+          )}
           <DetectionOverlay detections={camera.detections || []} trackId={showTrackId} />
 
           {/* LIVE badge */}
-          <span className="absolute left-2 top-2 rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
-            LIVE
+          <span className={`absolute left-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase text-white ${isOnline ? "bg-green-500" : "bg-amber-600"}`}>
+            {isOnline ? "LIVE" : camera.status}
           </span>
 
           {/* Alert banner */}
@@ -59,7 +70,7 @@ function CameraPreview({ camera, showTrackId = false, showAlertBanner = false })
               Last Seen {camera.lastSeen || camera.lastUpdate || "—"}
             </p>
           </div>
-          <span className="absolute left-2 top-2 rounded bg-slate-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+          <span className="absolute left-2 top-2 rounded bg-orange-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
             OFFLINE
           </span>
         </>

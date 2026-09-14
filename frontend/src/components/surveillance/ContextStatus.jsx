@@ -31,7 +31,7 @@ function ContextStatus({ context }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <ActivityIcon size={18} className="text-navy-700" />
+        <ActivityIcon size={18} className="text-white" />
         <h3 className="text-sm font-semibold text-slate-800">
           Context / Security Status
         </h3>

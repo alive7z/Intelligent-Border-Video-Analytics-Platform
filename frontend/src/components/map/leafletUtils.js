@@ -6,10 +6,10 @@ import { createRoot } from "react-dom/client";
 export function cameraStatusClass(camera) {
   const status = String(camera.status || "").toLowerCase();
   const hasActiveAlert = Boolean(camera.activeAlert);
-  if (status === "offline") return "ibvap-marker--offline";
+  if (["offline", "error", "not_configured", "disabled"].includes(status)) return "ibvap-marker--offline";
   if (hasActiveAlert) return "ibvap-marker--alert";
   const risk = String(camera.risk || "").toLowerCase();
-  if (risk === "high" || risk === "medium" || risk === "warning")
+  if (["connecting", "reconnecting", "degraded"].includes(status) || risk === "high" || risk === "medium" || risk === "warning")
     return "ibvap-marker--warning";
   return "ibvap-marker--online";
 }
@@ -30,13 +30,12 @@ export function cameraIcon(camera, selected) {
 
 // Builds a divIcon alert marker. Severity drives the color class.
 export function alertIcon(alert, selected) {
-  const sev = String(alert.severity || "medium").toLowerCase();
+  const requestedSeverity = String(alert.severity || "").toLowerCase();
+  const sev = ["critical", "high", "medium", "low", "info"].includes(requestedSeverity) ? requestedSeverity : "info";
   const sel = selected ? " ibvap-alert-marker--selected" : "";
   return L.divIcon({
     className: `ibvap-alert-marker ibvap-alert-marker--${sev}${sel}`,
-    html: `<span class="ibvap-alert-marker__dot" role="img" aria-label="Active alert ${String(
-      alert.severity || ""
-    ).toUpperCase()}"></span>`,
+    html: `<span class="ibvap-alert-marker__dot" role="img" aria-label="Active alert ${sev.toUpperCase()}"></span>`,
     iconSize: [20, 20],
     iconAnchor: [10, 10],
     popupAnchor: [0, -10],
@@ -44,15 +43,27 @@ export function alertIcon(alert, selected) {
   });
 }
 
+// Browser-only device position. Deliberately distinct from camera and alert
+// markers so it cannot be mistaken for operational infrastructure.
+export function myLocationIcon() {
+  return L.divIcon({
+    className: "ibvap-my-location",
+    html: '<span class="ibvap-my-location__pulse" aria-hidden="true"></span><span class="ibvap-my-location__dot" aria-hidden="true"></span>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -12],
+  });
+}
+
 // Render a React element into a Leaflet popup attached to `layer`, calling
 // onFrameUpdate when the popup is closed so the page can clear its selection.
 // Works for both markers (getLatLng) and shapes such as polygons/lines
 // (getCenter).
-export function openReactPopup(layer, element, onClose) {
+export function openReactPopup(layer, element, onClose, options = {}) {
   const div = document.createElement("div");
   const latlng = layer.getLatLng ? layer.getLatLng() : layer.getCenter ? layer.getCenter() : null;
   if (!latlng) return;
-  const popup = L.popup({ minWidth: 240, maxWidth: 320, offset: [0, -12] })
+  const popup = L.popup({ minWidth: 240, maxWidth: 320, offset: [0, -12], ...options })
     .setLatLng(latlng)
     .setContent(div);
 

@@ -1,8 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../components/common/PageHeader";
 import CameraFilters from "../components/surveillance/CameraFilters";
 import CameraGrid from "../components/surveillance/CameraGrid";
-import { getCameras } from "../services/cameraApi";
+import {
+  getAllCameras,
+  fromSocketCamera,
+  fetchRuntimeMap,
+  mergeRuntimeCamera,
+} from "../services/cameraApi";
+import { useRealtime } from "../context/RealtimeContext";
+import { SOCKET_EVENTS } from "../services/websocket";
+import { upsertByKey } from "../utils/realtime";
+
+// Single page-level sync cadence for live runtime state. NOT per-render: the
+// grid never spawns per-card loops. Runtime truth comes from the backend
+// runtime-status endpoint (Redis or the Python /health fallback).
+const RUNTIME_SYNC_MS = 5000;
 
 const defaultFilters = { search: "", status: "all", alert: "all", sector: "all" };
 
@@ -23,6 +36,7 @@ function SummaryCard({ label, value, tone }) {
 
 function LiveSurveillance() {
   const [cameras, setCameras] = useState([]);
+  const [runtimeById, setRuntimeById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [filters, setFilters] = useState(defaultFilters);
@@ -30,7 +44,7 @@ function LiveSurveillance() {
   const load = () => {
     setLoading(true);
     setError(false);
-    getCameras()
+    getAllCameras()
       .then((res) => setCameras(res.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -38,25 +52,79 @@ function LiveSurveillance() {
 
   useEffect(load, []);
 
+  const { subscribe } = useRealtime();
+
+  // Realtime: apply camera status/update events by camera_code so ONLINE/OFFLINE
+  // states change without a page refresh (metadata only, no streaming).
+  useEffect(() => {
+    const applyCamera = (payload) => {
+      const item = fromSocketCamera(payload?.data);
+      if (!item?.id) return;
+      setCameras((prev) => upsertByKey(prev, item, "id"));
+    };
+    const offs = [
+      subscribe(SOCKET_EVENTS.CAMERA_STATUS, applyCamera),
+      subscribe(SOCKET_EVENTS.CAMERA_UPDATED, applyCamera),
+    ];
+    return () => offs.forEach((off) => off());
+  }, [subscribe]);
+
+  // Live runtime sync: one interval for the whole page (never per render/card).
+  // Refreshes runtime-status for each enabled camera and merges runtime onto
+  // the base list, so phone connect/disconnect reflects without a refresh.
+  const camerasRef = useRef(cameras);
+  useEffect(() => {
+    camerasRef.current = cameras;
+  }, [cameras]);
+
+  const syncingRef = useRef(false);
+  const syncRuntime = useCallback(async () => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+    try {
+      const map = await fetchRuntimeMap(camerasRef.current);
+      setRuntimeById((prev) => ({ ...prev, ...map }));
+    } finally {
+      syncingRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    syncRuntime();
+    const timer = setInterval(syncRuntime, RUNTIME_SYNC_MS);
+    return () => clearInterval(timer);
+  }, [syncRuntime, cameras.length]);
+
+  // Merge: runtime state is the live truth when present; the static DB row is
+  // the fallback. Missing runtime NEVER fabricates ONLINE. Disabled cameras are
+  // left untouched so they cannot show stale/cached runtime.
+  const merged = useMemo(
+    () =>
+      cameras.map((c) =>
+        c.enabled ? mergeRuntimeCamera(c, runtimeById[c.id] || null) : c
+      ),
+    [cameras, runtimeById]
+  );
+
   const sectors = useMemo(
-    () => [...new Set(cameras.map((c) => c.sector).filter(Boolean))],
-    [cameras]
+    () => [...new Set(merged.map((c) => c.sector).filter(Boolean))],
+    [merged]
   );
 
   const summary = useMemo(() => {
-    const online = cameras.filter((c) => c.status === "online").length;
-    const activeAlert = cameras.filter((c) => c.activeAlert).length;
+    const online = merged.filter((c) => c.status === "online").length;
+    const activeAlert = merged.filter((c) => c.activeAlert).length;
     return {
-      total: cameras.length,
+      total: merged.length,
       online,
-      offline: cameras.length - online,
+      offline: merged.length - online,
       activeAlert,
     };
-  }, [cameras]);
+  }, [merged]);
 
   const filtered = useMemo(() => {
     const q = filters.search.trim().toLowerCase();
-    return cameras.filter((c) => {
+    return merged.filter((c) => {
       if (filters.status !== "all" && c.status !== filters.status) return false;
       if (filters.alert === "active" && !c.activeAlert) return false;
       if (filters.alert === "normal" && c.activeAlert) return false;
@@ -70,7 +138,7 @@ function LiveSurveillance() {
         return false;
       return true;
     });
-  }, [cameras, filters]);
+  }, [merged, filters]);
 
   return (
     <div>
@@ -95,8 +163,8 @@ function LiveSurveillance() {
       {/* Grid */}
       <div className="mt-6">
         {!loading && !error && (
-          <p className="mb-4 text-sm text-slate-500">
-            Showing <span className="font-medium text-slate-700">{filtered.length}</span>{" "}
+          <p className="mb-4 text-sm text-white">
+            Showing <span className="font-medium text-white">{filtered.length}</span>{" "}
             of {cameras.length} cameras
           </p>
         )}

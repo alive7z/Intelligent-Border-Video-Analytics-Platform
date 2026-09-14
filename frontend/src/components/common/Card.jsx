@@ -23,7 +23,7 @@ export function CardHeader({ icon, title, subtitle, children, className = "" }) 
       <div className="flex items-center gap-2">
         {icon &&
           React.cloneElement(icon, {
-            className: `${icon.props.className || ""} text-navy-700 dark:text-navy-500`.trim(),
+            className: `${icon.props.className || ""} text-white`.trim(),
           })}
         <div>
           <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 text-[15px]">

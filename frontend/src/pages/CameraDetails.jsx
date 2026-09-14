@@ -6,7 +6,7 @@ import Badge from "../components/common/Badge";
 import Loader from "../components/common/Loader";
 import Modal from "../components/common/Modal";
 import StatusIndicator from "../components/common/StatusIndicator";
-import DetectionOverlay from "../components/surveillance/DetectionOverlay";
+import CameraPreview from "../components/surveillance/CameraPreview";
 import CameraInfoPanel from "../components/surveillance/CameraInfoPanel";
 import CurrentDetections from "../components/surveillance/CurrentDetections";
 import ContextStatus from "../components/surveillance/ContextStatus";
@@ -22,8 +22,15 @@ import {
 import {
   getCameraById,
   getCameraEvents,
+  getCameraRuntimeStatus,
+  mergeRuntimeCamera,
+  fromSocketCamera,
 } from "../services/cameraApi";
 import { acknowledgeAlert } from "../services/alertApi";
+import { useRealtime } from "../context/RealtimeContext";
+import { SOCKET_EVENTS } from "../services/websocket";
+
+const RUNTIME_SYNC_MS = 5000;
 
 function CameraDetails() {
   const { cameraId } = useParams();
@@ -39,10 +46,14 @@ function CameraDetails() {
     setLoading(true);
     setError(false);
     setAckState({ loading: false, done: false });
-    Promise.all([getCameraById(cameraId), getCameraEvents(cameraId)])
-      .then(([c, e]) => {
+    Promise.all([
+      getCameraById(cameraId),
+      getCameraEvents(cameraId),
+      getCameraRuntimeStatus(cameraId).catch(() => null),
+    ])
+      .then(([c, e, runtime]) => {
         if (!active) return;
-        setCamera(c.data);
+        setCamera(runtime ? mergeRuntimeCamera(c.data, runtime) : c.data);
         setEvents(e.data || []);
       })
       .catch(() => active && setError(true))
@@ -51,6 +62,63 @@ function CameraDetails() {
       active = false;
     };
   }, [cameraId]);
+
+  // Poll the safe runtime endpoint so the detail view recovers even when the
+  // optional Redis/Socket.IO path is unavailable. The initial status above is
+  // merged before render, avoiding a race where static DB state overwrote it.
+  useEffect(() => {
+    let active = true;
+    let syncing = false;
+    const syncRuntime = async () => {
+      if (syncing) return;
+      syncing = true;
+      try {
+        const runtime = await getCameraRuntimeStatus(cameraId);
+        if (active && runtime) {
+          setCamera((prev) => (prev ? mergeRuntimeCamera(prev, runtime) : prev));
+        }
+      } catch {
+        // Runtime is supplementary; retain the last known safe camera state.
+      } finally {
+        syncing = false;
+      }
+    };
+    const timer = setInterval(syncRuntime, RUNTIME_SYNC_MS);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [cameraId]);
+
+  const { subscribe } = useRealtime();
+
+  // Realtime: apply camera status/update events for the visible camera so
+  // ONLINE/OFFLINE/metadata change without a manual refresh.
+  useEffect(() => {
+    const applyCamera = (payload) => {
+      const item = fromSocketCamera(payload?.data);
+      if (!item?.id || item.id !== cameraId) return;
+      setCamera((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, ...item };
+        // Socket camera events serialize recorded DB state. Keep a newer live
+        // runtime overlay authoritative until the runtime poll replaces it.
+        return prev.runtime
+          ? mergeRuntimeCamera(next, {
+              ...item,
+              cameraCode: item.id,
+              live: prev.live,
+              runtime: prev.runtime,
+            })
+          : next;
+      });
+    };
+    const offs = [
+      subscribe(SOCKET_EVENTS.CAMERA_STATUS, applyCamera),
+      subscribe(SOCKET_EVENTS.CAMERA_UPDATED, applyCamera),
+    ];
+    return () => offs.forEach((off) => off());
+  }, [subscribe, cameraId]);
 
   if (loading) {
     return (
@@ -81,6 +149,13 @@ function CameraDetails() {
   }
 
   const isOnline = camera.status === "online";
+  const isTransitioning = ["connecting", "degraded", "reconnecting"].includes(
+    camera.status
+  );
+  const isOffline =
+    !camera.status ||
+    camera.status === "offline" ||
+    camera.status === "error";
   const hasAlert = Boolean(camera.activeAlert);
   const ackId = camera.activeAlert?.id || null;
 
@@ -102,7 +177,7 @@ function CameraDetails() {
     <div>
       <Link
         to="/surveillance"
-        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-navy-700 hover:text-navy-900"
+        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-white"
       >
         <ArrowLeftIcon size={16} />
         Back to Surveillance
@@ -116,7 +191,10 @@ function CameraDetails() {
           {isOnline ? (
             <StatusIndicator status="success" label="ONLINE · LIVE" pulse />
           ) : (
-            <StatusIndicator status="offline" label="OFFLINE" />
+            <StatusIndicator
+              status={isOffline ? "offline" : "warning"}
+              label={isOffline ? "OFFLINE" : (camera.status || "offline").toUpperCase()}
+            />
           )}
         </div>
         {hasAlert && isOnline && (
@@ -152,10 +230,25 @@ function CameraDetails() {
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* Large video panel */}
         <div className="xl:col-span-2">
+          {camera.runtime?.adaptiveProcessing && <div className="card p-3 text-xs text-white">
+            Secondary processing: {camera.runtime.adaptiveProcessing.enabled ? "Adaptive" : "Fixed cadence"}. Core risk thresholds are unchanged.
+            {Object.entries(camera.runtime.adaptiveProcessing.tasks || {}).map(([name, task]) => <p key={name} className="mt-1">
+              {name.toUpperCase()}: {task.runs ?? 0} runs · {task.skipped ?? 0} deferred · {Math.round(task.latencyMs || 0)} ms recent mean{task.lastSkipReason ? ` · ${task.lastSkipReason.replaceAll("_", " ")}` : ""}
+            </p>)}
+          </div>}
+          {camera.runtime?.cameraQuality && (
+            <div className="mb-3 rounded-lg border border-slate-200 px-4 py-3 text-sm text-white">
+              Visibility: {camera.runtime.cameraQuality.status}
+              {camera.runtime.cameraQuality.brightnessStatus && ` · Brightness: ${camera.runtime.cameraQuality.brightnessStatus}`}
+              {camera.runtime.cameraQuality.reasons?.length > 0 && (
+                <p className="mt-1 text-xs">{camera.runtime.cameraQuality.reasons.join(", ").replaceAll("_", " ")}</p>
+              )}
+            </div>
+          )}
           <Card pad={false}>
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
               <div className="flex items-center gap-2 text-sm text-slate-600">
-                <VideoIcon size={16} className="text-navy-700" />
+                <VideoIcon size={16} className="text-white" />
                 <span className="font-medium text-slate-800">{camera.id}</span>
                 <span className="text-slate-400">·</span>
                 <span>{camera.sector || camera.location}</span>
@@ -164,33 +257,9 @@ function CameraDetails() {
             </div>
 
             <div className="relative aspect-video bg-slate-900 dark:bg-[#0b101a]">
-              {isOnline ? (
-                <>
-                  <div
-                    className="absolute inset-0 opacity-[0.06]"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
-                      backgroundSize: "32px 32px",
-                    }}
-                    aria-hidden="true"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-                    <VideoIcon size={40} />
-                  </div>
-                  <DetectionOverlay detections={camera.detections || []} trackId />
-
-                  {/* Zone boundary overlay */}
-                  <div
-                    className="pointer-events-none absolute inset-x-10 top-8 bottom-10 rounded-lg border border-dashed border-lime-300/40"
-                    aria-hidden="true"
-                  >
-                    <span className="absolute -top-3 left-2 rounded bg-lime-300/20 px-1.5 py-0.5 text-[10px] font-medium uppercase text-lime-200">
-                      Restricted Zone / Virtual Fence
-                    </span>
-                  </div>
-                </>
-              ) : (
+              {isOnline || isTransitioning ? (
+                <CameraPreview camera={camera} showTrackId />
+              ) : isOffline ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-slate-400 dark:bg-[#141c2b]">
                   <VideoIcon size={40} />
                   <p className="mt-3 text-sm font-semibold uppercase tracking-wide">
@@ -198,6 +267,19 @@ function CameraDetails() {
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     Last Seen {camera.lastSeen || "—"} · Stream Disconnected
+                  </p>
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-slate-400 dark:bg-[#141c2b]">
+                  <VideoIcon size={40} />
+                  <p className="mt-3 text-sm font-semibold uppercase tracking-wide">
+                    {camera.status}…
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {camera.status === "degraded"
+                      ? "Receiving frames intermittently · Preview may flicker"
+                      : "Reconnecting to live stream · Preview will resume"}
+                    {camera.lastSeen ? ` · Last Seen ${camera.lastSeen}` : ""}
                   </p>
                 </div>
               )}
@@ -220,7 +302,7 @@ function CameraDetails() {
         <div className="xl:col-span-1">
           <Card>
             <div className="mb-3 flex items-center gap-2">
-              <BellIcon size={18} className="text-navy-700" />
+              <BellIcon size={18} className="text-white" />
               <h3 className="text-sm font-semibold text-slate-800">
                 Current Alert
               </h3>
@@ -263,11 +345,11 @@ function CameraDetails() {
       >
         <p className="text-sm text-slate-600">
           {infoModal === "evidence"
-            ? "Evidence snapshots and incident clips will be available here once the evidence capture service is connected."
+            ? "Best snapshots and confirmed plate crops will be available here once the evidence capture service is connected."
             : "Incident report creation will be enabled once the backend case-management service is connected."}
         </p>
         <p className="mt-2 text-xs text-slate-500">
-          This is a demonstration build running on mock data.
+          This control remains unavailable until the case-management integration is configured.
         </p>
       </Modal>
     </div>

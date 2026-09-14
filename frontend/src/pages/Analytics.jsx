@@ -49,11 +49,15 @@ function Analytics() {
     );
     const topCamera = (summary.alertsByCamera || [])[0];
     const topType = (summary.eventsByType || [])[0];
+    const statusSummary = (summary.alertStatusDistribution || [])
+      .map((row) => `${row.status}: ${row.count}`)
+      .join(" · ");
     return [
       { label: "Peak Event Window", value: `${peak.hour}:00 (${peak.count} events)` },
       { label: "Top Camera by Alerts", value: topCamera ? `${topCamera.name} (${topCamera.alerts})` : "—" },
       { label: "Top Event Type", value: topType ? `${topType.name} (${topType.value})` : "—" },
       { label: "Lowest Camera Health", value: lowestHealth(summary.cameraHealth) },
+      { label: "Alert Statuses", value: statusSummary || "—" },
     ];
   }, [summary]);
 
@@ -66,7 +70,7 @@ function Analytics() {
   return (
     <div className="space-y-5">
       <PageHeader title="Analytics" subtitle="Detection, alert and camera health analytics">
-        <Button variant="secondary" size="sm" onClick={load} aria-label="Refresh analytics">
+        <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" onClick={load} aria-label="Refresh analytics">
           <RefreshIcon size={15} /> Refresh
         </Button>
       </PageHeader>

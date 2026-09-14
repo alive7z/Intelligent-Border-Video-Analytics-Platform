@@ -4,13 +4,16 @@ import AlertRow from "./AlertRow";
 import AlertSeverityBadge from "./AlertSeverityBadge";
 import AlertStatusBadge from "./AlertStatusBadge";
 import RiskScoreBar from "./RiskScoreBar";
-import { formatTime } from "../../utils/date";
+import Button from "../common/Button";
+import AcknowledgeAlertButton from "./AcknowledgeAlertButton";
+import { BookmarkIcon, TrashIcon } from "../common/Icons";
+import { formatDateTime, formatTime } from "../../utils/date";
 
 /**
  * Alerts table for desktop/tablet plus compact cards for mobile.
  * Handles loading / empty / error states via the grid wrapper.
  */
-function AlertTable({ alerts }) {
+function AlertTable({ alerts, canDelete = false, showSave = false, savingId = null, onDelete, onAlertAcknowledged, onToggleSaved }) {
   return (
     <>
       {/* Desktop / tablet table */}
@@ -32,7 +35,16 @@ function AlertTable({ alerts }) {
             </thead>
             <tbody>
               {alerts.map((a) => (
-                <AlertRow key={a.id} alert={a} />
+                <AlertRow
+                  key={a.id}
+                  alert={a}
+                  canDelete={canDelete}
+                  showSave={showSave}
+                  savingId={savingId}
+                  onDelete={onDelete}
+                  onAlertAcknowledged={onAlertAcknowledged}
+                  onToggleSaved={onToggleSaved}
+                />
               ))}
             </tbody>
           </table>
@@ -45,7 +57,7 @@ function AlertTable({ alerts }) {
           <div key={a.id} className="card p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-semibold text-navy-700">{a.id}</p>
+                <p className="font-semibold text-sky-400">{a.id}</p>
                 <p className="text-sm text-slate-700">{a.eventType}</p>
                 <p className="mt-0.5 text-xs text-slate-400">
                   {a.camera} · {a.cameraName} · {formatTime(a.timestamp)}
@@ -55,14 +67,47 @@ function AlertTable({ alerts }) {
             </div>
             <div className="mt-3 flex items-center justify-between">
               <RiskScoreBar score={a.riskScore} />
-              <AlertStatusBadge status={a.status} />
+              <div className="text-right">
+                <AlertStatusBadge status={a.status} />
+                {a.acknowledgedBy && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    {a.acknowledgedBy} · {formatDateTime(a.acknowledgedAt)}
+                  </p>
+                )}
+              </div>
             </div>
-            <Link
-              to={`/alerts/${a.id}`}
-              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              View
-            </Link>
+            <div className="mt-3 flex items-center gap-2">
+              <AcknowledgeAlertButton
+                alert={a}
+                onAcknowledged={onAlertAcknowledged}
+              />
+              {canDelete && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => onDelete(a)}
+                  aria-label={`Delete alert ${a.id}`}
+                >
+                  <TrashIcon size={14} />
+                </Button>
+              )}
+              <Link
+                to={`/alerts/${a.id}`}
+                className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                View
+              </Link>
+              {showSave && (
+                <Button
+                  variant={a.isSaved ? "success" : "secondary"}
+                  size="sm"
+                  onClick={() => onToggleSaved(a)}
+                  aria-label={a.isSaved ? `Remove alert ${a.id} from Saved Alerts` : `Save alert ${a.id}`}
+                >
+                  <BookmarkIcon size={14} filled={Boolean(a.isSaved)} />
+                </Button>
+              )}
+            </div>
           </div>
         ))}
       </div>

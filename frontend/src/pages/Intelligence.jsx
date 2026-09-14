@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../components/common/PageHeader";
 import Button from "../components/common/Button";
 import Loader from "../components/common/Loader";
@@ -19,9 +19,12 @@ import { RefreshIcon, AlertTriangleIcon } from "../components/common/Icons";
 import {
   getANPREvents,
   getFaceEvents,
+  getIntelligenceSummary,
   getVehicleEvents,
 } from "../services/intelligenceApi";
 import { getEventById } from "../services/eventApi";
+import { useWebSocket } from "../hooks/useWebSocket";
+import { SOCKET_EVENTS } from "../services/websocket";
 
 const PAGE_SIZE = 10;
 
@@ -31,6 +34,8 @@ const anprDefaults = {
   confidence: "all",
   vehicleType: "all",
   date: "all",
+  startDate: "",
+  endDate: "",
 };
 const faceDefaults = {
   search: "",
@@ -38,18 +43,25 @@ const faceDefaults = {
   sector: "all",
   confidence: "all",
   date: "all",
+  startDate: "",
+  endDate: "",
 };
 const vehicleDefaults = {
   search: "",
   vehicleType: "all",
   camera: "all",
-  direction: "all",
-  risk: "all",
   date: "all",
+  startDate: "",
+  endDate: "",
 };
 
 function Intelligence() {
+  const { subscribe, operationalDataEpoch } = useWebSocket();
   const [tab, setTab] = useState("anpr");
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState(false);
+  const realtimeIds = useRef(new Set());
 
   const [anpr, setAnpr] = useState([]);
   const [anprFilters, setAnprFilters] = useState(anprDefaults);
@@ -74,16 +86,27 @@ function Intelligence() {
 
   const [detail, setDetail] = useState(null);
 
-  const loadAnpr = () => {
+  const loadSummary = useCallback(() => {
+    setSummaryLoading(true);
+    setSummaryError(false);
+    return getIntelligenceSummary()
+      .then((res) => setSummary(res.data))
+      .catch(() => setSummaryError(true))
+      .finally(() => setSummaryLoading(false));
+  }, []);
+
+  const loadAnpr = useCallback(() => {
     setAnprLoading(true);
     setAnprError(false);
-    const { search, camera, confidence, vehicleType, date } = anprFilters;
+    const { search, camera, confidence, vehicleType, date, startDate, endDate } = anprFilters;
     getANPREvents({
       search: search || undefined,
       camera: camera !== "all" ? camera : undefined,
       confidence: confidence !== "all" ? confidence : undefined,
       vehicleType: vehicleType !== "all" ? vehicleType : undefined,
       date: date !== "all" ? date : undefined,
+      startDate: date === "custom" ? startDate || undefined : undefined,
+      endDate: date === "custom" ? endDate || undefined : undefined,
       page: anprPage,
       pageSize: PAGE_SIZE,
     })
@@ -93,18 +116,20 @@ function Intelligence() {
       })
       .catch(() => setAnprError(true))
       .finally(() => setAnprLoading(false));
-  };
+  }, [anprFilters, anprPage]);
 
-  const loadFace = () => {
+  const loadFace = useCallback(() => {
     setFaceLoading(true);
     setFaceError(false);
-    const { search, camera, sector, confidence, date } = faceFilters;
+    const { search, camera, sector, confidence, date, startDate, endDate } = faceFilters;
     getFaceEvents({
       search: search || undefined,
       camera: camera !== "all" ? camera : undefined,
       sector: sector !== "all" ? sector : undefined,
       confidence: confidence !== "all" ? confidence : undefined,
       date: date !== "all" ? date : undefined,
+      startDate: date === "custom" ? startDate || undefined : undefined,
+      endDate: date === "custom" ? endDate || undefined : undefined,
       page: facePage,
       pageSize: PAGE_SIZE,
     })
@@ -114,18 +139,19 @@ function Intelligence() {
       })
       .catch(() => setFaceError(true))
       .finally(() => setFaceLoading(false));
-  };
+  }, [faceFilters, facePage]);
 
-  const loadVehicle = () => {
+  const loadVehicle = useCallback(() => {
     setVehicleLoading(true);
     setVehicleError(false);
-    const { search, vehicleType, camera, direction, risk, date } = vehicleFilters;
+    const { search, vehicleType, camera, date, startDate, endDate } = vehicleFilters;
     getVehicleEvents({
+      search: search || undefined,
       vehicleType: vehicleType !== "all" ? vehicleType : undefined,
       camera: camera !== "all" ? camera : undefined,
-      direction: direction !== "all" ? direction : undefined,
-      risk: risk !== "all" ? risk : undefined,
       date: date !== "all" ? date : undefined,
+      startDate: date === "custom" ? startDate || undefined : undefined,
+      endDate: date === "custom" ? endDate || undefined : undefined,
       page: vehiclePage,
       pageSize: PAGE_SIZE,
     })
@@ -135,17 +161,24 @@ function Intelligence() {
       })
       .catch(() => setVehicleError(true))
       .finally(() => setVehicleLoading(false));
-  };
+  }, [vehicleFilters, vehiclePage]);
 
   const refreshAll = () => {
+    loadSummary();
     if (tab === "anpr") loadAnpr();
     else if (tab === "face") loadFace();
     else loadVehicle();
   };
 
-  useEffect(loadAnpr, [anprFilters, anprPage]);
-  useEffect(loadFace, [faceFilters, facePage]);
-  useEffect(loadVehicle, [vehicleFilters, vehiclePage]);
+  useEffect(() => { loadSummary(); }, [loadSummary, operationalDataEpoch]);
+  useEffect(() => { loadAnpr(); }, [loadAnpr, operationalDataEpoch]);
+  useEffect(() => { loadFace(); }, [loadFace, operationalDataEpoch]);
+  useEffect(() => { loadVehicle(); }, [loadVehicle, operationalDataEpoch]);
+
+  useEffect(() => {
+    setDetail(null);
+    realtimeIds.current.clear();
+  }, [operationalDataEpoch]);
 
   useEffect(() => {
     setAnprPage(1);
@@ -157,10 +190,31 @@ function Intelligence() {
     setVehiclePage(1);
   }, [vehicleFilters]);
 
-  const cameras = useMemo(
-    () => [...new Set([...anpr, ...faces, ...vehicles].map((x) => x.cameraId || x.camera).filter(Boolean))].sort(),
-    [anpr, faces, vehicles]
-  );
+  useEffect(() => {
+    const onEvent = (payload) => {
+      const event = payload?.data || payload;
+      const id = event?.eventCode;
+      if (!id || realtimeIds.current.has(id)) return;
+      realtimeIds.current.add(id);
+      if (realtimeIds.current.size > 500) realtimeIds.current.clear();
+      if (event.eventType === "PLATE_DETECTED") loadAnpr();
+      if (event.eventType === "FACE_DETECTED") loadFace();
+      if (event.eventType === "VEHICLE_DETECTED") loadVehicle();
+      if (["PLATE_DETECTED", "FACE_DETECTED", "VEHICLE_DETECTED"].includes(event.eventType)) {
+        loadSummary();
+      }
+    };
+    const refreshCameras = () => loadSummary();
+    const offEvent = subscribe(SOCKET_EVENTS.EVENT_NEW, onEvent);
+    const offStatus = subscribe(SOCKET_EVENTS.CAMERA_STATUS, refreshCameras);
+    const offCamera = subscribe(SOCKET_EVENTS.CAMERA_UPDATED, refreshCameras);
+    return () => { offEvent(); offStatus(); offCamera(); };
+  }, [subscribe, loadAnpr, loadFace, loadVehicle, loadSummary]);
+
+  const cameras = useMemo(() => {
+    if (summary?.cameras?.length) return summary.cameras;
+    return [...new Set([...anpr, ...faces, ...vehicles].map((x) => x.cameraId).filter(Boolean))].sort();
+  }, [summary, anpr, faces, vehicles]);
 
   const openDetail = useMemo(
     () => (record) => {
@@ -175,19 +229,19 @@ function Intelligence() {
         title="Intelligence"
         subtitle="Review AI-generated vehicle, ANPR, and face detection intelligence from connected CCTV cameras."
       >
-        <Button variant="secondary" size="sm" onClick={refreshAll}>
+        <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" onClick={refreshAll}>
           <RefreshIcon size={15} /> Refresh
         </Button>
       </PageHeader>
 
       <IntelligenceSummary
-        summary={{
-          anprToday: anprTotal,
-          faceDetections: faceTotal,
-          vehicleEvents: vehicleTotal,
-          activeCameras: cameras.length,
-        }}
+        summary={summary}
+        loading={summaryLoading}
+        error={summaryError}
       />
+      {summaryError && (
+        <p className="mt-2 text-sm text-red-600">Unable to load intelligence summary.</p>
+      )}
 
       <div className="mt-6">
         <IntelligenceTabs active={tab} onChange={setTab} />
@@ -195,8 +249,8 @@ function Intelligence() {
         <div className="pt-4">
           {tab === "anpr" && (
             <div>
-              <h2 className="text-base font-semibold text-slate-800">ANPR Events</h2>
-              <p className="mb-4 text-sm text-slate-500">
+              <h2 className="text-base font-semibold text-white">ANPR Events</h2>
+              <p className="mb-4 text-sm text-white/70">
                 Detected vehicle number plates from surveillance cameras.
               </p>
               <div className="card mb-4 p-4">
@@ -218,8 +272,8 @@ function Intelligence() {
 
           {tab === "face" && (
             <div>
-              <h2 className="text-base font-semibold text-slate-800">Face Detection Events</h2>
-              <p className="mb-4 text-sm text-slate-500">
+              <h2 className="text-base font-semibold text-white">Face Detection Events</h2>
+              <p className="mb-4 text-sm text-white/70">
                 Detected face regions associated with tracked persons.
               </p>
               <div className="card mb-4 p-4">
@@ -229,7 +283,7 @@ function Intelligence() {
                 loading: faceLoading,
                 error: faceError,
                 retry: loadFace,
-                emptyMsg: "No face detection events found.",
+                emptyMsg: "No face detections recorded.",
                 records: faces,
                 table: <FaceEventTable events={faces} onView={(e) => openDetail(e)} />,
                 pagination: (
@@ -241,8 +295,8 @@ function Intelligence() {
 
           {tab === "vehicle" && (
             <div>
-              <h2 className="text-base font-semibold text-slate-800">Vehicle Intelligence</h2>
-              <p className="mb-4 text-sm text-slate-500">
+              <h2 className="text-base font-semibold text-white">Vehicle Intelligence</h2>
+              <p className="mb-4 text-sm text-white/70">
                 Review detected and tracked vehicle activity across surveillance cameras.
               </p>
               <div className="card mb-4 p-4">
@@ -252,7 +306,7 @@ function Intelligence() {
                 loading: vehicleLoading,
                 error: vehicleError,
                 retry: loadVehicle,
-                emptyMsg: "No vehicle events found.",
+                emptyMsg: "No vehicle intelligence available.",
                 records: vehicles,
                 table: <VehicleTable events={vehicles} onView={(e) => openDetail(e)} />,
                 pagination: (

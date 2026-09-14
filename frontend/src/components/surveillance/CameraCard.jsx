@@ -84,7 +84,7 @@ function CameraCard({ camera }) {
           </p>
           <Link
             to={`/surveillance/${camera.id}`}
-            className="btn-focus inline-flex items-center gap-1 text-sm font-medium text-navy-700 hover:text-navy-900"
+            className="btn-focus inline-flex items-center gap-1 rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-600"
           >
             View Camera
             <ArrowRightIcon size={14} />

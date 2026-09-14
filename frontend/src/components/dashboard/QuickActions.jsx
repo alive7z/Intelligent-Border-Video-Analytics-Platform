@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Card from "../common/Card";
-import Button from "../common/Button";
 import {
   VideoIcon,
   BellIcon,
@@ -38,24 +37,21 @@ const actions = [
 function QuickActions() {
   return (
     <Card>
-      <h3 className="mb-4 text-sm font-semibold text-slate-800">
+      <h3 className="mb-4 text-sm font-semibold text-white">
         Quick Actions
       </h3>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {actions.map((a) => {
           const Icon = a.icon;
           return (
-            <Button
+            <Link
               key={a.label}
-              as={Link}
               to={a.to}
-              variant="secondary"
-              size="md"
-              className="justify-start"
+              className="group btn-focus inline-flex min-h-11 items-center justify-start gap-2 rounded-lg border border-white/20 bg-white px-4 py-2.5 text-left text-sm font-medium text-slate-900 transition-all duration-150 hover:border-white/20 hover:bg-transparent hover:text-white active:scale-[0.98]"
             >
-              <Icon size={16} className="text-navy-700" />
+              <Icon size={16} className="shrink-0 text-black transition-colors group-hover:text-white" />
               {a.label}
-            </Button>
+            </Link>
           );
         })}
       </div>

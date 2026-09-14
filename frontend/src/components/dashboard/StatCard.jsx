@@ -16,11 +16,11 @@ const iconMap = {
 };
 
 const accentMap = {
-  cameras: { bg: "bg-navy-50", text: "text-navy-700" },
-  alerts: { bg: "bg-orange-50", text: "text-orange-600" },
-  highRisk: { bg: "bg-red-50", text: "text-red-600" },
-  anpr: { bg: "bg-green-50", text: "text-green-700" },
-  health: { bg: "bg-green-50", text: "text-green-700" },
+  cameras: { bg: "bg-white/10", text: "text-white" },
+  alerts: { bg: "bg-white/10", text: "text-white" },
+  highRisk: { bg: "bg-white/10", text: "text-white" },
+  anpr: { bg: "bg-white/10", text: "text-white" },
+  health: { bg: "bg-white/10", text: "text-white" },
 };
 
 /**

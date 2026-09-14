@@ -14,7 +14,7 @@ function RelatedEvents({ alert }) {
     <Card pad={false}>
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div className="flex items-center gap-2">
-          <FileTextIcon size={18} className="text-navy-700" />
+          <FileTextIcon size={18} className="text-white" />
           <h3 className="text-sm font-semibold text-slate-800">Related Events</h3>
         </div>
         <Button as={Link} to="/events" variant="secondary" size="sm">

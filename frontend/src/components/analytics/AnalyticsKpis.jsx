@@ -21,7 +21,7 @@ function AnalyticsKpis({ summary }) {
     0
   );
   const criticalHigh = (summary.riskDistribution || [])
-    .filter((d) => ["Critical", "High"].includes(d.name))
+    .filter((d) => ["CRITICAL", "HIGH"].includes(String(d.name).toUpperCase()))
     .reduce((s, d) => s + (d.value || 0), 0);
   const camHealth = summary.cameraHealth || [];
   const healthyCams = camHealth.filter((c) => (c.value || 0) >= 90).length;
@@ -33,32 +33,32 @@ function AnalyticsKpis({ summary }) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       <Kpi
-        label="Alerts (7 Days)"
+        label="Retained Alerts"
         value={severityTotal}
         sub="All severities"
-        icon={<BellIcon size={16} className="text-blue-700" />}
-        tone="bg-blue-50"
+        icon={<BellIcon size={16} className="text-white" />}
+        tone="bg-transparent"
       />
       <Kpi
         label="High + Critical"
         value={criticalHigh}
         sub="Require attention"
         icon={<AlertTriangleIcon size={16} className="text-red-600" />}
-        tone="bg-red-50"
+        tone="bg-transparent"
       />
       <Kpi
         label="Avg Camera Health"
         value={`${avgHealth}%`}
         sub={`${healthyCams} of ${camHealth.length} healthy`}
         icon={<ActivityIcon size={16} className="text-green-600" />}
-        tone="bg-green-50"
+        tone="bg-transparent"
       />
       <Kpi
-        label="Event Types"
-        value={(summary.eventsByType || []).length}
-        sub="Distinct categories"
-        icon={<ShieldIcon size={16} className="text-navy-700" />}
-        tone="bg-navy-50"
+        label="Average Alert Risk"
+        value={summary.averageRiskScore == null ? "—" : Number(summary.averageRiskScore).toFixed(1)}
+        sub="Across retained alerts"
+        icon={<ShieldIcon size={16} className="text-white" />}
+        tone="bg-transparent"
       />
     </div>
   );

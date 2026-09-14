@@ -9,14 +9,12 @@ import {
   Tooltip,
 } from "recharts";
 import ChartCard from "./ChartCard";
-import { useChartTheme } from "../../hooks/useChartTheme";
 
 /**
  * Area chart of event counts across the day, bucketed by 4h intervals.
  */
 function EventsByTimeChart({ data = [] }) {
-  const chart = useChartTheme();
-  const lineColor = chart.isDark ? "#4f8fef" : "#0f2a4f";
+  const lineColor = "#38bdf8";
   const labels = { "00": "00:00", "04": "04:00", "08": "08:00", "12": "12:00", "16": "16:00", "20": "20:00" };
   const chartData = data.map((d) => ({ ...d, label: labels[d.hour] || d.hour }));
 
@@ -31,16 +29,16 @@ function EventsByTimeChart({ data = [] }) {
                 <stop offset="100%" stopColor={lineColor} stopOpacity={0.03} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 12, fill: chart.tick }}
-              axisLine={{ stroke: chart.axis }}
+              tick={{ fontSize: 12, fill: "#ffffff" }}
+              axisLine={{ stroke: "rgba(255,255,255,0.2)" }}
               tickLine={false}
             />
             <YAxis
               allowDecimals={false}
-              tick={{ fontSize: 12, fill: chart.tick }}
+              tick={{ fontSize: 12, fill: "#ffffff" }}
               axisLine={false}
               tickLine={false}
             />
@@ -49,11 +47,11 @@ function EventsByTimeChart({ data = [] }) {
               contentStyle={{
                 fontSize: 12,
                 borderRadius: 8,
-                border: `1px solid ${chart.tooltipBorder}`,
-                background: chart.tooltipBg,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(15,23,42,0.95)",
               }}
-              labelStyle={{ color: chart.tooltipText }}
-              itemStyle={{ color: chart.tooltipText }}
+              labelStyle={{ color: "#ffffff" }}
+              itemStyle={{ color: "#ffffff" }}
             />
             <Area
               type="monotone"

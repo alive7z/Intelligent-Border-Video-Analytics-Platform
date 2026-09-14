@@ -23,8 +23,8 @@ function Pagination({ total, page, pageSize, onChange }) {
 
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-      <p className="text-xs text-slate-500">
-        Showing <span className="font-medium text-slate-700">{from}–{to}</span> of {total} records
+      <p className="text-xs text-white">
+        Showing <span className="font-medium text-white">{from}–{to}</span> of {total} records
       </p>
       {pageCount > 1 && (
         <div className="flex items-center gap-1">
@@ -46,7 +46,7 @@ function Pagination({ total, page, pageSize, onChange }) {
                 onClick={() => onChange(it)}
                 className={`btn-focus rounded-lg border px-3 py-1.5 text-xs font-medium ${
                   it === safePage
-                    ? "border-navy-700 bg-navy-700 text-white"
+                    ? "border-blue-700 bg-blue-700 text-white"
                     : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >

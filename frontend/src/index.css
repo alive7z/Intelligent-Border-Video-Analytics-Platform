@@ -49,6 +49,33 @@
     color: rgb(var(--c-slate-800));
   }
 
+  /* Fixed blurred backdrop so the page background shows softly through
+     the translucent cards (body directly cannot blur its own image). */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("/background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(6px);
+    transform: scale(1.06);
+  }
+
+  /* Keep the login page's inputs transparent when the browser applies
+     autofill/autofill-hover suggestion backgrounds. The near-infinite
+     transition preserves the glass input surface instead of snapping to
+     the browser's solid autofill white. */
+  .login-page input:-webkit-autofill,
+  .login-page input:-webkit-autofill:hover,
+  .login-page input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(255 255 255);
+    caret-color: rgb(255 255 255);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -56,10 +83,63 @@
 
 @layer components {
   .card {
-    @apply rounded-xl border;
-    background-color: rgb(var(--c-white));
-    border-color: rgb(var(--c-slate-200));
+    @apply rounded-xl border border-white/20;
+    background-color: rgb(15 23 42 / 0.75);
     box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  }
+
+  /* Dark cards: lift slate text and neutral surfaces so content stays readable.
+     Only applies to cards that are dark; light cards keep dark text. */
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-300,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-400,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-500,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-600,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-700,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-800,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-900 {
+    color: rgb(var(--c-slate-100));
+  }
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .bg-slate-50,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .bg-slate-100 {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .hover\:bg-slate-50:not(.bg-white):hover,
+  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .hover\:bg-slate-100:not(.bg-white):hover {
+    background-color: rgba(255, 255, 255, 0.14);
+  }
+
+  /* Light cards keep dark slate text (no overrides applied above). */
+
+  /* Translucent sidebar: lighten its text and neutral surfaces */
+  .sidebar-surface {
+    color: rgb(var(--c-slate-100));
+  }
+  .sidebar-surface .text-black,
+  .sidebar-surface .text-slate-400,
+  .sidebar-surface .text-slate-500,
+  .sidebar-surface .text-slate-600,
+  .sidebar-surface .text-slate-700,
+  .sidebar-surface .text-slate-800 {
+    color: rgb(var(--c-slate-100));
+  }
+  .sidebar-surface .bg-slate-50,
+  .sidebar-surface .bg-slate-100 {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  .sidebar-surface .hover\:bg-slate-100:hover,
+  .sidebar-surface .hover\:bg-blue-50:hover {
+    background-color: rgba(59, 130, 246, 0.18);
+  }
+  .sidebar-surface .hover\:text-blue-700:hover,
+  .sidebar-surface .hover\:text-slate-700:hover {
+    color: #93c5fd;
+  }
+
+  /* The System Health flyout/tooltip are light surfaces inside the dark
+     sidebar; do not inherit the sidebar's light navigation-label colors. */
+  .system-status-control :is([role="dialog"], [role="tooltip"]),
+  .system-status-control :is([role="dialog"], [role="tooltip"]) :is(.text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700, .text-slate-800) {
+    color: #000 !important;
   }
 
   .input-field {
@@ -78,6 +158,25 @@
 
   .btn-focus {
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2;
+  }
+
+  /* White controls need black labels even inside dark cards. Scope the
+     override to controls, leaving colored buttons and card text unchanged. */
+  .btn-focus.bg-white,
+  button.bg-white,
+  [role="button"].bg-white {
+    color: #000 !important;
+  }
+
+  .btn-focus.bg-white:hover,
+  button.bg-white:hover,
+  [role="button"].bg-white:hover {
+    color: #fff !important;
+  }
+
+  .btn-focus.bg-white.map-location-button:hover,
+  .btn-focus.bg-white.rounded-full:hover {
+    color: #000 !important;
   }
 
   /* Micro-interaction helpers */
@@ -140,6 +239,17 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes alertSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -211,6 +321,7 @@
 }
 
 /* Map container surface */
+.ibvap-map-container.leaflet-container,
 .ibvap-map-container .leaflet-container {
   background: #e8edf3;
 }

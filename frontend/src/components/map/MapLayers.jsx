@@ -17,7 +17,7 @@ function MapLayers({ layers, onChange }) {
   return (
     <div className="card pointer-events-auto p-3">
       <div className="mb-2 flex items-center gap-2">
-        <LayersIcon size={15} className="text-navy-700" />
+        <LayersIcon size={15} className="text-blue-700" />
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Layers
         </p>
@@ -30,7 +30,7 @@ function MapLayers({ layers, onChange }) {
                 type="checkbox"
                 checked={!!layers[l.id]}
                 onChange={() => toggle(l.id)}
-                className="h-4 w-4 rounded border-slate-300 text-navy-700 focus:ring-navy-500"
+                className="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-500"
               />
               {l.label}
             </label>

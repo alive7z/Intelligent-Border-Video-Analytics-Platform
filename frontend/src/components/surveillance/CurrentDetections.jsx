@@ -14,7 +14,7 @@ function CurrentDetections({ detections = [] }) {
     return (
       <Card>
         <div className="flex items-center gap-2">
-          <BrainIcon size={18} className="text-navy-700" />
+          <BrainIcon size={18} className="text-white" />
           <h3 className="text-sm font-semibold text-slate-800">
             Current Detections
           </h3>
@@ -27,7 +27,7 @@ function CurrentDetections({ detections = [] }) {
   return (
     <Card>
       <div className="mb-3 flex items-center gap-2">
-        <BrainIcon size={18} className="text-navy-700" />
+        <BrainIcon size={18} className="text-white" />
         <h3 className="text-sm font-semibold text-slate-800">
           Current Detections
         </h3>

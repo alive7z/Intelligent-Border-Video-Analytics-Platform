@@ -2,43 +2,86 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Card from "../common/Card";
 import Button from "../common/Button";
-import AcknowledgeModal from "./AcknowledgeModal";
+import Modal from "../common/Modal";
+import Input from "../common/Input";
+import AcknowledgeAlertButton from "./AcknowledgeAlertButton";
 import ResolveAlertModal from "./ResolveAlertModal";
 import {
   CheckIcon,
   CheckCircleIcon,
-  PlusIcon,
   FileTextIcon,
   VideoIcon,
+  SearchIcon,
+  ShieldIcon,
+  BookmarkIcon,
+  TrashIcon,
+  AlertTriangleIcon,
 } from "../common/Icons";
 import {
-  acknowledgeAlert,
+  investigateAlert,
+  falsePositiveAlert,
+  escalateAlert,
+  protectAlert,
+  unprotectAlert,
+  saveAlert,
+  unsaveAlert,
+  deleteAlert,
   resolveAlert,
 } from "../../services/alertApi";
+import { useAuth } from "../../hooks/useAuth";
+import { canAcknowledgeAlert, normalizeAlertStatus } from "../../utils/alertPermissions";
+
+const ADMIN = "Administrator";
 
 /**
- * Operator actions for an alert. Handles acknowledge + resolve flows via the
- * service layer (auditable) and exposes actions that navigate the operator
- * to relevant pages. No siren / patrol / weapon integrations.
+ * Role-aware operator actions for an alert.
+ *
+ * Rule enforcement:
+ *   - Operators acknowledge MEDIUM/HIGH; CRITICAL is escalated (never
+ *     operator-acknowledged). Administrators acknowledge/resolve CRITICAL.
+ *   - Protect/unprotect and soft-delete are administrator-only.
+ * The backend enforces the same rules; this UI simply reflects them.
  */
 function OperatorActions({ alert, onAlertUpdate }) {
-  const [ackOpen, setAckOpen] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === ADMIN;
+  const isOperator = user?.roleKey === "SECURITY_OPERATOR";
+  const canHandle = isAdmin || isOperator;
+
   const [resolveOpen, setResolveOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [escalateOpen, setEscalateOpen] = useState(false);
+  const [escalationReason, setEscalationReason] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
 
-  const isAcknowledged =
-    (alert.status || "").toLowerCase() === "acknowledged";
-  const isResolved = (alert.status || "").toLowerCase() === "resolved";
+  const isCritical = (alert.severity || "").toUpperCase() === "CRITICAL";
+  const status = normalizeAlertStatus(alert.status);
+  const isAcknowledged = status === "acknowledged";
+  const isResolved = status === "resolved";
+  const isFalsePositive = status === "false_positive";
+  const isInvestigating = status === "investigating";
+  const isTerminal = isResolved || isFalsePositive;
 
-  const handleAcknowledge = async (notes) => {
+  const canAck = canAcknowledgeAlert(user, alert);
+  const mustEscalate = isOperator && isCritical;
+  const escalated = Boolean(alert.escalated);
+
+  const handleInvestigate = async () => {
     setLoading(true);
     try {
-      const res = await acknowledgeAlert(alert.id, {
-        operator: "Security Operator",
-        notes,
-      });
+      const res = await investigateAlert(alert.id);
       onAlertUpdate(res.data);
-      setAckOpen(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFalsePositive = async () => {
+    setLoading(true);
+    try {
+      const res = await falsePositiveAlert(alert.id, { notes: "Marked false positive by operator" });
+      onAlertUpdate(res.data);
     } finally {
       setLoading(false);
     }
@@ -55,53 +98,207 @@ function OperatorActions({ alert, onAlertUpdate }) {
     }
   };
 
+  const handleEscalate = async () => {
+    setLoading(true);
+    try {
+      const res = await escalateAlert(alert.id, { reason: escalationReason });
+      onAlertUpdate(res.data);
+      setEscalateOpen(false);
+      setEscalationReason("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProtectToggle = async () => {
+    setLoading(true);
+    try {
+      const res = alert.isProtected ? await unprotectAlert(alert.id) : await protectAlert(alert.id);
+      onAlertUpdate(res.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    setLoading(true);
+    try {
+      const res = alert.isSaved ? await unsaveAlert(alert.id) : await saveAlert(alert.id);
+      onAlertUpdate(res.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      const res = await deleteAlert(alert.id, { reason: deleteReason });
+      onAlertUpdate(res.data);
+      setDeleteOpen(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card>
-      <h3 className="mb-3 text-sm font-semibold text-slate-800">
-        Operator Actions
+      <h3 className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-slate-800">
+        <span>Operator Actions</span>
+        <span className="flex items-center gap-2">
+          {alert.isSaved && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+              <BookmarkIcon size={12} filled /> Saved
+            </span>
+          )}
+          {alert.isProtected && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+              <ShieldIcon size={12} /> Protected
+            </span>
+          )}
+        </span>
       </h3>
       <div className="grid grid-cols-1 gap-2">
-        <Button
-          variant="primary"
-          size="md"
-          disabled={isAcknowledged || isResolved}
-          onClick={() => setAckOpen(true)}
-        >
-          <CheckIcon size={16} />
-          {isAcknowledged ? "Acknowledged" : "Acknowledge Alert"}
-        </Button>
-        <Button
-          variant="success"
-          size="md"
-          disabled={isResolved}
-          onClick={() => setResolveOpen(true)}
-        >
-          <CheckCircleIcon size={16} />
-          {isResolved ? "Resolved" : "Resolve Alert"}
-        </Button>
+        {canHandle && (
+          <Button
+            variant={alert.isSaved ? "success" : "secondary"}
+            size="md"
+            onClick={handleSaveToggle}
+            loading={loading}
+          >
+            <BookmarkIcon size={16} filled={Boolean(alert.isSaved)} />
+            {alert.isSaved ? "Remove from Saved Alerts" : "Save Alert"}
+          </Button>
+        )}
+        {mustEscalate && !escalated && !isTerminal ? (
+          <Button variant="danger" size="md" onClick={() => setEscalateOpen(true)}>
+            <AlertTriangleIcon size={16} /> Escalate to Administrator
+          </Button>
+        ) : canAck ? (
+          <AcknowledgeAlertButton
+            alert={alert}
+            label="Acknowledge Alert"
+            size="md"
+            className="w-full"
+            onAcknowledged={onAlertUpdate}
+          />
+        ) : isAcknowledged || isInvestigating ? (
+          <Button variant="ghost" size="md" disabled>
+            <CheckIcon size={16} />
+            {isInvestigating ? "Under Investigation" : "Acknowledged"}
+          </Button>
+        ) : null}
+
+        {!isTerminal && !isAcknowledged && !isInvestigating && canHandle && (!isCritical || isAdmin) ? (
+          <Button variant="secondary" size="md" className="bg-orange-500! text-white! hover:bg-orange-600!" onClick={handleInvestigate} loading={loading}>
+            <SearchIcon size={16} /> Start Investigation
+          </Button>
+        ) : isInvestigating && canHandle && (!isCritical || isAdmin) ? (
+          <Button variant="secondary" size="md" onClick={() => setResolveOpen(true)} loading={loading}>
+            <SearchIcon size={16} /> Resolve Investigation
+          </Button>
+        ) : null}
+
+        {!isTerminal && canHandle && (!isCritical || isAdmin) && (
+          <Button variant="success" size="md" disabled={isResolved} onClick={() => setResolveOpen(true)}>
+            <CheckCircleIcon size={16} /> {isResolved ? "Resolved" : "Resolve Alert"}
+          </Button>
+        )}
+
+        {!isTerminal && canHandle && (!isCritical || isAdmin) && (
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={handleFalsePositive}
+            loading={loading}
+            disabled={isFalsePositive}
+          >
+            <FileTextIcon size={16} /> Mark False Positive
+          </Button>
+        )}
+
         <Button as={Link} to={`/surveillance/${alert.camera}`} variant="secondary" size="md">
-          <VideoIcon size={16} className="text-navy-700" /> View Live Camera
+          <VideoIcon size={16} className="text-blue-700" /> View Live Camera
         </Button>
-        <Button variant="secondary" size="md">
-          <FileTextIcon size={16} className="text-navy-700" /> View Evidence
-        </Button>
-        <Button variant="secondary" size="md">
-          <PlusIcon size={16} className="text-navy-700" /> Create Incident Report
-        </Button>
+        {isAdmin && (
+          <>
+            <Button
+              variant={alert.isSaved ? "secondary" : alert.isProtected ? "secondary" : "success"}
+              size="sm"
+              onClick={handleProtectToggle}
+              loading={loading}
+              disabled={alert.isSaved}
+              title={alert.isSaved ? "Remove this alert from Saved Alerts before removing protection" : undefined}
+            >
+              <ShieldIcon size={14} /> {alert.isProtected ? (alert.isSaved ? "Protection managed by Saved Alerts" : "Remove Protection") : "Protect from Cleanup"}
+            </Button>
+            {alert.isSaved && (
+              <p className="text-xs text-slate-500">
+                This alert is automatically protected while saved. Unsave it from Saved
+                Alerts to manage protection manually.
+              </p>
+            )}
+            <Button variant="danger" size="sm" disabled={alert.isSaved} onClick={() => setDeleteOpen(true)} title={alert.isSaved ? "Remove from Saved Alerts before deleting" : undefined}>
+              <TrashIcon size={14} /> Delete Alert
+            </Button>
+          </>
+        )}
       </div>
 
-      <AcknowledgeModal
-        open={ackOpen}
-        onClose={() => setAckOpen(false)}
-        onConfirm={handleAcknowledge}
-        loading={loading}
-      />
       <ResolveAlertModal
         open={resolveOpen}
         onClose={() => setResolveOpen(false)}
         onConfirm={handleResolve}
         loading={loading}
       />
+
+      <Modal open={escalateOpen} onClose={() => setEscalateOpen(false)} title="Escalate CRITICAL Alert">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">
+            CRITICAL alerts require administrator authorization. Escalation flags this
+            incident for immediate review. You cannot acknowledge or resolve it yourself.
+          </p>
+          <Input
+            id="escalation-reason"
+            label="Escalation reason (optional)"
+            placeholder="e.g. Multiple unauthorized entries in Sector A"
+            value={escalationReason}
+            onChange={(e) => setEscalationReason(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setEscalateOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" loading={loading} onClick={handleEscalate}>
+              <AlertTriangleIcon size={14} /> Escalate
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Alert">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">
+            This is a soft delete — the alert is hidden from listings but its audit
+            trail is preserved. Protected alerts must be unprotected first.
+          </p>
+          <Input
+            id="delete-reason"
+            label="Deletion reason"
+            placeholder="e.g. Incorrectly classified incident"
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" loading={loading} onClick={handleDelete}>
+              <TrashIcon size={14} /> Delete Alert
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Card>
   );
 }

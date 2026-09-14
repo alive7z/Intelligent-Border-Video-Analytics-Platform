@@ -183,7 +183,7 @@ function UserManagement() {
                   <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 font-medium text-slate-800">
-                        <UserIcon size={16} className="text-navy-600" />
+                        <UserIcon size={16} className="text-white" />
                         {u.name}
                       </div>
                       <p className="text-xs text-slate-400">{u.email}</p>
@@ -205,15 +205,16 @@ function UserManagement() {
                         {canManage && (
                           <>
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditing(u);
-                                setFormOpen(true);
-                              }}
-                            >
-                              <EditIcon size={14} /> Edit
-                            </Button>
+                            variant="ghost"
+                            size="sm"
+                            className="bg-green-500! text-white! hover:bg-green-600!"
+                            onClick={() => {
+                              setEditing(u);
+                              setFormOpen(true);
+                            }}
+                          >
+                            <EditIcon size={14} /> Edit
+                          </Button>
                             {u.status !== "Disabled" && (
                               <Button
                                 variant="ghost"
