@@ -28,6 +28,8 @@ class PlateDetection:
     # Rotation of the plate's long axis relative to horizontal (degrees,
     # clockwise-positive). 0.0 means "not measured"/axis-aligned.
     angle: float = 0.0
+    # Localizer that produced this detection: "MODEL", "STRUCTURAL" or "LEGACY".
+    method: str = "STRUCTURAL"
 
 
 @dataclass
@@ -54,6 +56,7 @@ class PlateCandidate:
     vehicle_type: str | None = None
     crop_quality: dict = field(default_factory=dict)
     preprocessing_variant: str = "enhanced"
+    detection_method: str = "STRUCTURAL"
     plate_image: object = field(default=None, repr=False, compare=False)
     vehicle_image: object = field(default=None, repr=False, compare=False)
 
@@ -92,6 +95,7 @@ class PlateObservation:
     acceptance_method: str = "TEMPORAL_CONSENSUS"
     confirmation_reads: int = 0
     preprocessing_variant: str = "enhanced"
+    localization_method: str = "STRUCTURAL"
 
     # Transient winning-candidate pixels only; never serialized into the API.
     plate_image: object = field(default=None, repr=False, compare=False)
@@ -116,6 +120,7 @@ class PlateObservation:
             "acceptanceMethod": self.acceptance_method,
             "confirmationReads": self.confirmation_reads,
             "preprocessingVariant": self.preprocessing_variant,
+            "localizationMethod": self.localization_method,
         }
 
     def to_observation(self) -> dict:
