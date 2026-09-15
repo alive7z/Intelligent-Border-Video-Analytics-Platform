@@ -11,6 +11,21 @@ const login = async (req, res) => {
   return sendSuccess(res, 200, "Login successful", result);
 };
 
+const mfaVerify = async (req, res) => {
+  const result = await authService.mfaVerify({
+    mfaChallengeToken: req.body.mfaChallengeToken,
+    code: req.body.code,
+    ipAddress: req.ip,
+  });
+  return sendSuccess(res, 200, "MFA verified", result);
+};
+
+const mfaEnroll = async (req, res) => {
+  const targetId = req.body.userId || req.user.userId;
+  const result = await authService.mfaEnroll({ userId: Number(targetId) }, getActor(req));
+  return sendSuccess(res, 200, "MFA enrolled", result);
+};
+
 const me = async (req, res) => {
   const user = await authService.getCurrentUser(req.user.publicId);
   return sendSuccess(res, 200, "Current user retrieved", { user });
@@ -26,8 +41,13 @@ const updateProfile = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-  await authService.logout(getActor(req));
-  return sendSuccess(res, 200, "Logout recorded", {});
+  await authService.logout(getActor(req), req.tokenPayload || null);
+  return sendSuccess(res, 200, "Session revoked", {});
 };
 
-module.exports = { login, me, updateProfile, logout };
+const revokeSessions = async (req, res) => {
+  const result = await authService.adminRevokeSessions({ targetUserId: Number(req.params.userId) }, getActor(req));
+  return sendSuccess(res, 200, "User sessions revoked", result);
+};
+
+module.exports = { login, mfaVerify, mfaEnroll, me, updateProfile, logout, revokeSessions };
