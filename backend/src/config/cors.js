@@ -27,6 +27,12 @@ function expandLocalOrigin(origin) {
 }
 
 const allowedOrigins = new Set([env.FRONTEND_URL, ...expandLocalOrigin(env.FRONTEND_URL)]);
+if (env.CORS_ALLOWED_ORIGINS) {
+  for (const o of String(env.CORS_ALLOWED_ORIGINS).split(",")) {
+    const t = o.trim();
+    if (t) allowedOrigins.add(t);
+  }
+}
 
 const corsOptions = {
   origin(origin, callback) {
