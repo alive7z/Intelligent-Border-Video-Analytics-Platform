@@ -32,7 +32,7 @@ you chose in step 2:
 
 ```env
 NODE_ENV=development
-PORT=5000
+PORT=5001
 FRONTEND_URL=http://localhost:5173
 API_PREFIX=/api
 
@@ -92,7 +92,7 @@ On startup the server:
 ## 8. Test health
 
 ```bash
-curl http://localhost:5000/api/health
+curl http://localhost:5001/api/health
 ```
 
 Expected (200 when MySQL is connected):
@@ -114,6 +114,38 @@ Expected (200 when MySQL is connected):
 
 If the database is unavailable, `/api/health` returns HTTP 503 with
 `database.status: "disconnected"`.
+
+## 8b. Start the AI engine (port 8001)
+
+```bash
+cd ai_engine
+source .venv/bin/activate        # or create: python -m venv .venv
+pip install -r requirements.txt  # exact pinned versions
+python -m uvicorn api.server:app --host 127.0.0.1 --port 8001
+```
+
+Health check: `curl http://127.0.0.1:8001/health`
+
+The AI service runs as a separate persistent process and answers internal calls
+from `/internal/*` using `AI_SERVICE_TOKEN`. The backend probes it at
+`AI_INTERNAL_URL` (default `http://localhost:8001`). It loads inference models
+lazily on the first pipeline start.
+
+## 8c. Start the frontend (Vite dev, port 5173)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The production build (CI/demo artifact) is produced with `npm run build` and does
+not require the dev server.
+
+## 8d. Start Redis (optional)
+
+Used for cache/scheduling if enabled. Not required for the core demo flow, which
+runs fully on MySQL + local dirs.
 
 ## 9. Authentication (Phase 3)
 
