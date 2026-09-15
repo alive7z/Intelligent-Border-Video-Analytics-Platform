@@ -163,6 +163,7 @@ class AnprManager:
             bbox=chosen.bbox, vehicle_type=chosen.vehicle_type, vehicle_bbox=chosen.vehicle_bbox,
             crop_quality=chosen.crop_quality, acceptance_method="BEST_SAMPLE_WINDOW",
             confirmation_reads=agreeing_reads, preprocessing_variant=chosen.preprocessing_variant,
+            localization_method=chosen.detection_method,
             plate_image=chosen.plate_image, vehicle_image=chosen.vehicle_image,
         )
 
@@ -264,6 +265,7 @@ class AnprManager:
                     source_timestamp_ms=int(source_timestamp_ms), vehicle_bbox=dict(vbox),
                     vehicle_type=vehicle_types.get(track_id), crop_quality=quality,
                     preprocessing_variant=variant,
+                    detection_method=getattr(det, "method", "STRUCTURAL"),
                     plate_image=crop.copy() if valid else None,
                     vehicle_image=self._retain_crop(frame, vbox) if valid else None,
                 )
