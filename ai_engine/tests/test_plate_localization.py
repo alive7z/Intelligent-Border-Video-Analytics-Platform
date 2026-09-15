@@ -5,6 +5,9 @@ rectangle inside the vehicle ROI, (b) recover a rotation angle, (c) fall back
 to the legacy lower-center strip when no plate structure exists, and (d) leave
 the dedicated MODEL path untouched. Uses synthetic plates only — no weights,
 no network, no real footage.
+
+The MODEL path is exercised with stub models so the tests are deterministic
+regardless of whether `license_plate_detector.pt` is present on disk.
 """
 
 import cv2
@@ -13,6 +16,9 @@ import numpy as np
 from config import ANPR_DETECTION_CONFIDENCE
 from anpr.detector import PlateDetector
 from anpr.preprocess import deskew_plate_crop
+
+# A name that never resolves to a real weights file -> deterministic HEURISTIC.
+_UNRESOLVED_MODEL = "__missing_plate_model__.pt"
 
 
 def _canvas(body=60, size=(480, 360)):
@@ -69,11 +75,12 @@ def _vehicle_bbox_of(img):
 
 def test_structural_locator_finds_tight_plate_crop():
     img, plate = _draw_plate(_canvas())
-    det = PlateDetector()  # no weights present -> STRUCTURAL/HEURISTIC
+    det = PlateDetector(model_path=_UNRESOLVED_MODEL)  # no weights -> STRUCTURAL/HEURISTIC
     det.load()
     hits = det.detect(img, _vehicle_bbox_of(img))
     assert hits, "structural locator returned no plate on a synthetic plate"
     best = hits[0]
+    assert best.method == "STRUCTURAL", f"unexpected method {best.method}"
     bw, bh = best.bbox.x2 - best.bbox.x1, best.bbox.y2 - best.bbox.y1
     assert bw >= 150 and bh >= 20, f"plate bbox too small: {bw}x{bh}"
     assert 3.0 <= bw / max(1.0, bh) <= 7.0, f"plate aspect off: {bw / max(1.0, bh)}"
@@ -85,7 +92,7 @@ def test_structural_locator_finds_tight_plate_crop():
 
 def test_structural_locator_recovers_plate_rotation_angle():
     rotated = _rotated_plate_canvas(deg=9.0)
-    det = PlateDetector()
+    det = PlateDetector(model_path=_UNRESOLVED_MODEL)
     det.load()
     hits = det.detect(rotated, _vehicle_bbox_of(rotated))
     assert hits, "no plate on rotated synthetic canvas"
@@ -99,10 +106,11 @@ def test_legacy_bottom_center_strip_when_no_plate_structure():
     # Almost-uniform body with mild noise: no plate-like rectangle.
     rng = np.random.default_rng(0)
     img = img + rng.integers(0, 6, size=img.shape, dtype=np.uint8)
-    det = PlateDetector()
+    det = PlateDetector(model_path=_UNRESOLVED_MODEL)
     det.load()
     hits = det.detect(img, _vehicle_bbox_of(img))
     assert len(hits) == 1
+    assert hits[0].method == "LEGACY"
     h, w = img.shape[:2]
     expected = {
         "x1": 0.15 * w, "y1": h - 0.35 * h,
@@ -137,6 +145,7 @@ def test_model_mode_uses_dedicated_model_only():
     assert len(hits) == 1
     assert hits[0].confidence == 0.9
     assert hits[0].bbox.x1 == 50.0
+    assert hits[0].method == "MODEL"
 
 
 def test_deskew_plate_crop_noop_for_small_angle_and_valid_for_large():
@@ -155,10 +164,158 @@ def test_manager_stats_reports_structural_localizer_as_degraded():
     from anpr.manager import AnprManager
     from anpr.ocr import PlateOCR
 
-    det = PlateDetector()
+    det = PlateDetector(model_path=_UNRESOLVED_MODEL)
     mgr = AnprManager(enabled=True, detector=det, ocr=PlateOCR())
     mgr.initialize()
     stats = mgr.get_stats()
     assert stats["status"] == "DEGRADED"
     assert stats["detectorMode"] == "HEURISTIC"
     assert stats["detectorLocalization"] == "STRUCTURAL+LEGACY_FALLBACK"
+
+
+class _Boxes:
+    def __init__(self, items):
+        self._items = items
+
+    def __iter__(self):
+        return iter(self._items)
+
+    def __len__(self):
+        return len(self._items)
+
+
+class _BoxItem:
+    def __init__(self, xyxy, conf):
+        self.xyxy = [np.array(xyxy, dtype=np.float32)]
+        self.conf = [np.float32(conf)]
+
+
+class _BoxResult:
+    def __init__(self, boxes):
+        self.boxes = _Boxes([_BoxItem(xyxy, conf) for conf, xyxy in boxes])
+
+
+class _EmptyResult:
+    boxes = None
+
+
+class _RecordingModel:
+    """Records the image the plate model is called with; returns stub boxes."""
+
+    def __init__(self, detections=(), error=False):
+        self.detections = list(detections)
+        self.error = error
+        self.last_input = None
+        self.calls = 0
+
+    def __call__(self, image, *args, **kwargs):
+        self.calls += 1
+        if self.error:
+            raise RuntimeError("plate model inference boom")
+        self.last_input = image
+        if not self.detections:
+            return [_EmptyResult()]
+        return [_BoxResult(self.detections)]
+
+
+def _model_detector(model):
+    det = PlateDetector()
+    det._loaded = True
+    det._mode = "MODEL"
+    det._model = model
+    return det
+
+
+def test_model_mode_runs_on_vehicle_roi_and_maps_back():
+    img = _canvas()
+    rec = _RecordingModel(detections=[(0.88, (100.0, 120.0, 250.0, 160.0))])
+    det = _model_detector(rec)
+    vbox = {"x1": 50.0, "y1": 60.0, "x2": 430.0, "y2": 320.0}
+    hits = det.detect(img, vbox)
+    # ROI-only inference: the model saw the 380x260 crop, not the full frame.
+    assert rec.last_input is not None
+    assert rec.last_input.shape == (260, 380, 3)
+    assert len(hits) == 1
+    hit = hits[0]
+    assert hit.method == "MODEL"
+    assert hit.confidence == 0.88
+    # ROI coords mapped back to full-frame pixels (offset 50, 60).
+    assert (hit.bbox.x1, hit.bbox.y1, hit.bbox.x2, hit.bbox.y2) == (150.0, 180.0, 300.0, 220.0)
+
+
+def test_model_mode_ranks_multiple_detections_by_confidence():
+    img = _canvas()
+    rec = _RecordingModel(detections=[
+        (0.62, (20.0, 20.0, 80.0, 60.0)),
+        (0.95, (200.0, 200.0, 300.0, 240.0)),
+    ])
+    det = _model_detector(rec)
+    hits = det.detect(img, _vehicle_bbox_of(img))
+    assert [h.confidence for h in hits] == [0.95, 0.62]
+    assert all(h.method == "MODEL" for h in hits)
+    assert hits[0].bbox.x1 == 200.0
+
+
+def test_model_mode_falls_back_to_structural_when_model_empty():
+    img, _ = _draw_plate(_canvas())
+    rec = _RecordingModel()
+    det = _model_detector(rec)
+    hits = det.detect(img, _vehicle_bbox_of(img))
+    assert hits, "model-empty fallback found no structural plate"
+    assert all(h.method == "STRUCTURAL" for h in hits)
+
+
+def test_model_mode_falls_back_to_legacy_when_no_plate_structure():
+    img = _canvas()
+    det = _model_detector(_RecordingModel())
+    hits = det.detect(img, _vehicle_bbox_of(img))
+    assert len(hits) == 1
+    assert hits[0].method == "LEGACY"
+    assert hits[0].confidence == round(ANPR_DETECTION_CONFIDENCE, 4)
+
+
+def test_model_inference_error_falls_back_to_structural():
+    img, _ = _draw_plate(_canvas())
+    det = _model_detector(_RecordingModel(error=True))
+    hits = det.detect(img, _vehicle_bbox_of(img))
+    assert hits and all(h.method == "STRUCTURAL" for h in hits)
+
+
+def test_plate_detection_and_observation_payload_carry_method():
+    from anpr.models import PlateBBox, PlateDetection, PlateObservation
+
+    det = PlateDetection(bbox=PlateBBox(1, 2, 3, 4), confidence=0.7, method="MODEL")
+    assert det.method == "MODEL"
+    default = PlateDetection(bbox=PlateBBox(1, 2, 3, 4))
+    assert default.method == "STRUCTURAL"
+
+    obs = PlateObservation(
+        observation_id="obs-1", camera_code="cam", vehicle_track_id=7,
+        plate_text="KA02AB1234", raw_text="KA 02 AB 1234",
+        ocr_confidence=0.9, plate_detection_confidence=0.8,
+        occurred_at="2026-01-01T00:00:00Z", source_timestamp_ms=0,
+        bbox=PlateBBox(1, 2, 3, 4), localization_method="MODEL",
+    )
+    payload = obs.to_payload()
+    assert payload["localizationMethod"] == "MODEL"
+
+
+def test_real_plate_weights_resolve_to_model_mode_if_present():
+    from pathlib import Path
+    import config
+
+    weights = Path(config.WEIGHTS_DIR) / config.ANPR_MODEL_PATH
+    if not weights.exists():
+        import pytest
+        pytest.skip("license_plate_detector.pt not present; skipping real-weights smoke test")
+    det = PlateDetector()
+    assert det.load() is True
+    assert det.mode == "MODEL"
+    info = det.get_info()
+    assert info["localization"] == "DEDICATED_MODEL"
+    assert info["resolutionType"] == "resolved"
+    # A synthetic vehicle canvas must never crash the model path and returns a
+    # plate candidate from some localizer (MODEL/STRUCTURAL/LEGACY).
+    img = _canvas()
+    hits = det.detect(img, _vehicle_bbox_of(img))
+    assert isinstance(hits, list)
