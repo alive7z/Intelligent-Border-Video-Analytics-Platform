@@ -19,7 +19,7 @@ function IntelligenceSummary({ summary, loading = false, error = false }) {
       <Card label="ANPR Events Today" value={value("anprToday")} />
       <Card label="Face Detections Today" value={value("faceDetectionsToday")} />
       <Card label="Vehicle Events Today" value={value("vehicleEventsToday")} />
-      <Card label="Active Cameras" value={value("activeCameras")} />
+      <Card label="Configured Cameras" value={value("activeCameras")} />
     </div>
   );
 }

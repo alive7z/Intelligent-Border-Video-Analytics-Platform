@@ -7,6 +7,7 @@ import AlertSeverityBadge from "../components/alerts/AlertSeverityBadge";
 import AlertStatusBadge from "../components/alerts/AlertStatusBadge";
 import AlertInformation from "../components/alerts/AlertInformation";
 import AlertEvidence from "../components/alerts/AlertEvidence";
+import EvidenceIntegrityPanel from "../components/integrity/EvidenceIntegrityPanel";
 import RiskReasons from "../components/alerts/RiskReasons";
 import IncidentTimeline from "../components/alerts/IncidentTimeline";
 import OperatorActions from "../components/alerts/OperatorActions";
@@ -163,6 +164,11 @@ function AlertDetails() {
           {packageUnavailable && <p className="text-sm text-amber-700">Incident package could not be loaded; showing available alert details.</p>}
           {incident?.truncated && <p className="text-sm text-amber-700">Incident history is truncated. Use Event History for older records.</p>}
           <AlertEvidence alert={alert} items={incident?.evidence} />
+          <div className="space-y-3">
+            {(incident?.evidence || []).filter((item) => item.id).map((item) => (
+              <EvidenceIntegrityPanel key={`integrity-${item.id}`} evidenceCode={item.id} evidenceType={item.type || "evidence"} />
+            ))}
+          </div>
           <IncidentTimeline alert={{ ...alert, timeline: incident?.timeline || alert.timeline }} />
           <RelatedEvents alert={{ ...alert, relatedEvents: incident?.events?.map((event) => ({ id: event.event_code, time: formatDateTime(event.occurred_at), type: event.event_type, severity: event.severity })) || [] }} />
         </div>

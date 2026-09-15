@@ -4,6 +4,7 @@ import Button from "./Button";
 import Loader from "./Loader";
 import { fetchEvidenceFileUrl } from "../../services/eventApi";
 import { formatDateTime } from "../../utils/date";
+import EvidenceIntegrityPanel from "../integrity/EvidenceIntegrityPanel";
 
 // Authenticated snapshot-oriented evidence, with object URLs released on selection/unmount.
 export default function EvidenceGallery({ items = [], title = "Incident Evidence", unavailable = false, emptyMessage = "No snapshot available", showVehicleStatus = false }) {
