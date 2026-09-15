@@ -7,6 +7,7 @@ import Button from "../common/Button";
 import AcknowledgeAlertButton from "./AcknowledgeAlertButton";
 import { BookmarkIcon, TrashIcon } from "../common/Icons";
 import { formatDateTime, formatTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Single row in the alerts table. Whole row is clickable and also has a
@@ -31,7 +32,7 @@ function AlertRow({ alert, canDelete = false, showSave = false, savingId = null,
           </p>
         )}
       </td>
-      <td className="px-5 py-3 text-slate-700">{alert.eventType}
+      <td className="px-5 py-3 text-slate-700">{formatEventLabel(alert.eventType)}
         {alert.reasons?.[0] && <p className="mt-1 text-xs text-slate-500">{alert.reasons.slice(0, 2).map((reason) => reason.label).join(" · ")}</p>}
         {alert.vehiclePlate && (
           <p className="mt-1 inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-semibold tracking-wide text-slate-700">

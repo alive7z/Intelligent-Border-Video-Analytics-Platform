@@ -17,7 +17,6 @@ def _sha256(path: Path) -> str:
 
 
 def _storage_reference(evidence_id: str, ext: str, subdir: str) -> str:
-    # Relative path under the shared storage root.
     return f"storage/{subdir}/{evidence_id}{ext}"
 
 

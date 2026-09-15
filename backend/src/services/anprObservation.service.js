@@ -27,7 +27,6 @@ const validatePlateText = (text) => {
   return text;
 };
 
-// Validate a single plate observation. Throws 400 on malformed fields.
 const validateAnprObservation = (obs) => {
   assertRequired(obs.observationId, "observation.observationId is required");
   if (typeof obs.observationId !== "string") {
@@ -125,7 +124,6 @@ const ingestAnprObservations = async ({ schemaVersion, cameraCode, observations 
         ? await eventRepository.findByObservationId(camera.id, observationId)
         : null;
     if (existing) {
-      // Duplicate request — skip re-insertion (idempotency by observationId).
       events.push({
         observationId,
         eventId: existing.event_code,

@@ -24,7 +24,7 @@ function isRevoked(jti) {
 }
 
 function newJti() {
-  return crypto.randomUUID(); // pre-alloc
+  return crypto.randomUUID();
 }
 
 module.exports = { revokeJti, isRevoked, newJti, _reset: () => revoked.clear(), _size: () => revoked.size };

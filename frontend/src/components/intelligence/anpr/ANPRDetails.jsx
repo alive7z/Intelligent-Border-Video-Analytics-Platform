@@ -3,6 +3,7 @@ import ConfidenceBadge, { ocrQuality, confidencePercent } from "../ConfidenceBad
 import { DetailRow, Snapshot, CameraButton, EventButton } from "../DetailBits";
 import { getEvidenceBlob, getEventEvidence } from "../../../services/intelligenceApi";
 import { formatDateTime } from "../../../utils/date";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 function useEventEvidence(eventId) {
   const [items, setItems] = useState([]);
@@ -70,7 +71,7 @@ function ANPRDetails({ event, eventType }) {
         <DetailRow label="Plate Number" value={event.plateNumber} />
         <DetailRow label="OCR Confidence" value={<ConfidenceBadge value={event.confidence} />} />
         <DetailRow label="Raw OCR Text" value={event.rawText} />
-        <DetailRow label="Vehicle Type" value={event.vehicleType || "—"} />
+        <DetailRow label="Vehicle Type" value={formatEventLabel(event.vehicleType) || "—"} />
         <DetailRow label="Vehicle Track ID" value={event.vehicleTrackId} />
         <DetailRow label="Camera" value={[event.cameraId, event.cameraName].filter(Boolean).join(" · ")} />
         <DetailRow label="Location" value={event.location} />

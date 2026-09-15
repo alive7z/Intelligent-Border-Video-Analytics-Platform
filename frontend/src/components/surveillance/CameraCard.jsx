@@ -31,7 +31,6 @@ function CameraCard({ camera }) {
 
   return (
     <div className="card flex flex-col overflow-hidden transition-shadow hover:shadow-lift">
-      {/* Preview */}
       <Link
         to={`/surveillance/${camera.id}`}
         className="block"
@@ -40,7 +39,6 @@ function CameraCard({ camera }) {
         <CameraPreview camera={camera} showAlertBanner />
       </Link>
 
-      {/* Body */}
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -58,7 +56,6 @@ function CameraCard({ camera }) {
           )}
         </div>
 
-        {/* Detections / risk row */}
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-md bg-slate-50 p-2">
             <p className="text-slate-500">Detections</p>
@@ -77,7 +74,6 @@ function CameraCard({ camera }) {
           </div>
         </div>
 
-        {/* Footer: last update + action */}
         <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
           <p className="text-xs text-slate-400">
             Updated <span className="font-medium text-slate-600">{camera.lastUpdate || "—"}</span>

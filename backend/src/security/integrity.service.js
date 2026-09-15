@@ -122,7 +122,6 @@ const canonicalMetadataHash = (integrity) => {
   });
 };
 
-// Retry loop driver for pending anchors.
 async function retryPendingAnchors(limit = 25) {
   const pending = await integrityRepository.listPendingAnchorEvidence(limit);
   const results = [];

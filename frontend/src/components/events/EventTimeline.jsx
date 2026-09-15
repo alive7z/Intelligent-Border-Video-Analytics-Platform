@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import { ClockIcon } from "../common/Icons";
 import { formatTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Visual event timeline. Falls back to a derived timeline (detection ->
@@ -12,7 +13,7 @@ function EventTimeline({ event }) {
   const timeline = explicit
     ? event.timeline
     : [
-        { time: formatTime(event.timestamp), event: `${event.type || "Event"} logged` },
+        { time: formatTime(event.timestamp), event: `${formatEventLabel(event.type || "Event")} logged` },
       ];
 
   return (

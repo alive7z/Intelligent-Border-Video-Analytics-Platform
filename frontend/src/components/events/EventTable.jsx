@@ -8,6 +8,7 @@ import RiskScoreBar from "../alerts/RiskScoreBar";
 import Button from "../common/Button";
 import { TrashIcon } from "../common/Icons";
 import { formatDateTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Events table for desktop/tablet plus stacked cards for mobile.
@@ -62,7 +63,7 @@ function EventTable({ events, canDelete = false, onDelete }) {
                   <EventTypeBadge type={e.type} />
                 </div>
                 <p className="mt-0.5 text-xs text-slate-400">
-                  {e.camera} · {e.objectType}
+                  {e.camera} · {formatEventLabel(e.objectType)}
                   {e.trackId ? ` #${e.trackId.split("-").pop()}` : ""} · {formatDateTime(e.timestamp)}
                 </p>
               </div>

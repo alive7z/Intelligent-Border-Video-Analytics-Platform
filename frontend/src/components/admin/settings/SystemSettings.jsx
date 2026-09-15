@@ -245,7 +245,6 @@ function SystemSettings() {
         canManage={canManage}
       />
 
-      {/* Audit log preview */}
       <Card>
         <div className="mb-4 flex items-center justify-between">
           <div>

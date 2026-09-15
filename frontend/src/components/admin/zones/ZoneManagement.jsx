@@ -15,6 +15,7 @@ import { useToast } from "../../common/Toast";
 import { useAdminAccess } from "../useAdminAccess";
 import ZoneForm from "./ZoneForm";
 import ZoneBoundaryEditor from "./ZoneBoundaryEditor";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 const riskTone = { Low: "low", Medium: "medium", High: "high", Critical: "critical" };
 
@@ -160,7 +161,7 @@ function ZoneManagement() {
                       </div>
                       <p className="text-xs text-slate-400">{z.name}</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{z.type}</td>
+                    <td className="px-4 py-3 text-slate-600">{formatEventLabel(z.type)}</td>
                     <td className="px-4 py-3 text-slate-600">
                       <p className="font-medium">{z.cameraId || "—"}</p>
                       <p className="text-xs text-slate-400">
@@ -168,7 +169,7 @@ function ZoneManagement() {
                       </p>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge tone={riskTone[z.riskLevel] || "default"}>{z.riskLevel}</Badge>
+                      <Badge tone={riskTone[z.riskLevel] || "default"}>{formatEventLabel(z.riskLevel)}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       {z.enabled ? (
@@ -219,7 +220,6 @@ function ZoneManagement() {
         zones={zones}
       />
 
-      {/* Preview */}
       <Modal
         open={!!preview}
         onClose={() => setPreview(null)}
@@ -248,11 +248,11 @@ function ZoneManagement() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-md bg-slate-50 px-3 py-2">
                 <p className="text-xs text-slate-400">Type</p>
-                <p className="font-medium text-slate-700">{preview.type}</p>
+                <p className="font-medium text-slate-700">{formatEventLabel(preview.type)}</p>
               </div>
               <div className="rounded-md bg-slate-50 px-3 py-2">
                 <p className="text-xs text-slate-400">Risk Level</p>
-                <Badge tone={riskTone[preview.riskLevel] || "default"}>{preview.riskLevel}</Badge>
+                <Badge tone={riskTone[preview.riskLevel] || "default"}>{formatEventLabel(preview.riskLevel)}</Badge>
               </div>
               <div className="rounded-md bg-slate-50 px-3 py-2">
                 <p className="text-xs text-slate-400">Camera</p>

@@ -4,6 +4,7 @@ import Card from "../common/Card";
 import AlertSeverityBadge from "./AlertSeverityBadge";
 import Button from "../common/Button";
 import { FileTextIcon } from "../common/Icons";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Related events table for an alert.
@@ -40,7 +41,7 @@ function RelatedEvents({ alert }) {
                   <td className="whitespace-nowrap px-5 py-2.5 text-slate-500">
                     {e.time}
                   </td>
-                  <td className="px-5 py-2.5 text-slate-700">{e.type}</td>
+                  <td className="px-5 py-2.5 text-slate-700">{formatEventLabel(e.type)}</td>
                   <td className="px-5 py-2.5">
                     <AlertSeverityBadge severity={e.severity} />
                   </td>

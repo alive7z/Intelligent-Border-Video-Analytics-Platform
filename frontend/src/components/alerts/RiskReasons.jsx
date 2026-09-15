@@ -1,5 +1,6 @@
 import React from "react";
 import Card from "../common/Card";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Human-readable risk reason breakdown for an alert.
@@ -18,7 +19,7 @@ function RiskReasons({ alert }) {
         {reasons.map((r, i) => (
           <li key={i}>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-700">{r.label}</span>
+              <span className="text-slate-700">{formatEventLabel(r.label)}</span>
               <span className="font-medium text-slate-800">{Number.isFinite(r.score) ? `+${r.score}` : "Recorded"}</span>
             </div>
             {Number.isFinite(r.score) && <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">

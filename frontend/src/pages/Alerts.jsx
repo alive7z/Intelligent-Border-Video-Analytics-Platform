@@ -173,7 +173,6 @@ function Alerts() {
         </Button>
       </PageHeader>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <SummaryCard label="Total Active" value={summary?.totalActive} counterClass="text-slate-900" />
         <SummaryCard label="Critical" value={summary?.critical} counterClass="text-red-700" />
@@ -182,12 +181,10 @@ function Alerts() {
         <SummaryCard label="Acknowledged" value={summary?.acknowledged} counterClass="text-yellow-600" />
       </div>
 
-      {/* Filter bar */}
       <div className="card mt-6 p-4">
         <AlertFilters filters={filters} onChange={(next) => { setFilters(next); setPage(1); }} cameras={cameras} operators={operators} />
       </div>
 
-      {/* Main list */}
       <div className="mt-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-white">

@@ -7,10 +7,7 @@
 
 -- Uses the database explicitly selected by the caller; never switches schemas.
 
--- ------------------------------------------------------------
--- Users (3) - password_hash is a placeholder; real bcrypt hashing
--- arrives in Phase 3 (Authentication).
--- ------------------------------------------------------------
+-- password_hash is a placeholder; real bcrypt hashing arrives in Phase 3 (Authentication).
 INSERT IGNORE INTO users
   (public_id, full_name, email, password_hash, role, status)
 VALUES
@@ -18,10 +15,7 @@ VALUES
   (UUID(), 'Demo Operator',      'operator@ibvap.demo', 'PLACEHOLDER_PHASE3', 'SECURITY_OPERATOR','ACTIVE'),
   (UUID(), 'Demo Analyst',       'analyst@ibvap.demo',  'PLACEHOLDER_PHASE3', 'AUDITOR_ANALYST',  'ACTIVE');
 
--- ------------------------------------------------------------
--- Cameras (8). CAM-01 is the MOBILE demo camera.
--- No real IP/hostname/URL/credentials are stored.
--- ------------------------------------------------------------
+-- CAM-01 is the MOBILE demo camera. No real IP/hostname/URL/credentials are stored.
 INSERT IGNORE INTO cameras
   (camera_code, name, description, location_name, sector, source_type, stream_protocol, stream_url, stream_status, ai_status, enabled)
 VALUES
@@ -38,9 +32,6 @@ VALUES
 -- ingestion so inference, evidence, overlays, and preview share landscape axes.
 UPDATE cameras SET rotation_degrees = 90 WHERE camera_code = 'CAM-01';
 
--- ------------------------------------------------------------
--- Zones (6)
--- ------------------------------------------------------------
 INSERT IGNORE INTO zones
   (zone_code, camera_id, name, zone_type, risk_level, coordinates_json, enabled)
 SELECT z.zone_code, c.id, z.name, z.zone_type, z.risk_level, z.coordinates_json, 1
@@ -64,9 +55,6 @@ FROM (SELECT 'ZONE-01' AS zone_code, 'CAM-01' AS camera_code, 'Mobile Restricted
 JOIN cameras c ON c.camera_code = z.camera_code
 WHERE NOT EXISTS (SELECT 1 FROM zones WHERE zones.zone_code = z.zone_code);
 
--- ------------------------------------------------------------
--- Risk Rules (8)
--- ------------------------------------------------------------
 INSERT IGNORE INTO risk_rules
   (rule_code, name, description, category, weight, minimum_duration_ms, confidence_threshold, cooldown_seconds, enabled)
 VALUES
@@ -81,10 +69,7 @@ VALUES
   ('REPEATED_ENTRY', 'Repeated Entry', 'Same object enters the same zone repeatedly.', 'BEHAVIORAL', 3.0, 0, 0.55, 120, 0),
   ('UNUSUAL_SPEED', 'Unusual Speed', 'Object speed is inconsistent with expected for the area.', 'BEHAVIORAL', 2.0, 0, 0.55, 30, 0);
 
--- ------------------------------------------------------------
--- Demo Events (a few) + linked Alerts, demonstrating the
--- events != alerts architecture.
--- ------------------------------------------------------------
+-- Demo events + linked alerts demonstrate the events != alerts architecture.
 INSERT IGNORE INTO events
   (event_code, camera_id, event_type, object_type, track_id, confidence, risk_score, severity, status, context_json, occurred_at)
 SELECT e.event_code, c.id, e.event_type, e.object_type, e.track_id, e.confidence, e.risk_score, e.severity, e.status, e.context_json, e.occurred_at

@@ -9,6 +9,7 @@ import { getAlertsSummary } from "../../../services/alertApi";
 import { getOverviewAnalytics } from "../../../services/analyticsApi";
 import { getSystemStatus } from "../../../services/cameraApi";
 import { useRealtime } from "../../../context/RealtimeContext";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 /**
  * Admin Overview pane: real aggregate KPIs (alerts, retention posture) plus
@@ -309,10 +310,7 @@ function SystemMetric({ label, status, value }) {
 }
 
 function toDisplayStatus(value) {
-  return value
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return formatEventLabel(value);
 }
 
 function RetStat({ label, value }) {

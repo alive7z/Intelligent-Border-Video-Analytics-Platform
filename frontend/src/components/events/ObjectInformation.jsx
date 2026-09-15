@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import { UserIcon } from "../common/Icons";
 import { formatTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 function Row({ label, value }) {
   return (
@@ -42,7 +43,7 @@ function ObjectInformation({ event }) {
         <dl className="divide-y divide-slate-100 text-sm">
           <Row label="Plate Number" value={event.anpr.plate} />
           <Row label="OCR Confidence" value={`${Math.round((event.anpr.ocrConfidence || 0) * 100)}%`} />
-          <Row label="Vehicle Type" value={event.anpr.vehicleType} />
+          <Row label="Vehicle Type" value={formatEventLabel(event.anpr.vehicleType)} />
           <Row label="Vehicle Track" value={event.trackId} />
           <Row label="Camera" value={`${event.anpr.camera} · ${event.cameraName}`} />
           <Row label="Location" value={event.location} />
@@ -65,14 +66,14 @@ function ObjectInformation({ event }) {
           <Row label="Track ID" value={event.trackId} />
           <Row label="Vehicle Number" value={event.vehiclePlate || "Plate not confirmed"} />
           <Row label="OCR Confidence" value={event.anpr?.ocrConfidence == null ? "—" : `${Math.round(event.anpr.ocrConfidence * 100)}%`} />
-          <Row label="Vehicle Type" value={event.object.vehicleType} />
-          <Row label="Direction" value={event.object.direction} />
+          <Row label="Vehicle Type" value={formatEventLabel(event.object.vehicleType)} />
+          <Row label="Direction" value={formatEventLabel(event.object.direction)} />
           <Row label="Confidence" value={`${Math.round((event.object.confidence || 0) * 100)}%`} />
         </dl>
       ) : isVehicle ? (
         <dl className="divide-y divide-slate-100 text-sm">
           <Row label="Track ID" value={event.trackId} />
-          <Row label="Direction" value={event.context?.direction} />
+          <Row label="Direction" value={formatEventLabel(event.context?.direction)} />
           <Row label="Confidence" value={`${Math.round((event.confidence || 0) * 100)}%`} />
         </dl>
       ) : event.object ? (
@@ -86,7 +87,7 @@ function ObjectInformation({ event }) {
       ) : (
         <dl className="divide-y divide-slate-100 text-sm">
           <Row label="Track ID" value={event.trackId} />
-          <Row label="Object Type" value={event.objectType} />
+          <Row label="Object Type" value={formatEventLabel(event.objectType)} />
           <Row label="Confidence" value={`${Math.round((event.confidence || 0) * 100)}%`} />
         </dl>
       )}

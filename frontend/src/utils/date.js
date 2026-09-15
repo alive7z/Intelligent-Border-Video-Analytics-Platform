@@ -1,5 +1,3 @@
-// Small date/time helpers for consistent display across the dashboard.
-
 export function formatDateTime(iso) {
   if (!iso) return "—";
   const d = new Date(iso);

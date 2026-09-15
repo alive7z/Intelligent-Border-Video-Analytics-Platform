@@ -40,7 +40,6 @@ export function AuthProvider({ children }) {
   // wipe) a session that was just established by a fresh login.
   const freshLoginRef = useRef(false);
 
-  // Persist token/user whenever they change.
   useEffect(() => {
     if (token) setToken(token);
     else clearToken();

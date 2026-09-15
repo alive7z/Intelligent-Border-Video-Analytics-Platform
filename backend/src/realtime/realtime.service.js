@@ -125,7 +125,6 @@ const safeSystemStatus = (status) => {
   };
 };
 
-// Build the standard event envelope: { type, timestamp, data }.
 const envelope = (type, data) => ({
   type,
   timestamp: new Date().toISOString(),

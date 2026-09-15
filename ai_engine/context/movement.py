@@ -32,7 +32,7 @@ def movement_speed(points: list[dict], seconds: float, min_displacement: float =
     return {
         "moving": moving,
         "normalizedUnitsPerSecond": round(speed, 5),
-        "pixelsPerSecond": None,  # computed by caller if pixel scale unknown? kept null.
+        "pixelsPerSecond": None,
         "dx": round(dx, 4),
         "dy": round(dy, 4),
     }

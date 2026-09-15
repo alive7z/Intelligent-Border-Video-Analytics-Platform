@@ -147,7 +147,6 @@ function LiveSurveillance() {
         subtitle="Monitor real-time CCTV feeds, AI detections, and active security events."
       />
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <SummaryCard label="Total Cameras" value={summary.total} tone="slate" />
         <SummaryCard label="Online" value={summary.online} tone="success" />
@@ -155,12 +154,10 @@ function LiveSurveillance() {
         <SummaryCard label="Active Alerts" value={summary.activeAlert} tone="warning" />
       </div>
 
-      {/* Filter bar */}
       <div className="card mt-6 p-4">
         <CameraFilters filters={filters} onChange={setFilters} sectors={sectors} />
       </div>
 
-      {/* Grid */}
       <div className="mt-6">
         {!loading && !error && (
           <p className="mb-4 text-sm text-white">

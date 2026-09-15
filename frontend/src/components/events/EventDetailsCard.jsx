@@ -4,6 +4,7 @@ import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import AlertStatusBadge from "../alerts/AlertStatusBadge";
 import { InfoIcon } from "../common/Icons";
 import { formatDateTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 function Row({ label, value, children }) {
   const displayValue = value === null || value === undefined || value === "" ? "—" : value;
@@ -35,10 +36,10 @@ function EventDetailsCard({ event }) {
       </div>
       <dl className="divide-y divide-slate-100 text-sm">
         <Row label="Event ID" value={event.id} />
-        <Row label="Event Type" value={event.type} />
+        <Row label="Event Type" value={formatEventLabel(event.type)} />
         <Row label="Camera" value={cameraLabel} />
         <Row label="Location" value={event.location} />
-        <Row label="Object Type" value={event.objectType} />
+        <Row label="Object Type" value={formatEventLabel(event.objectType)} />
         <Row label="Track ID" value={event.trackId} />
         <Row label="Vehicle Number" value={event.vehiclePlate || (event.objectType?.toLowerCase() === "vehicle" ? "Plate not confirmed" : null)} />
         <Row label="Risk Score" value={event.riskScore == null ? "—" : `${event.riskScore} / 100`} />

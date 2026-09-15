@@ -7,6 +7,7 @@ import RiskScoreBar from "../alerts/RiskScoreBar";
 import Button from "../common/Button";
 import { TrashIcon } from "../common/Icons";
 import { formatDateTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Single row in the events history table.
@@ -23,13 +24,13 @@ function EventRow({ event, canDelete = false, onDelete }) {
         </Link>
       </td>
       <td className="px-5 py-3">
-        <EventTypeBadge type={event.type} label={event.type} />
+        <EventTypeBadge type={event.type} />
       </td>
       <td className="px-5 py-3 text-slate-600">
         <span className="font-medium text-slate-700">{event.camera}</span>
       </td>
       <td className="px-5 py-3 text-slate-600">
-        {event.objectType}
+        {formatEventLabel(event.objectType)}
         {event.trackId ? (
           <span className="font-medium text-slate-700"> #{event.trackId.split("-").pop()}</span>
         ) : null}

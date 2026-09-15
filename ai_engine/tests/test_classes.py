@@ -18,7 +18,6 @@ def test_allowed_classes():
 
 
 def test_irrelevant_classes_excluded():
-    # dogs/chairs/bags are not in allowed classes
     assert "dog" not in COCO_NAME_TO_ID
     assert "chair" not in COCO_NAME_TO_ID
     assert "handbag" not in COCO_NAME_TO_ID

@@ -2,6 +2,7 @@ import React from "react";
 import ConfidenceBadge from "../ConfidenceBadge";
 import { DetailRow, CameraButton, EventButton } from "../DetailBits";
 import { formatDateTime } from "../../../utils/date";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 /**
  * Vehicle intelligence detail. Vehicles are never labelled as blacklisted /
@@ -12,7 +13,7 @@ function VehicleDetails({ vehicle, eventType }) {
     <div>
       <dl className="divide-y divide-slate-100 text-sm">
         <DetailRow label="Vehicle Track ID" value={vehicle.trackId} />
-        <DetailRow label="Vehicle Type" value={vehicle.vehicleType} />
+        <DetailRow label="Vehicle Type" value={formatEventLabel(vehicle.vehicleType)} />
         <DetailRow label="Detection Confidence" value={<ConfidenceBadge value={vehicle.confidence} />} />
         <DetailRow label="Camera" value={[vehicle.cameraId, vehicle.cameraName].filter(Boolean).join(" · ")} />
         <DetailRow label="Location" value={vehicle.location} />

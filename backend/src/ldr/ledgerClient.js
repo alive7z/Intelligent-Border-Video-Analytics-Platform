@@ -28,7 +28,7 @@ const _httpRequest = (url, body, timeout = DEFAULT_TIMEOUT_MS) => new Promise((r
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Content-Length": bodyBuf.length, // fixes celery/removing chunked encoding
+      "Content-Length": bodyBuf.length, // explicit Content-Length avoids chunked transfer-encoding
       ...(env.LEDGER_NODE_TOKEN ? { "X-Ledger-Token": env.LEDGER_NODE_TOKEN } : {}),
     },
     timeout,

@@ -1,6 +1,7 @@
 import React from "react";
 import ConfidenceBadge from "../ConfidenceBadge";
 import { formatTime } from "../../../utils/date";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 function ActionButton({ onClick }) {
   return (
@@ -39,7 +40,7 @@ function VehicleTable({ events, onView }) {
               {events.map((v) => (
                 <tr key={v.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                   <td className="px-5 py-3 font-medium text-blue-700">{v.trackId}</td>
-                  <td className="px-5 py-3 text-slate-700">{v.vehicleType}</td>
+                  <td className="px-5 py-3 text-slate-700">{formatEventLabel(v.vehicleType)}</td>
                   <td className="px-5 py-3 text-slate-600">{v.cameraId}</td>
                   <td className="px-5 py-3 text-slate-700">{v.plateNumber || "—"}</td>
                   <td className="px-5 py-3">
@@ -66,7 +67,7 @@ function VehicleTable({ events, onView }) {
               <div>
                 <p className="font-semibold text-blue-700">{v.trackId}</p>
                 <p className="text-sm text-slate-700">
-                  {v.vehicleType} · {v.cameraId}
+                  {formatEventLabel(v.vehicleType)} · {v.cameraId}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-400">{formatTime(v.timestamp)}</p>
                 <p className="mt-0.5 text-xs text-slate-500">Plate: {v.plateNumber || "—"}</p>

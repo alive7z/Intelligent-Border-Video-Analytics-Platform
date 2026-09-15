@@ -18,6 +18,7 @@ import {
 } from "../../../services/operatorApi";
 import { getAllCameras } from "../../../services/cameraApi";
 import { formatDateTime } from "../../../utils/date";
+import { roleLabel } from "../../../utils/roles";
 import { useRealtime } from "../../../context/RealtimeContext";
 import { SOCKET_EVENTS } from "../../../services/websocket";
 import { useToast } from "../../common/Toast";
@@ -48,11 +49,9 @@ function OperatorManagement({ readOnly = false }) {
   const [creating, setCreating] = useState(false);
   const push = useToast();
 
-  // Assignment modal state
   const [assigning, setAssigning] = useState(null); // operator detail object
   const [selected, setSelected] = useState([]);
 
-  // Remove confirmation state
   const [removeTarget, setRemoveTarget] = useState(null);
   const [removing, setRemoving] = useState(false);
 
@@ -210,7 +209,7 @@ function OperatorManagement({ readOnly = false }) {
                     <td className="px-3 py-2.5">
                       <p className="font-medium text-slate-800">{op.fullName || op.email}</p>
                       <p className="text-xs text-slate-400">{op.email}</p>
-                      <p className="text-xs text-slate-400">{op.publicId || `DB-${op.id}`} · {(op.role || "SECURITY_OPERATOR").replace(/_/g, " ")}</p>
+                      <p className="text-xs text-slate-400">{op.publicId || `DB-${op.id}`} · {roleLabel(op.role || "SECURITY_OPERATOR")}</p>
                     </td>
                     <td className="px-3 py-2.5">
                       {op.status === "ACTIVE" ? (

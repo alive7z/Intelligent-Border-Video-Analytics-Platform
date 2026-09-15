@@ -11,6 +11,7 @@ import { ActivityIcon, RefreshIcon, TrashIcon } from "../../common/Icons";
 import { getRetention, updateRetention, runRetention } from "../../../services/retentionApi";
 import { cleanAllOperationalData } from "../../../services/retentionApi";
 import { useRealtime } from "../../../context/RealtimeContext";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 const DELETE_ALL_PHRASE = "DELETE ALL DATA";
 
@@ -224,7 +225,7 @@ function RetentionSettings({ readOnly }) {
               <dt className="text-xs uppercase tracking-wide text-slate-500">Events by severity</dt>
               {Object.entries(stats.eventsBySeverity).map(([s, n]) => (
                 <dd key={s} className="flex justify-between text-sm text-slate-700">
-                  <span>{s}</span>
+                  <span>{formatEventLabel(s)}</span>
                   <span className="font-semibold">{Number(n || 0).toLocaleString()}</span>
                 </dd>
               ))}
@@ -235,7 +236,7 @@ function RetentionSettings({ readOnly }) {
               <dt className="text-xs uppercase tracking-wide text-slate-500">Alerts by severity</dt>
               {Object.entries(stats.alertsBySeverity).map(([s, n]) => (
                 <dd key={s} className="flex justify-between text-sm text-slate-700">
-                  <span>{s}</span>
+                  <span>{formatEventLabel(s)}</span>
                   <span className="font-semibold">{Number(n || 0).toLocaleString()}</span>
                 </dd>
               ))}
@@ -252,7 +253,7 @@ function RetentionSettings({ readOnly }) {
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-500">Evidence by type</dt>
               {Object.entries(stats.evidenceByType).map(([type, n]) => (
-                <dd key={type} className="flex justify-between text-sm text-slate-700"><span>{type.replace(/_/g, " ")}</span><span className="font-semibold">{Number(n).toLocaleString()}</span></dd>
+                <dd key={type} className="flex justify-between text-sm text-slate-700"><span>{formatEventLabel(type)}</span><span className="font-semibold">{Number(n).toLocaleString()}</span></dd>
               ))}
             </div>
           )}

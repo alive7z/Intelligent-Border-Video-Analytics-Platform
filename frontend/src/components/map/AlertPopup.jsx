@@ -3,6 +3,7 @@ import Badge from "../common/Badge";
 import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import { AlertTriangleIcon } from "../common/Icons";
 import { formatDateTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Compact active-alert popup rendered inside a Leaflet popup.
@@ -14,7 +15,7 @@ function AlertPopup({ alert, onViewAlert }) {
         <AlertTriangleIcon size={15} className="text-red-600" />
         <p className="text-sm font-bold text-slate-900">{alert.id}</p>
       </div>
-      <p className="text-sm text-slate-600">{alert.type}</p>
+      <p className="text-sm text-slate-600">{formatEventLabel(alert.type)}</p>
 
       <div className="mt-2 space-y-1 text-xs">
         <div className="flex items-center justify-between">

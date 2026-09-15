@@ -9,6 +9,7 @@ import { BellIcon } from "../common/Icons";
 import { getAlerts } from "../../services/alertApi";
 import { severityTone, statusTone } from "../../utils/severity";
 import { relativeTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 import { useRealtime } from "../../context/RealtimeContext";
 import { fromSocketAlert } from "../../services/alertApi";
 import { SOCKET_EVENTS } from "../../services/websocket";
@@ -110,7 +111,7 @@ function RecentAlerts() {
                   className="border-b border-white/20 last:border-0 hover:bg-slate-50"
                 >
                   <td className="px-5 py-3 font-medium text-sky-400">{a.id}</td>
-                  <td className="px-5 py-3 text-slate-700">{a.type}</td>
+                  <td className="px-5 py-3 text-slate-700">{formatEventLabel(a.type)}</td>
                   <td className="px-5 py-3 text-slate-600">{a.camera}</td>
                   <td className="px-5 py-3 text-slate-600">{a.zone || "—"}</td>
                   <td className="px-5 py-3">
@@ -126,7 +127,7 @@ function RecentAlerts() {
                   </td>
                   <td className="px-5 py-3">
                     <Badge tone={statusTone[a.status] || "default"}>
-                      {a.status}
+                      {formatEventLabel(a.status)}
                     </Badge>
                   </td>
                   <td className="px-5 py-3 text-right">

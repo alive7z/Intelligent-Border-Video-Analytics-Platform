@@ -1,6 +1,7 @@
 import React from "react";
 import ConfidenceBadge from "../ConfidenceBadge";
 import { formatTime } from "../../../utils/date";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 function ActionButton({ onClick }) {
   return (
@@ -38,7 +39,7 @@ function ANPRTable({ events, onView }) {
               {events.map((e) => (
                 <tr key={e.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                   <td className="px-5 py-3 font-medium text-sky-400">{e.plateNumber}</td>
-                  <td className="px-5 py-3 text-slate-700">{e.vehicleType || "—"}</td>
+                  <td className="px-5 py-3 text-slate-700">{formatEventLabel(e.vehicleType) || "—"}</td>
                   <td className="px-5 py-3 text-slate-600">{e.cameraId || "—"}</td>
                   <td className="px-5 py-3 text-slate-600">{e.location || "—"}</td>
                   <td className="px-5 py-3">
@@ -64,7 +65,7 @@ function ANPRTable({ events, onView }) {
               <div>
                 <p className="font-semibold text-sky-400">{e.plateNumber}</p>
                 <p className="text-sm text-slate-700">
-                  {e.vehicleType || "—"} · {e.cameraId || "—"}
+                  {formatEventLabel(e.vehicleType) || "—"} · {e.cameraId || "—"}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-400">
                   {e.location || "—"} · {formatTime(e.timestamp)}

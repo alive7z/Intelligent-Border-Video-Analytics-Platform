@@ -5,6 +5,7 @@ import Badge from "../common/Badge";
 import Button from "../common/Button";
 import { FileTextIcon } from "../common/Icons";
 import { severityTone, statusTone } from "../../utils/severity";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Latest events for a specific camera with a "View All Events" action.
@@ -44,9 +45,9 @@ function CameraEvents({ cameraId, events = [] }) {
                   <td className="whitespace-nowrap px-5 py-2.5 text-slate-500">
                     {e.time}
                   </td>
-                  <td className="px-5 py-2.5 text-slate-700">{e.type}</td>
+                  <td className="px-5 py-2.5 text-slate-700">{formatEventLabel(e.type)}</td>
                   <td className="whitespace-nowrap px-5 py-2.5 text-slate-600">
-                    {e.objectType || "—"}
+                    {formatEventLabel(e.objectType) || "—"}
                   </td>
                   <td className="whitespace-nowrap px-5 py-2.5 text-slate-600">
                     {e.trackId != null ? e.trackId : "—"}
@@ -67,7 +68,7 @@ function CameraEvents({ cameraId, events = [] }) {
                   </td>
                   <td className="px-5 py-2.5">
                     <Badge tone={statusTone[(e.status || "").toLowerCase()] || "default"}>
-                      {e.status}
+                      {formatEventLabel(e.status)}
                     </Badge>
                   </td>
                 </tr>

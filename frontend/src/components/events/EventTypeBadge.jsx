@@ -1,5 +1,6 @@
 import React from "react";
 import Badge from "../common/Badge";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 import {
   UserIcon,
   CctvIcon,
@@ -31,7 +32,7 @@ function EventTypeBadge({ type, label, className = "", withIcon = true }) {
   return (
     <Badge tone={tone} className={className}>
       {withIcon && <Icon size={13} />}
-      <span className="whitespace-nowrap">{label || type}</span>
+      <span className="whitespace-nowrap">{label || formatEventLabel(type)}</span>
     </Badge>
   );
 }

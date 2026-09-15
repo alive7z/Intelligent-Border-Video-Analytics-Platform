@@ -17,6 +17,8 @@ import { SUPPORTED_LANGUAGES } from "../../hooks/useLanguage";
 import { getAlerts, getAlertsSummary } from "../../services/alertApi";
 import { useRealtime } from "../../context/RealtimeContext";
 import { SOCKET_EVENTS } from "../../services/websocket";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
+import { roleLabel } from "../../utils/roles";
 
 const severityTag = (severity) => {
   if (severity === "CRITICAL") return "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/40";
@@ -42,7 +44,7 @@ function ProfileDropdown({ onLogout }) {
   const navigate = useNavigate();
 
   const displayName = user?.fullName || user?.name || "—";
-  const roleLabelText = user?.role || "—";
+  const roleLabelText = user?.role || user?.roleKey ? roleLabel(user.role || user.roleKey) : "—";
   const isAdmin = user?.roleKey === "ADMINISTRATOR";
 
   useEffect(() => {
@@ -215,14 +217,14 @@ function NotificationPanel({ notifications, unreadCount, error, setOpen, ref }) 
               <span
                 className={`inline-flex rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${severityTag(n.severity)}`}
               >
-                {n.severity}
+                {formatEventLabel(n.severity)}
               </span>
               <span className="ml-auto text-[11px] text-slate-400">
                 {relativeTime(n.timestamp)}
               </span>
             </div>
             <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
-              {String(n.eventType || "Security alert").replace(/_/g, " ")}
+              {formatEventLabel(n.eventType || "Security alert")}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {n.camera || "Camera unavailable"}
@@ -309,7 +311,6 @@ export function Header({ onMenuClick, lang, setLang }) {
         }}
       >
         <div className="flex items-center gap-3">
-          {/* Mobile hamburger */}
           <button
             type="button"
             onClick={onMenuClick}

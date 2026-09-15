@@ -7,7 +7,6 @@ const realtimeService = require("../realtime/realtime.service");
 
 const FACE_SOURCE = "AI_FACE_ENGINE";
 
-// Validate a single face observation. Throws 400 on malformed fields.
 // FACE DETECTION ONLY — this payload carries a bounding box + confidence and
 // no identity, name, matchScore, or criminal/wanted status.
 const validateFaceObservation = (obs) => {
@@ -87,7 +86,6 @@ const ingestFaceObservations = async ({ schemaVersion, cameraCode, observations 
         ? await eventRepository.findByObservationId(camera.id, observationId)
         : null;
     if (existing) {
-      // Duplicate request — skip re-insertion (idempotency by observationId).
       createdEvents.push({ eventId: existing.event_code, observationId });
       continue;
     }

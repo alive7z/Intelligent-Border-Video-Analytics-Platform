@@ -16,6 +16,7 @@ import {
   shouldNotifyUpdate,
 } from "../../utils/alertNotification.mjs";
 import { XIcon, ExternalLinkIcon } from "./Icons";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Audio for the custom alert beep (public/audio/alert-beep.mp3). The Web
@@ -231,7 +232,6 @@ export default function AlertNotification() {
             role="alert"
             aria-live="assertive"
           >
-            {/* Pulse dot */}
             <span className={`absolute left-0 top-0 h-full w-1 ${s.pulse} animate-pulse`} />
 
             <div className="flex items-start gap-3 pl-4 pr-3 py-3">
@@ -248,7 +248,7 @@ export default function AlertNotification() {
                   {eventLabel(a.eventType)}
                 </p>
                 {a.reason && (
-                  <p className={`text-xs mt-0.5 ${s.sub} truncate`}>{a.reason}</p>
+                  <p className={`text-xs mt-0.5 ${s.sub} truncate`}>{formatEventLabel(a.reason)}</p>
                 )}
                 {a.riskScore != null && !a.reason && (
                   <p className={`text-xs mt-0.5 ${s.sub}`}>

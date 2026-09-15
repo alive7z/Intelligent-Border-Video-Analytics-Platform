@@ -9,6 +9,7 @@ import { PlusIcon, EditIcon, UserIcon, CheckIcon, XIcon } from "../../common/Ico
 import { useToast } from "../../common/Toast";
 import { useAdminAccess } from "../useAdminAccess";
 import UserForm from "./UserForm";
+import { roleLabel } from "../../../utils/roles";
 
 const MODULES = ["Dashboard", "Surveillance", "Alerts", "Events", "Intelligence", "Map", "Analytics", "Admin"];
 
@@ -32,7 +33,7 @@ function RoleMatrix({ matrix }) {
           <tbody>
             {Object.entries(matrix || {}).map(([role, perms]) => (
               <tr key={role} className="border-b border-slate-100">
-                <td className="px-3 py-2.5 font-medium text-slate-700">{role}</td>
+                <td className="px-3 py-2.5 font-medium text-slate-700">{roleLabel(role)}</td>
                 {MODULES.map((m) => {
                   const v = perms[m];
                   return (
@@ -190,7 +191,7 @@ function UserManagement() {
                     </td>
                     <td className="px-4 py-3 text-slate-600">{u.username}</td>
                     <td className="px-4 py-3">
-                      <Badge tone="info">{u.role}</Badge>
+                      <Badge tone="info">{roleLabel(u.role)}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       {u.status === "Disabled" ? (

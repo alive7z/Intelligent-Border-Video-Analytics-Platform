@@ -8,6 +8,7 @@ import Button from "../common/Button";
 import AcknowledgeAlertButton from "./AcknowledgeAlertButton";
 import { BookmarkIcon, TrashIcon } from "../common/Icons";
 import { formatDateTime, formatTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Alerts table for desktop/tablet plus compact cards for mobile.
@@ -58,7 +59,7 @@ function AlertTable({ alerts, canDelete = false, showSave = false, savingId = nu
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-semibold text-sky-400">{a.id}</p>
-                <p className="text-sm text-slate-700">{a.eventType}</p>
+                <p className="text-sm text-slate-700">{formatEventLabel(a.eventType)}</p>
                 <p className="mt-0.5 text-xs text-slate-400">
                   {a.camera} · {a.cameraName} · {formatTime(a.timestamp)}
                 </p>

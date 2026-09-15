@@ -1,6 +1,7 @@
 import React from "react";
 import Badge from "../common/Badge";
 import { LayersIcon } from "../common/Icons";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Virtual fence popup.
@@ -24,7 +25,7 @@ function FencePopup({ fence }) {
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Status:</span>
-          <Badge tone="online">{fence.status}</Badge>
+          <Badge tone="online">{formatEventLabel(fence.status)}</Badge>
         </div>
       </div>
     </div>

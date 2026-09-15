@@ -150,19 +150,16 @@ function Events() {
         </Button>
       </PageHeader>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryCard label="Total Events Today" value={summary?.totalToday} />
         <SummaryCard label="Security Events" value={summary?.securityEvents} />
         <SummaryCard label="ANPR Events" value={summary?.anprEvents} />
       </div>
 
-      {/* Filter bar */}
       <div className="card mt-6 p-4">
         <EventFilters filters={filters} onChange={(next) => { setFilters(next); setPage(1); }} cameras={cameras} />
       </div>
 
-      {/* Event history */}
       <div className="mt-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-white">Event History</h2>

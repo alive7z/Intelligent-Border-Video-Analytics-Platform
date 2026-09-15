@@ -1,983 +1,400 @@
-# IBVAP
+# IBVAP — Intelligent Border Video Analytics Platform
 
-Current rollout status: [11 September stabilization report](docs/IBVAP-STABILIZATION-2026-09-11.md). The Border Map remains active. CAM-01/CAM-02 live verification awaits their source URLs; see the report for tested results, startup commands and remaining limitations.
+IBVAP turns CCTV observations into contextual events, prioritized alerts, and reviewable evidence. It combines a Python vision engine, a Node.js application backend, and a React command dashboard to support border-surveillance workflows.
 
-## Intelligent Border Video Analytics Platform
+The core workflow is **detection → tracking → context → risk → alert → evidence → operator action**. A person or vehicle detection is an observation; configured context and risk rules determine whether it needs operator attention.
 
-**IBVAP** is a context-aware border surveillance platform designed to enhance existing CCTV infrastructure with real-time computer vision, tracking, contextual analysis, risk scoring, alert generation, evidence management, analytics, and command-and-control capabilities.
+Developed for the Smart India Hackathon 2026 context, this repository is a prototype and research implementation. Camera accuracy, capacity, and operational readiness require validation in the intended deployment environment.
 
-> **Detection → Tracking → Context → Behavior → Risk → Alert → Evidence → Operator Action**
+## Contents
 
-IBVAP does not treat every person or vehicle detection as an immediate security threat. Instead, it evaluates factors such as location, duration, zone interaction, fence activity, and behavior before calculating risk and escalating meaningful incidents.
+- [Features](#features)
+- [Architecture](#architecture)
+- [Technology stack](#technology-stack)
+- [Project structure](#project-structure)
+- [Local setup](#local-setup)
+- [Camera ingestion and models](#camera-ingestion-and-models)
+- [Optional evidence ledger](#optional-evidence-ledger)
+- [Testing and checks](#testing-and-checks)
+- [Troubleshooting](#troubleshooting)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
----
+## Features
 
-## Problem
+| Area | Capabilities |
+| --- | --- |
+| Live surveillance | RTSP and HTTP/MJPEG camera ingestion, local video processing, annotated previews, reconnect handling, and camera status |
+| Detection and tracking | Person and vehicle detection with YOLO; object tracking with ByteTrack |
+| Context and risk | Zone entry, virtual-fence crossing, fence proximity, loitering, night movement, and configurable risk scoring |
+| Events and alerts | Searchable observations, risk explanations, acknowledgement and resolution workflows, and realtime updates |
+| Intelligence | Vehicle observations, number-plate localization and OCR, and face-detection observations |
+| Evidence | Snapshots and crops linked to events and alerts, retention controls, integrity verification, and custody records |
+| Command dashboard | Operational summaries, live surveillance, analytics, a Leaflet border map, and English/Hindi interface text |
+| Administration | Users, operator assignments, cameras, zones, risk rules, audit logs, retention, and system health |
+| Authentication | JWT access tokens, backend role checks, account security controls, and MFA endpoints |
+| Integrity ledger | Optional local permissioned ledger for evidence digests and audit-batch Merkle roots |
 
-Traditional CCTV surveillance systems depend heavily on continuous manual monitoring. Security personnel may need to watch multiple camera feeds simultaneously, which can lead to:
+Face processing performs **detection only**, without identity matching or facial recognition. Plate and face observations do not establish a person's identity or make an activity suspicious by themselves.
 
-- Operator fatigue
-- Missed suspicious activity
-- Delayed incident response
-- Continuous bandwidth consumption
-- Large volumes of unstructured footage
-- Limited contextual understanding
-- Difficulty prioritizing important incidents
+The application uses three primary roles: `ADMINISTRATOR`, `SECURITY_OPERATOR`, and `AUDITOR_ANALYST`. Backend routes enforce permissions in addition to the interface's access controls.
 
-IBVAP addresses these challenges by adding an intelligent software and edge-processing layer over existing IP CCTV infrastructure.
-
----
-
-## Solution
-
-IBVAP connects to existing CCTV cameras using standard video-surveillance protocols such as **RTSP** and **ONVIF**.
-
-Live video is processed through a computer-vision pipeline that performs:
-
-- Person detection
-- Vehicle detection
-- Multi-object tracking
-- Face detection
-- Number plate OCR
-- Loitering analysis
-- Restricted-zone monitoring
-- Virtual-fence crossing detection
-- Fence-proximity monitoring
-- Context analysis
-- Risk scoring
-
-Routine detections remain normal events.
-
-Only meaningful combinations of contextual conditions are escalated into security alerts.
-
----
-
-# Architecture
+## Architecture
 
 ```text
-Existing CCTV / IP Camera
-          │
-          │ RTSP / ONVIF
-          ▼
-┌───────────────────────────────┐
-│ Python Vision Engine          │
-│                               │
-│ YOLO11 Detection              │
-│ ByteTrack Tracking            │
-│ Context Analysis              │
-│ Risk Scoring                  │
-└───────────────┬───────────────┘
-                │
-                │ Structured Events
-                ▼
-┌───────────────────────────────┐
-│ Node.js Application Backend   │
-│                               │
-│ Auth • RBAC • Events          │
-│ Alerts • Admin • Realtime     │
-└───────────┬───────────┬───────┘
-            │           │
-            ▼           ▼
-          MySQL       Redis
-            │
-            └──────────────► Evidence Storage
-                              Snapshots / Clips
-            │
-            ▼
-┌───────────────────────────────┐
-│ React Command Dashboard       │
-│                               │
-│ Live • Alerts • Events        │
-│ Map • Analytics • Admin       │
-└───────────────────────────────┘
+RTSP / HTTP / MJPEG cameras or local video
+                    |
+                    v
+          Python vision engine
+     detection, tracking, context, risk
+          |                    |
+          | observations       | media files
+          v                    v
+     Node.js / Express       Evidence storage
+     APIs and alert manager     |
+          |                    |
+          +---- MySQL: records, metadata, custody
+          +---- Redis: optional runtime state
+          +---- Optional ledger: digests and audit roots
+          |
+          | REST, Socket.IO, authenticated preview proxy
+          v
+        React command dashboard
 ```
 
----
-
-# Core Design Principle
-
-IBVAP follows a context-first surveillance workflow:
-
-```text
-Detection
-   ↓
-Tracking
-   ↓
-Context
-   ↓
-Behavior / Duration
-   ↓
-Risk
-   ↓
-Alert
-   ↓
-Evidence
-   ↓
-Operator Action
-```
-
-Example:
-
-```text
-PERSON_DETECTED
-      ↓
-Track maintained over time
-      ↓
-Loitering / Fence Proximity /
-Restricted Zone / Fence Crossing
-      ↓
-Context Analysis
-      ↓
-Risk Engine
-      ↓
-SUSPICIOUS_ACTIVITY
-      ↓
-Node Alert Manager
-      ↓
-Alert + Evidence
-```
-
-A normal detection remains an event.
-
-An alert is created only when the risk or configured rules indicate that operator attention is required.
-
----
-
-# Key Features
-
-## Live Surveillance
-
-- Existing CCTV / IP camera integration
-- RTSP video ingestion
-- Camera status monitoring
-- Live annotated preview
-- Multi-camera support
-- Camera-specific configuration
-- Stream reconnection handling
-- Secure browser preview
-
----
-
-## Detection and Tracking
-
-- Person detection
-- Vehicle detection
-- YOLO11 object detection
-- ByteTrack multi-object tracking
-- Track-based event deduplication
-- Stream-session-aware tracking
-- Temporal track continuity
-
----
-
-## Context Analysis
-
-IBVAP evaluates surveillance activity using contextual rules such as:
-
-- Loitering
-- Restricted-zone entry
-- Virtual-fence crossing
-- Fence proximity
-- Zone interaction
-- Duration
-- Temporal behavior
-- Camera-specific surveillance rules
-
----
-
-## Risk Engine
-
-IBVAP does not consider every detection a threat.
-
-Risk can be calculated using multiple independent contextual conditions associated with the same tracked object.
-
-```text
-Loitering
-+
-Fence Proximity
-+
-Restricted Zone Entry
-+
-Virtual Fence Crossing
-        ↓
-Combined Risk Score
-        ↓
-Severity
-```
-
-Supported severity levels:
-
-- INFO
-- LOW
-- MEDIUM
-- HIGH
-- CRITICAL
-
-Risk values come from configured risk rules rather than hardcoded frontend values.
-
----
-
-# Events and Alerts
-
-## Events
-
-Events represent surveillance observations.
-
-Examples include:
-
-```text
-PERSON_DETECTED
-VEHICLE_DETECTED
-FACE_DETECTED
-PLATE_DETECTED
-LOITERING
-FENCE_PROXIMITY
-VIRTUAL_FENCE_CROSSING
-RESTRICTED_ZONE_ENTRY
-SUSPICIOUS_ACTIVITY
-```
-
-## Alerts
-
-Alerts represent higher-priority incidents requiring operator attention.
-
-The **Node.js Alert Manager** is responsible for alert creation and lifecycle management.
-
-The Python vision engine generates structured observations and risk information, but it does not independently create final alerts.
-
----
-
-# Evidence Management
-
-For qualifying incidents, IBVAP can preserve:
-
-- Event snapshots
-- Confirmed plate crops
-- Face-detection crops
-- Evidence metadata
-- Event associations
-- Alert associations
-
-Large media files are stored in controlled evidence storage.
-
-Structured metadata is stored in MySQL.
-
----
-
-# Intelligence
-
-The Intelligence module provides structured surveillance observations for vehicles, number plates, and face detections.
-
-## Vehicle Intelligence
-
-Includes:
-
-- Vehicle detection
-- Vehicle class
-- Track ID
-- Camera information
-- Detection confidence
-- Timestamp
-
-## ANPR
-
-Includes:
-
-- Number plate OCR
-- Plate validation
-- OCR confidence
-- Camera association
-- Vehicle association
-
-## Face Events
-
-Includes:
-
-- Face detection
-- Face snapshots
-- Track association
-- Camera association
-
-> IBVAP currently performs **face detection only**. It does not perform facial recognition or identity matching.
-
----
-
-# Border Map
-
-The geographic surveillance map provides:
-
-- Camera locations
-- Camera status
-- Alert locations
-- Geographic zones
-- Map filters
-- Current device location
-- Command-level situational awareness
-
-Camera-frame surveillance coordinates and geographic latitude/longitude coordinates are treated as separate coordinate systems.
-
----
-
-# Analytics
-
-IBVAP provides operational analytics such as:
-
-- Events by type
-- Events by severity
-- Alert distribution
-- Alert trends
-- Risk distribution
-- Operator workload
-- Alert acknowledgement metrics
-- Resolution metrics
-- Camera health
-- Evidence statistics
-- Storage statistics
-
----
-
-# Administration
-
-Administrators can manage:
-
-- Operators
-- Cameras
-- Camera assignments
-- Surveillance zones
-- Virtual fences
-- Risk rules
-- Retention policies
-- Storage cleanup
-- System health
-- Audit logs
-- Platform settings
-
----
-
-# Role-Based Access Control
-
-IBVAP supports multiple operational roles.
-
-## Admin
-
-Administrators can:
-
-- Manage the platform
-- Manage users and operators
-- Configure cameras
-- Configure surveillance zones
-- Configure risk rules
-- Manage retention policies
-- Run storage cleanup
-- Review audit logs
-- Access system health
-- Acknowledge permitted alerts
-
-## Operator
-
-Operators can:
-
-- Monitor live surveillance
-- Review events
-- Review alerts
-- Acknowledge permitted alerts
-- Investigate incidents
-
-## Analyst
-
-Analysts receive read-only access to analytical and intelligence information where configured.
-
-Sensitive permissions are enforced through backend RBAC rather than frontend visibility alone.
-
----
-
-# Technology Stack
+- **Python** processes frames and sends observations to the backend through internal APIs.
+- **Node.js** owns application permissions, persistent records, and alert creation. The AI engine does not write directly to MySQL.
+- **MySQL** stores structured data. Evidence media lives in filesystem storage; Redis holds optional transient state.
+- **The browser** uses backend APIs and a token-protected preview proxy. Raw camera stream credentials remain on the server side.
+- **The ledger** anchors integrity records; it does not replace the application database or media storage.
+
+## Technology stack
 
 | Layer | Technologies |
-|---|---|
-| Frontend | React.js, JavaScript, Tailwind CSS, Vite |
-| Mapping | Leaflet |
-| Application Backend | Node.js, Express.js |
-| Vision Backend | Python, FastAPI |
-| Object Detection | YOLO11, Ultralytics |
-| ML Runtime | PyTorch |
-| Computer Vision | OpenCV |
-| Object Tracking | ByteTrack |
-| Face Detection | YuNet |
-| OCR / ANPR | EasyOCR |
-| Camera Streaming | RTSP, ONVIF |
-| Video Processing | FFmpeg |
-| Browser Preview | MJPEG |
-| Realtime Communication | Socket.IO, WebSocket |
-| Database | MySQL |
-| Temporary State / Cache | Redis |
-| Evidence Storage | Controlled local / file storage |
-| Authentication | JWT |
-| Authorization | RBAC |
-| Containerization | Docker |
-| Reverse Proxy | Nginx |
-| Monitoring | Prometheus, Grafana |
+| --- | --- |
+| Frontend | React 18, Vite, Tailwind CSS, React Router, Leaflet, Recharts |
+| Backend | Node.js, Express, Socket.IO, mysql2 |
+| AI service | Python, FastAPI, Ultralytics YOLO, PyTorch, OpenCV, ByteTrack |
+| Secondary analysis | EasyOCR for plate text; YuNet for face detection |
+| Persistence | MySQL 8, local evidence storage, optional Redis |
+| Integrity | SHA-256, Ed25519 evidence signatures, custody hash chains, Merkle roots |
+| Tests | Node.js test runner, Supertest, pytest |
 
----
+Dependency versions are defined in the component package manifests, npm lockfiles, and [AI requirements](ai_engine/requirements.txt).
 
-# Why These Technologies?
-
-## React + Tailwind CSS
-
-Used to build the command-and-control dashboard, surveillance interface, events, alerts, analytics, maps, and administration pages.
-
-React provides reusable UI components while Tailwind CSS provides consistent and responsive styling.
-
----
-
-## Node.js + Express
-
-Node.js acts as the primary application and control backend.
-
-It handles:
-
-- Authentication
-- RBAC
-- Users
-- Operators
-- Cameras
-- Events
-- Alerts
-- Administration
-- Retention
-- Audit logs
-- Database APIs
-- Realtime communication
-
----
-
-## Python + FastAPI
-
-Python powers the vision-processing engine because of its strong ecosystem for:
-
-- YOLO
-- PyTorch
-- OpenCV
-- Tracking
-- OCR
-- Computer vision
-
-FastAPI exposes the Python processing service through lightweight internal APIs.
-
----
-
-## YOLO11
-
-YOLO11 is used for realtime object detection.
-
-It detects objects such as:
-
-- People
-- Cars
-- Trucks
-- Buses
-- Motorcycles
-
----
-
-## ByteTrack
-
-ByteTrack maintains object identities across successive frames.
-
-Without tracking:
+## Project structure
 
 ```text
-Frame 1 → Person
-Frame 2 → Person
-Frame 3 → Person
+.
+├── frontend/              # React dashboard, pages, components, and API clients
+├── backend/               # Express APIs, services, repositories, and security
+├── ai_engine/             # Detection, tracking, context, risk, OCR, and streaming
+├── database/              # MySQL setup, migrations, and development seeds
+├── ledger/                # Python integrity-ledger demo and launch resources
+├── storage/               # Runtime evidence media
+├── docs/                  # Setup guides, architecture, and verification reports
+├── scripts/               # Development and readiness checks
+├── infra/                 # Infrastructure resources
+└── docker-compose.yml     # Legacy infrastructure scaffold
 ```
 
-could be treated as unrelated detections.
+## Local setup
 
-With tracking:
+The commands below use a POSIX shell. Run component commands from the directory shown so their `.env` files resolve correctly.
 
-```text
-Frame 1 → Track 17
-Frame 2 → Track 17
-Frame 3 → Track 17
+### 1. Prerequisites and clone
+
+- Node.js and npm; the backend manifest requires Node.js 18 or later.
+- Python 3.11 with virtual-environment support, as documented by the AI engine.
+- A running MySQL 8 server and permission to create a development database/user.
+- Redis if runtime caching is enabled; otherwise set `REDIS_ENABLED=false` in both backend and AI configuration.
+- Local model weights and an authorized video source for inference. The dashboard and API can start before camera ingestion is configured.
+
+```bash
+git clone https://github.com/alive7z/Intelligent-Border-Video-Analytics-Platform.git
+cd Intelligent-Border-Video-Analytics-Platform
 ```
 
-This allows IBVAP to calculate:
+**Docker status:** the root Compose file is an older scaffold that declares PostgreSQL and different service ports. The current backend uses MySQL. Use the component setup below; the root file is not a working full-stack quick start.
 
-- Loiter duration
-- Zone interaction
-- Fence proximity
-- Tracking continuity
-- Risk progression
-- Duplicate-event prevention
+### 2. Create component configuration
 
----
+For a fresh checkout:
 
-## OpenCV
-
-OpenCV is used for:
-
-- Frame processing
-- Image manipulation
-- Bounding-box operations
-- Cropping
-- Overlay rendering
-- Evidence generation
-- Video processing
-
----
-
-## EasyOCR
-
-EasyOCR is used to extract text from candidate number-plate regions.
-
-Only valid OCR observations that satisfy configured validation rules are persisted.
-
----
-
-## YuNet
-
-YuNet is used for lightweight face detection.
-
-IBVAP deliberately separates:
-
-```text
-Face Detection ✅
-Face Recognition ❌
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+cp ai_engine/.env.example ai_engine/.env
 ```
 
-No persistent human identity is inferred from detected faces.
+Keep existing `.env` files if the project is already configured. Component files are authoritative; the root `.env.example` is a topology reference.
 
----
+Set these values before starting services:
 
-## MySQL
+| File | Setting | Purpose |
+| --- | --- | --- |
+| `backend/.env` | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | MySQL connection |
+| `backend/.env` | `JWT_SECRET` | Random secret for access-token signing |
+| `backend/.env` | `AI_SERVICE_TOKEN` | Shared credential for internal AI requests |
+| `backend/.env` | `PREVIEW_TOKEN_SECRET` | Separate random secret for browser preview tokens |
+| `backend/.env` | `AI_INTERNAL_URL=http://localhost:8001` | Internal AI service address |
+| `backend/.env` | `BLOCKCHAIN_ENABLED=false` | Keep ledger integration disabled until a node is configured |
+| `ai_engine/.env` | `NODE_AI_SERVICE_TOKEN` | Must match backend `AI_SERVICE_TOKEN` |
+| `ai_engine/.env` | `NODE_API_URL=http://localhost:5001/api` | Backend API address |
+| `ai_engine/.env` | `NODE_INTEGRATION_ENABLED=true` | Deliver observations to the backend |
+| `frontend/.env` | `VITE_API_BASE_URL=http://localhost:5001/api` | Browser API address, including `/api` |
+| `frontend/.env` | `VITE_WS_URL=http://localhost:5001` | Socket.IO address |
 
-MySQL stores persistent structured application data including:
+Generate a separate value for each secret, for example with `openssl rand -hex 32`. Never put secrets in `VITE_*` variables: those values are bundled into browser code.
 
-- Users
-- Operators
-- Cameras
-- Events
-- Alerts
-- Zones
-- Risk rules
-- Plate observations
-- Evidence metadata
-- Audit records
-- Retention settings
+### 3. Prepare MySQL
 
----
+Review [database/setup.sql](database/setup.sql). Using a local copy, replace its `<DEV_PASSWORD>` placeholders with the password configured in `backend/.env`, then execute that copy as a MySQL administrator:
 
-## Redis
-
-Redis is used for temporary and fast-access runtime data such as:
-
-- Cache
-- Rate limiting
-- Transient state
-- Realtime-support functionality
-
-Redis is not the primary persistent database.
-
----
-
-## RTSP
-
-RTSP is used to receive live video streams from compatible IP cameras.
-
-```text
-CCTV Camera
-    ↓
-RTSP Stream
-    ↓
-Vision Engine
+```bash
+mysql -u root -p < /path/to/your/local-setup.sql
 ```
 
----
+The script creates `ibvap`, the dedicated `ibvap_app` user, and the necessary grants. Keep the credential-bearing copy outside version control.
 
-## ONVIF
+Install backend dependencies and apply migrations:
 
-ONVIF improves compatibility with IP security cameras from different manufacturers.
-
-It can support camera discovery and standards-based integration.
-
----
-
-## FFmpeg
-
-FFmpeg is used for:
-
-- Video decoding
-- Stream handling
-- Media processing
-- RTSP compatibility
-
----
-
-## Socket.IO / WebSocket
-
-Used for realtime communication between the backend and frontend.
-
-Examples:
-
-- New event
-- New alert
-- Alert acknowledgement
-- Camera status updates
-- Realtime dashboard updates
-
----
-
-## Docker
-
-Docker provides reproducible deployment environments for IBVAP services.
-
-Potential services include:
-
-```text
-Frontend
-Backend
-AI Engine
-MySQL
-Redis
-Monitoring
+```bash
+cd backend
+npm ci
+npm run db:migrate
 ```
 
----
+For a **disposable development database**, optional demo fixtures can be loaded with:
 
-## Nginx
-
-Nginx can act as the reverse proxy and routing layer between external clients and internal services.
-
----
-
-## Prometheus + Grafana
-
-Prometheus collects system metrics.
-
-Grafana visualizes metrics and platform-health information.
-
----
-
-# Existing CCTV Deployment Model
-
-IBVAP is designed to work as an additional software layer over existing CCTV infrastructure.
-
-```text
-Existing CCTV Cameras
-        │
-        │ RTSP / ONVIF
-        ▼
-Local Edge Device / Server
-        │
-        ├── Detection
-        ├── Tracking
-        ├── Context Analysis
-        └── Risk Analysis
-        │
-        ▼
-Secure Network
-        │
-        ▼
-Command Centre
-        │
-        ├── Events
-        ├── Alerts
-        ├── Evidence
-        └── Dashboard
+```bash
+ALLOW_DEMO_SEED=true npm run db:seed
 ```
 
-Existing compatible CCTV cameras do not need to be replaced.
+The seed requires this explicit flag. Skip it for operational data.
 
----
+Create login-enabled development users with passwords you supply:
 
-# Edge-Oriented Architecture
-
-A production deployment can run the vision engine close to the cameras using a local server or edge-computing device.
-
-Advantages include:
-
-- Reduced network bandwidth
-- Lower processing latency
-- Local video processing
-- Reduced dependency on external cloud services
-- Improved resilience during network disruption
-- Ability to forward primarily important events and evidence
-
-The architecture is designed so that sensitive video processing can remain within authorized infrastructure.
-
----
-
-# Security and Privacy
-
-IBVAP is designed around controlled surveillance infrastructure.
-
-Important security principles include:
-
-- JWT-based authentication
-- Role-Based Access Control
-- Admin-only sensitive operations
-- Audit logging
-- Protected security incidents
-- Evidence retention policies
-- Controlled evidence paths
-- No browser exposure of raw RTSP credentials
-- Environment-variable-based secret management
-- Local / edge-oriented video processing
-- No external cloud AI dependency for the core surveillance pipeline
-- No face recognition or identity matching
-
----
-
-# Retention and Storage
-
-IBVAP includes configurable retention policies for:
-
-- INFO / LOW events
-- MEDIUM events
-- HIGH events
-- CRITICAL events
-- Resolved alerts
-- Orphan evidence
-- Maximum normal-event count
-- Automatic cleanup interval
-
-The system also supports administrative cleanup while preserving protected incidents according to configured policy.
-
----
-
-# Realtime Communication
-
-IBVAP uses Socket.IO to synchronize important platform state with connected dashboards.
-
-Realtime updates can include:
-
-- New events
-- New alerts
-- Alert acknowledgement
-- Camera status
-- Deleted incidents
-- Profile updates
-
----
-
-# Monitoring
-
-System health monitoring covers important services such as:
-
-- Application backend
-- Vision engine
-- MySQL
-- Redis
-- Cameras
-- Evidence storage
-
-Prometheus and Grafana are included in the infrastructure architecture for observability.
-
----
-
-# Project Structure
-
-```text
-IBVAP/
-│
-├── frontend/
-│   └── React command-and-control dashboard
-│
-├── backend/
-│   └── Node.js application backend
-│
-├── ai_engine/
-│   └── Python vision, tracking, context, and risk engine
-│
-├── database/
-│   └── Database schema and migration resources
-│
-├── storage/
-│   └── Snapshot, plate-crop, and face evidence
-│
-├── infra/
-│   ├── docker/
-│   ├── nginx/
-│   └── monitoring/
-│
-├── docs/
-│   └── Architecture and operational documentation
-│
-└── scripts/
-    └── Development and deployment utilities
+```bash
+DEV_ADMIN_PASSWORD='<your-admin-password>' \
+DEV_OPERATOR_PASSWORD='<your-operator-password>' \
+DEV_AUDITOR_PASSWORD='<your-analyst-password>' \
+npm run db:seed-users
 ```
 
----
+| Account | Role |
+| --- | --- |
+| `admin@ibvap.demo` | `ADMINISTRATOR` |
+| `operator@ibvap.demo` | `SECURITY_OPERATOR` |
+| `analyst@ibvap.demo` | `AUDITOR_ANALYST` |
 
-# Engineering Guardrails
+There is no shared default password. The script skips accounts without a supplied password and updates the password for supplied accounts when rerun.
 
-The platform follows several important architectural rules:
+### 4. Start the backend
 
-- No YOLO/OpenCV inference inside Node.js
-- Python remains responsible for computer-vision processing
-- Node.js remains responsible for application and control logic
-- Node Alert Manager remains the alert authority
-- Redis is not used as the primary database
-- Evidence media is not stored directly inside MySQL
-- Raw RTSP URLs are not exposed to normal browser clients
-- Face detection is not presented as face recognition
-- Risk values are not fabricated to force alerts
-- Different tracks are not treated as persistent human identity
-- Secrets are supplied through environment variables
-- `.env` files must not be committed
-- `node_modules` must not be committed
-- Python virtual environments must not be committed
-- Generated evidence/media must not pollute Git history
+In a terminal, from `backend/`:
 
----
-
-# IBVAP vs BriefCam
-
-BriefCam is a mature commercial video-analytics platform designed for broad enterprise, investigation, public-safety, and forensic-video use cases.
-
-IBVAP is a domain-specific platform focused on border-surveillance workflows, contextual risk scoring, edge-oriented deployment, and explainable alert escalation.
-
-| Capability | IBVAP | BriefCam |
-|---|---|---|
-| Primary Focus | Border surveillance | General enterprise video analytics |
-| Existing CCTV Integration | Yes | Yes |
-| Person Detection | Yes | Yes |
-| Vehicle Detection | Yes | Yes |
-| Object Tracking | ByteTrack-based | Commercial proprietary analytics |
-| Loitering Analysis | Yes | Yes |
-| Restricted Area Monitoring | Yes | Yes |
-| Virtual Fence Monitoring | Yes | Supported through configurable rules |
-| Fence Proximity | Explicit context rule | Deployment/rule dependent |
-| Context-Aware Risk Engine | Core design | Different commercial rule engine |
-| Multi-condition Risk Aggregation | Yes | Different proprietary analytics approach |
-| Realtime Alerts | Yes | Yes |
-| Evidence Snapshots / Clips | Yes | Yes |
-| ANPR / LPR | EasyOCR-based pipeline | Commercial LPR |
-| Face Detection | Yes | Yes |
-| Face Recognition | No | Supported |
-| Appearance Similarity | No | Supported |
-| Video Synopsis | No | Core BriefCam capability |
-| Advanced Forensic Search | Basic event/intelligence search | Major capability |
-| Border-specific Rules | Core focus | General-purpose configuration |
-| Edge-oriented Deployment | Core architecture goal | Deployment dependent |
-| Offline-first BOP Concept | Architecture goal | Deployment dependent |
-| Architecture | Modular / open-source components | Commercial proprietary platform |
-| Product Stage | SIH prototype | Mature commercial product |
-
----
-
-## Key Difference from BriefCam
-
-BriefCam focuses heavily on making surveillance footage searchable, reviewable, and actionable across broad enterprise use cases.
-
-IBVAP focuses specifically on the border-security decision pipeline:
-
-> **Detection → Tracking → Context → Risk → Alert → Evidence → Operator**
-
-The primary IBVAP differentiator is not simply object detection.
-
-It is the combination of:
-
-- Tracking
-- Zone interaction
-- Behavior
-- Duration
-- Fence activity
-- Context
-- Configurable security rules
-- Risk aggregation
-
-before an incident is escalated.
-
-IBVAP does not claim to replace or outperform a mature commercial platform such as BriefCam.
-
-Its focus is a specialized, modular, edge-oriented architecture for border surveillance using existing CCTV infrastructure.
-
----
-
-# Current Platform Modules
-
-IBVAP includes modules for:
-
-- Frontend dashboard
-- Authentication
-- RBAC
-- Camera configuration
-- Live surveillance
-- Detection and tracking
-- Event management
-- Alert management
-- Alert acknowledgement
-- Context analysis
-- Risk scoring
-- Evidence management
-- Border map
-- Intelligence
-- Analytics
-- Administration
-- Retention and storage
-- Audit logging
-- Realtime updates
-- English / Hindi interface
-- System-health monitoring
-
----
-
-# Deployment Considerations
-
-A production deployment would require:
-
-- Agency-approved infrastructure
-- Security hardening
-- Network segmentation
-- TLS configuration
-- Secrets management
-- Edge-device benchmarking
-- Camera-scale performance testing
-- Database backup strategy
-- Evidence-storage planning
-- Disaster recovery
-- Model validation using authorized operational footage
-- Field testing
-- Infrastructure monitoring
-- Agency-approved security policies
-
----
-
-# Project Goal
-
-IBVAP aims to transform:
-
-```text
-Passive CCTV Monitoring
+```bash
+npm run dev
 ```
 
-into:
+The default API address is `http://localhost:5001/api`. For a process without the development file watcher, use `npm start`.
 
-```text
-Context-Aware
-Risk-Based
-Operator-Assisted
-Border Surveillance
+### 5. Install and start the AI service
+
+In another terminal, from the repository root:
+
+```bash
+cd ai_engine
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python main.py --serve
 ```
 
-while preserving compatibility with existing CCTV infrastructure.
+With `VIDEO_SOURCE` empty, this starts the API without ingestion. The default AI address is `http://127.0.0.1:8001`. Use one of the ingestion commands below when ready to process video.
 
----
+### 6. Start the frontend
 
-# Disclaimer
+In another terminal, from the repository root:
 
-IBVAP is currently developed as a prototype and research implementation for the Smart India Hackathon problem context.
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-It is **not an official Government of India or security-agency production system**.
+Open `http://localhost:5173` and sign in with a user configured above.
 
-Operational deployment would require authorization, security assessment, infrastructure validation, field testing, approved models, and deployment according to the concerned organization's security policies.
+### 7. Check service health
 
----
+```bash
+curl http://localhost:5001/api/health
+curl http://127.0.0.1:8001/health
+```
 
-## Team
+From the repository root, run the dependency and model readiness check:
 
-Developed for **Smart India Hackathon 2026**.
+```bash
+bash scripts/check-readiness.sh
+```
 
-**Project:** IBVAP — Intelligent Border Video Analytics Platform
+Readiness checks do not start ingestion or verify live-camera accuracy. An API health response alone does not establish that a camera is delivering frames.
+
+## Camera ingestion and models
+
+Model loading uses local files. Provision the required assets before starting inference:
+
+| Asset | Configuration |
+| --- | --- |
+| Main YOLO object detector | `YOLO_MODEL`, default `yolo11n.pt` |
+| Dedicated plate detector | `ANPR_MODEL_PATH`, default `license_plate_detector.pt` |
+| YuNet face detector | `FACE_MODEL_PATH`, default `face_detection_yunet_2023mar.onnx` |
+| EasyOCR recognition models | EasyOCR's local model cache; runtime downloads are disabled |
+
+The default weights directory is `ai_engine/models/weights/`. See the [AI guide](ai_engine/README.md) and [plate-model provenance](ai_engine/models/weights/README.md) for additional context. Model availability and secondary-feature readiness are reported separately; do not assume OCR is ready simply because the main detector loaded.
+
+Run **one** of the following from `ai_engine/` with its virtual environment active, replacing the API-only process if it already occupies port 8001:
+
+```bash
+# Local video: supply your own clip and an appropriate AI_CAMERA_CODE.
+python main.py --video samples/test.mp4
+
+# One camera configured in the application's camera administration.
+python main.py --camera-code CAM-01
+
+# Discover and supervise enabled live cameras from the backend.
+python main.py --all-cameras
+```
+
+Leave `VIDEO_SOURCE` empty for live-camera modes. Configure each camera's source URL, enabled state, zones, and rules in the application. The single-camera command fetches its source configuration from the backend; the camera code must exist there.
+
+The engine supports RTSP and HTTP/MJPEG sources through its streaming pipeline. ONVIF discovery is not part of these startup instructions. Camera-frame coordinates used for zones and fences are distinct from latitude/longitude on the border map.
+
+## Optional evidence ledger
+
+The backend includes SHA-256 evidence hashing, Ed25519 signatures, custody records, and optional ledger anchoring. The bundled Python ledger is a local demonstration using HMAC-authorized blocks, hash links, and peer replication. It is not a production distributed-consensus system.
+
+For a single local node, run from `ledger/`:
+
+```bash
+export LEDGER_NODE_TOKEN='<your-local-ledger-token>'
+python3 ledger.py --node-id BOP --port 8541 --chain-id 51201
+```
+
+Set matching backend values and restart the backend:
+
+```dotenv
+BLOCKCHAIN_ENABLED=true
+LEDGER_RPC_URL=http://127.0.0.1:8541
+LEDGER_NODE_TOKEN=<same-local-ledger-token>
+LEDGER_CHAIN_ID=51201
+EVIDENCE_INTEGRITY_ENABLED=true
+```
+
+Evidence files remain off-chain. The ledger records digests and anchoring metadata. Pending anchors can be retried through the backend security workflow when the ledger becomes available.
+
+For persistent deployments, configure stable signing keys using `EVIDENCE_SIGNING_PRIVATE_KEY`, `EVIDENCE_SIGNING_PUBLIC_KEY`, and `EVIDENCE_SIGNING_KEY_ID`. The fallback development signing key is generated in memory. Review master-key configuration before enabling encryption or MFA workflows.
+
+The ledger binds to loopback in the current implementation. The supplied ledger Compose resources require networking review before container-based use. See [integrity documentation](docs/blockchain-integrity.md) and the [on-chain/off-chain matrix](docs/onchain-offchain-matrix.md) for design context; current route and configuration source files define implemented behavior.
+
+## Testing and checks
+
+### Frontend
+
+From `frontend/`:
+
+```bash
+npm test
+npm run build
+```
+
+The build output is `frontend/dist/`. It is generated output and is not committed.
+
+### AI engine
+
+From `ai_engine/`, with the virtual environment active:
+
+```bash
+python -m pytest
+```
+
+Automated tests complement camera validation; they do not establish field detection or OCR accuracy.
+
+### Backend
+
+From `backend/`:
+
+```bash
+npm run lint
+```
+
+Integration tests require a **separate disposable MySQL database**, such as `ibvap_test`, with its own grants. They modify data and must not use the operational database.
+
+In a dedicated test shell, configure isolated credentials and secrets before running migrations and tests:
+
+```bash
+export ENV_FILE=/dev/null
+export NODE_ENV=test
+export DB_HOST=127.0.0.1
+export DB_PORT=3306
+export DB_NAME=ibvap_test
+export DB_USER=ibvap_test_user
+export DB_PASSWORD='<test-database-password>'
+export JWT_SECRET='<test-only-signing-secret>'
+export AI_SERVICE_TOKEN='<test-only-service-token>'
+export PREVIEW_TOKEN_SECRET='<test-only-preview-secret>'
+export REDIS_ENABLED=false
+export BLOCKCHAIN_ENABLED=false
+
+npm run db:migrate
+npm run db:prepare-test
+npm test
+```
+
+Provision the test database and user first. Some security integration tests also launch a local Python ledger, so `python3` and a free test port are required. Historical test counts and environment limitations are recorded in the linked reports below; they are not a guarantee that the current checkout passes every check.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Backend cannot connect to MySQL | Confirm the server, database, dedicated-user grants, and `DB_*` values; run commands from `backend/`. |
+| Login fails after setup | Run `db:seed-users` with the intended account's password variable; demo fixtures alone do not establish usable login passwords. |
+| Browser API or Socket.IO requests fail | Confirm ports 5173/5001, frontend URLs, and backend `FRONTEND_URL`/`CORS_ALLOWED_ORIGINS`; restart Vite after changing its environment. |
+| AI API responds but there is no preview | Start an ingestion mode and verify the camera source, model readiness, service-token match, and `AI_INTERNAL_URL`. |
+| Model or OCR is unavailable | Check local weights and the EasyOCR cache with the readiness script; startup does not fetch missing models. |
+| Redis is unavailable | Start Redis or explicitly disable it in both components for local use. |
+| Ledger anchors remain pending | Check `BLOCKCHAIN_ENABLED`, node availability, the shared token, and chain ID. |
+| Backend tests fail on database access | Create the isolated test database and grants; do not switch tests to operational data. |
+
+## Documentation
+
+| Document | Focus |
+| --- | --- |
+| [Architecture](docs/architecture.md) | Architecture notes |
+| [Backend setup](docs/backend-setup.md) | Database, API, and authentication runbook |
+| [AI engine](ai_engine/README.md) | Vision pipeline, configuration, streaming, and evidence |
+| [Backend security](docs/backend-security.md) | Security design notes |
+| [Evidence integrity](docs/blockchain-integrity.md) | Hashing, signatures, custody, and ledger anchoring |
+| [On-chain/off-chain matrix](docs/onchain-offchain-matrix.md) | Data placement and integrity responsibilities |
+| [Threat model](docs/threat-model.md) | Security assumptions and threats |
+| [Stabilization report](docs/IBVAP-STABILIZATION-2026-09-11.md) | Startup checks and known limitations at that revision |
+| [Regression report](docs/IBVAP-PHASE5-FINAL-REGRESSION-2026-09-14.md) | Recorded validation results and blocked checks |
+| [UI screenshots](frontend/docs/screenshots) | Captured interface examples |
+
+Some documents describe earlier implementation phases. Check component scripts, configuration loaders, and routes when a historical guide differs from the current code.
+
+## Contributing
+
+1. Create a branch for a focused change.
+2. Keep inference in the AI engine and application/alert authority in the backend.
+3. Add a migration for schema changes and update environment examples for new settings.
+4. Run the relevant checks above and document any prerequisites or unverified behavior.
+5. Use a clear commit message describing the change.
+
+Keep credentials, private keys, model weights, local environments, generated builds, and captured media out of commits. Retain provenance for model assets and use authorized footage for validation.
+
+## License
+
+This checkout does not contain a project-level `LICENSE` file. Dependency and model assets have their own terms; see the manifests and [model provenance notes](ai_engine/models/weights/README.md). Establish the project's license before distributing it under an assumed open-source license.

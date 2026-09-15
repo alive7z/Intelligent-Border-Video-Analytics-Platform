@@ -8,7 +8,6 @@ const router = Router();
 
 router.use(authenticate);
 
-// Self-service analytics for the currently authenticated operator.
 router.get(
   "/me/analytics",
   authorizeRoles("SECURITY_OPERATOR", "ADMINISTRATOR"),
@@ -20,7 +19,6 @@ router.post(
   asyncHandler(operatorController.create)
 );
 
-// Admin management of operators.
 router.get(
   "/",
   authorizeRoles("ADMINISTRATOR"),

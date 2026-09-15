@@ -13,7 +13,6 @@ function CameraFilters({ filters, onChange, sectors }) {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* Search */}
       <div className="relative min-w-[220px] flex-1 sm:flex-none">
         <SearchIcon
           size={16}

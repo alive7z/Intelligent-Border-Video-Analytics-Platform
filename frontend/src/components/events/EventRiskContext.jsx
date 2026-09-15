@@ -3,6 +3,7 @@ import Card from "../common/Card";
 import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import { ActivityIcon } from "../common/Icons";
 import { mapRiskReasons } from "../../utils/riskReasons.mjs";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 function Row({ label, value }) {
   return (
@@ -34,7 +35,7 @@ function EventRiskContext({ event }) {
       {hasRisk ? (
         <dl className="divide-y divide-slate-100 text-sm">
           {reasons.map((reason, index) => <Row key={index} label={reason.label} value={reason.score == null ? "Recorded" : `+${reason.score}`} />)}
-          <Row label="Direction" value={ctx.direction} />
+          <Row label="Direction" value={formatEventLabel(ctx.direction)} />
           {ctx.duration != null && <Row label="Duration" value={`${ctx.duration} seconds`} />}
           <Row label="Risk Score" value={event.riskScore == null ? "—" : `${event.riskScore} / 100`} />
           <Row label="Severity" value={<AlertSeverityBadge severity={event.severity} />} />

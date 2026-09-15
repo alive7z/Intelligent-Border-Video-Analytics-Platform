@@ -18,6 +18,7 @@ import { getEventById, getRelatedEvents, getEventEvidence, protectEvent, unprote
 import { getAlertById } from "../services/alertApi";
 import { getCameraById } from "../services/cameraApi";
 import { formatDateTime } from "../utils/date";
+import { formatEventLabel } from "../utils/eventTypeLabels";
 import { useAuth } from "../context/AuthContext";
 import { useRealtime } from "../context/RealtimeContext";
 import { useToast } from "../components/common/Toast";
@@ -155,14 +156,13 @@ function EventDetails() {
         <ArrowLeftIcon size={16} /> Back to Events
       </Link>
 
-      {/* Header */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-slate-900">
             Event {event.id}
           </h1>
           <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            <span className="font-medium text-slate-700">{event.type}</span>
+            <span className="font-medium text-slate-700">{formatEventLabel(event.type)}</span>
             <span>·</span>
             <AlertSeverityBadge severity={event.severity} />
             <span>·</span>
@@ -184,7 +184,6 @@ function EventDetails() {
         </div>
       </div>
 
-      {/* Evidence + Information */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <EventEvidence event={event} items={evidence} />
@@ -195,7 +194,6 @@ function EventDetails() {
         </div>
       </div>
 
-      {/* Timeline + Risk Context */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <EventTimeline event={event} />
@@ -205,7 +203,6 @@ function EventDetails() {
         </div>
       </div>
 
-      {/* Related data */}
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         <RelatedAlert event={event} alert={alert} />
         <CameraLink camera={camera} event={event} />

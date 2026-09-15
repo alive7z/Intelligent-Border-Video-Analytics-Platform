@@ -29,6 +29,7 @@ import {
 import { acknowledgeAlert } from "../services/alertApi";
 import { useRealtime } from "../context/RealtimeContext";
 import { SOCKET_EVENTS } from "../services/websocket";
+import { formatEventLabel } from "../utils/eventTypeLabels";
 
 const RUNTIME_SYNC_MS = 5000;
 
@@ -233,15 +234,15 @@ function CameraDetails() {
           {camera.runtime?.adaptiveProcessing && <div className="card p-3 text-xs text-white">
             Secondary processing: {camera.runtime.adaptiveProcessing.enabled ? "Adaptive" : "Fixed cadence"}. Core risk thresholds are unchanged.
             {Object.entries(camera.runtime.adaptiveProcessing.tasks || {}).map(([name, task]) => <p key={name} className="mt-1">
-              {name.toUpperCase()}: {task.runs ?? 0} runs · {task.skipped ?? 0} deferred · {Math.round(task.latencyMs || 0)} ms recent mean{task.lastSkipReason ? ` · ${task.lastSkipReason.replaceAll("_", " ")}` : ""}
+              {name.toUpperCase()}: {task.runs ?? 0} runs · {task.skipped ?? 0} deferred · {Math.round(task.latencyMs || 0)} ms recent mean{task.lastSkipReason ? ` · ${formatEventLabel(task.lastSkipReason)}` : ""}
             </p>)}
           </div>}
           {camera.runtime?.cameraQuality && (
             <div className="mb-3 rounded-lg border border-slate-200 px-4 py-3 text-sm text-white">
-              Visibility: {camera.runtime.cameraQuality.status}
-              {camera.runtime.cameraQuality.brightnessStatus && ` · Brightness: ${camera.runtime.cameraQuality.brightnessStatus}`}
+              Visibility: {formatEventLabel(camera.runtime.cameraQuality.status)}
+              {camera.runtime.cameraQuality.brightnessStatus && ` · Brightness: ${formatEventLabel(camera.runtime.cameraQuality.brightnessStatus)}`}
               {camera.runtime.cameraQuality.reasons?.length > 0 && (
-                <p className="mt-1 text-xs">{camera.runtime.cameraQuality.reasons.join(", ").replaceAll("_", " ")}</p>
+                <p className="mt-1 text-xs">{camera.runtime.cameraQuality.reasons.map(formatEventLabel).join(", ")}</p>
               )}
             </div>
           )}
@@ -273,7 +274,7 @@ function CameraDetails() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-slate-400 dark:bg-[#141c2b]">
                   <VideoIcon size={40} />
                   <p className="mt-3 text-sm font-semibold uppercase tracking-wide">
-                    {camera.status}…
+                    {formatEventLabel(camera.status)}…
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {camera.status === "degraded"
@@ -321,10 +322,10 @@ function CameraDetails() {
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                   <Badge tone="high" dot>
                     {(camera.activeAlert.severity).toUpperCase()} ·{" "}
-                    {camera.activeAlert.type}
+                    {formatEventLabel(camera.activeAlert.type)}
                   </Badge>
                   <p className="mt-2 text-sm text-red-800">
-                    {camera.activeAlert.type} detected on {camera.id}.
+                    {formatEventLabel(camera.activeAlert.type)} detected on {camera.id}.
                   </p>
                 </div>
               )

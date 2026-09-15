@@ -18,6 +18,7 @@ import { ArrowLeftIcon, AlertTriangleIcon } from "../components/common/Icons";
 import { getAlertById, getIncidentPackage } from "../services/alertApi";
 import { getCameraById } from "../services/cameraApi";
 import { formatDateTime } from "../utils/date";
+import { formatEventLabel } from "../utils/eventTypeLabels";
 import { useRealtime } from "../context/RealtimeContext";
 import { fromSocketAlert } from "../services/alertApi";
 import { SOCKET_EVENTS } from "../services/websocket";
@@ -133,14 +134,13 @@ function AlertDetails() {
         <ArrowLeftIcon size={16} /> Back to Alerts
       </Link>
 
-      {/* Header */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-xl font-bold text-slate-900">
             Alert {alert.id}
           </h1>
           <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            <span className="font-medium text-slate-700">{alert.eventType}</span>
+            <span className="font-medium text-slate-700">{formatEventLabel(alert.eventType)}</span>
             <span>·</span>
             <AlertSeverityBadge severity={alert.severity} />
             <span>·</span>
@@ -153,7 +153,7 @@ function AlertDetails() {
 
         {alert.status.toLowerCase() === "resolved" && (
           <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-            Resolved as <span className="font-semibold">{alert.resolution?.type}</span>
+            Resolved as <span className="font-semibold">{alert.resolution?.type ? formatEventLabel(alert.resolution.type) : alert.resolution?.type}</span>
           </div>
         )}
       </div>

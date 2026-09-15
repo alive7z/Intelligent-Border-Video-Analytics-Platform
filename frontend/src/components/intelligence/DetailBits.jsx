@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Badge from "../common/Badge";
 import { CameraIcon, ImageIcon } from "../common/Icons";
 import { getEvidenceBlob } from "../../services/intelligenceApi";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 export function DetailRow({ label, value }) {
   return (
@@ -38,7 +39,7 @@ export function EventButton({ eventId, eventType }) {
     <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
       <p className="text-xs text-slate-500">Related Event</p>
       <p className="text-sm font-semibold text-slate-800">{eventId}</p>
-      {eventType && <p className="text-xs text-slate-500">{eventType}</p>}
+      {eventType && <p className="text-xs text-slate-500">{formatEventLabel(eventType)}</p>}
       <Link
         to={`/events/${eventId}`}
         className="btn-focus mt-2 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"

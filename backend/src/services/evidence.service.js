@@ -168,7 +168,7 @@ const ingestEvidence = async ({ schemaVersion, cameraCode, evidence }) => {
       alertId,
       cameraId: camera.id,
       evidenceType: it.type,
-      filePath: storageRef, // server-local storage reference
+      filePath: storageRef,
       mimeType: it.mimeType || null,
       fileSizeBytes: fileSize,
       checksum: it.checksum || null,

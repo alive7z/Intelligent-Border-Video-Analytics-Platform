@@ -1,6 +1,7 @@
 import React from "react";
 import Badge from "../common/Badge";
 import { ShieldIcon } from "../common/Icons";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 const riskTone = (level) => {
   const l = String(level || "").toLowerCase();
@@ -23,7 +24,7 @@ function ZonePopup({ zone }) {
       <div className="mt-2 space-y-1 text-xs">
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Type:</span>
-          <Badge tone="new">{zone.type}</Badge>
+          <Badge tone="new">{formatEventLabel(zone.type)}</Badge>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-500">Associated Camera:</span>

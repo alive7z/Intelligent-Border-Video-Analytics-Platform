@@ -8,6 +8,7 @@ import { TableSkeleton } from "../../common/Skeleton";
 import { FileTextIcon, RefreshIcon, TrashIcon } from "../../common/Icons";
 import { getAuditLogs, getAuditLogStats, cleanupAuditLogs } from "../../../services/auditApi";
 import { useToast } from "../../common/Toast";
+import { roleLabel } from "../../../utils/roles";
 import { formatDateTime } from "../../../utils/date";
 
 const PAGE_OPTIONS = [20, 50, 100];
@@ -243,7 +244,7 @@ function AuditLogs() {
                       <td className="px-3 py-2.5">
                         <p className="text-slate-700">{a.userName || "System"}</p>
                         {a.userEmail && <p className="text-xs text-slate-400">{a.userEmail}</p>}
-                        {a.actorRole && <p className="text-xs text-slate-400">{a.actorRole.replace(/_/g, " ")}</p>}
+                        {a.actorRole && <p className="text-xs text-slate-400">{roleLabel(a.actorRole)}</p>}
                       </td>
                       <td className="px-3 py-2.5">
                         <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">

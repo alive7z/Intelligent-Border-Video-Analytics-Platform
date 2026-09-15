@@ -32,7 +32,6 @@ class LoiteringDetector:
         disp = ((point["x"] - self._anchor["x"]) ** 2 + (point["y"] - self._anchor["y"]) ** 2) ** 0.5
         self._max_displacement = max(self._max_displacement, disp)
 
-        # If the object strayed outside the radius, reset the window.
         if disp > self._radius:
             self._reset(point, now)
             return False

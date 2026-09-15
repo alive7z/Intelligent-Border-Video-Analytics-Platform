@@ -59,7 +59,6 @@ function RiskRules() {
 
   return (
     <>
-      {/* Pipeline visualization */}
       <Card className="mb-6">
         <p className="mb-3 text-sm font-semibold text-slate-800">
           How a single detection becomes an action
@@ -84,7 +83,6 @@ function RiskRules() {
         </div>
       </Card>
 
-      {/* Rule list */}
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-semibold text-white">Risk Rules</p>
       </div>

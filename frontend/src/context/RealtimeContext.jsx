@@ -46,7 +46,6 @@ export function RealtimeProvider({ children }) {
   const socketRef = useRef(null);
   const subCounter = useRef(0);
 
-  // Connect once the app is authenticated and auth init has finished.
   useEffect(() => {
     if (isChecking) return;
     if (!isAuthenticated || !token) {
@@ -109,7 +108,6 @@ export function RealtimeProvider({ children }) {
     setOperationalDataEpoch((value) => value + 1);
   }, []);
 
-  // Fully tear down on unmount (app close).
   useEffect(() => {
     return () => disconnect();
   }, []);

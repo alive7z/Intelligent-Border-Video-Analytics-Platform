@@ -57,7 +57,3 @@ services:
     image: grafana/grafana:latest
     ports:
       - "3002:3000"
-
-# NOTE:
-# This compose file is intentionally minimal and will be refined after final architecture approval.
-# Do not add production-grade deployment topology or app logic yet.

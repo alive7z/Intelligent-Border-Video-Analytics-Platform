@@ -97,7 +97,6 @@ const SIDEBAR_W = "w-[272px]";
           </div>
         )}
 
-        {/* Main column */}
         <div className="flex min-h-screen flex-1 flex-col">
           <main
             key={location.pathname}

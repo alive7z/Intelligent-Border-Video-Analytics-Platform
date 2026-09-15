@@ -137,7 +137,6 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
     def _px(p):
         return int(p["x"] * width), int(p["y"] * height)
 
-    # Zone polygons.
     for z in engine.zone_overlays():
         pts = [_px(pt) for pt in z["coordinates"]]
         if len(pts) < 3:
@@ -148,14 +147,12 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         cv2.polylines(annotated, [pts_np], True, color, 2)
         cv2.putText(annotated, z["zoneCode"], pts[0], cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
-    # Virtual fences (lines).
     for f in engine.fence_overlays():
         a = _px(f["a"])
         b = _px(f["b"])
         cv2.line(annotated, a, b, (0, 255, 255), 2)
         cv2.putText(annotated, f["zoneCode"], a, cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
-    # Tracks: bbox, reference point, trajectory.
     for t in tracks:
         x1, y1, x2, y2 = int(t.bbox.x1), int(t.bbox.y1), int(t.bbox.x2), int(t.bbox.y2)
         color = (0, 255, 0) if t.state == "CONFIRMED" else (0, 165, 255)
@@ -170,7 +167,6 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         ry = y2
         cv2.circle(annotated, (rx, ry), 4, (0, 0, 255), -1)
 
-    # Trajectory history polyline for each confirmed track (tracker pixel history).
     for cm in output.tracks:
         if not cm.historyLength:
             continue
@@ -181,14 +177,12 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         if len(pts) >= 2:
             cv2.polylines(annotated, [np.array(pts, np.int32).reshape((-1, 1, 2))], False, (255, 0, 255), 1)
 
-    # Context event labels for this frame.
     y_offset = 20
     for c in output.context:
         text = f"{c.type} | TID {c.trackId}"
         cv2.putText(annotated, text, (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 255), 2)
         y_offset += 20
 
-    # Phase 10: risk score/severity overlay per track.
     risk_y_offset = y_offset + 10
     for r in output.risk:
         color = {
@@ -200,7 +194,6 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         cv2.putText(annotated, text, (10, risk_y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         risk_y_offset += 20
 
-    # Phase 12: confirmed plate bbox (green) and face bbox (cyan) overlays.
     for obs in (anpr_obs or []):
         b = obs.bbox
         x1, y1 = int(b.x1), int(b.y1)
@@ -372,7 +365,6 @@ def run_video_pipeline(
         "fencesLoaded": worker.context_engine.fences_loaded(),
     })
 
-    # Phase 10: fetch risk configuration (risk rules + severity thresholds) from Node.
     risk_status = "DISABLED"
     if RISK_ENABLED:
         risk_config_result = asyncio.run(node_client.fetch_risk_config(AI_CAMERA_CODE))
@@ -483,7 +475,6 @@ def run_video_pipeline(
             # receive every currently visible confirmed track for consensus.
             current_confirmed = worker.get_current_confirmed_tracks()
 
-            # Phase 12: drive ANPR + face detection from confirmed tracks.
             frame_anpr_obs = []
             frame_face_obs = []
             confirmed_vehicles = {
@@ -758,7 +749,6 @@ def run_live_pipeline(
         "outputs": [],
     }
 
-    # Fetch camera context configuration (zones/fences) from Node.
     context_status = "DISABLED"
     if CONTEXT_ENABLED:
         config_result = asyncio.run(node_client.fetch_context_config(camera_code))
@@ -778,7 +768,6 @@ def run_live_pipeline(
         "fencesLoaded": worker.context_engine.fences_loaded(),
     })
 
-    # Fetch risk configuration from Node.
     risk_status = "DISABLED"
     if RISK_ENABLED:
         risk_result = asyncio.run(node_client.fetch_risk_config(camera_code))

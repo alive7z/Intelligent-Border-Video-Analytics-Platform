@@ -5,6 +5,7 @@ import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import Button from "../common/Button";
 import { BellIcon } from "../common/Icons";
 import { formatTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Compact side panel listing active alerts. Clicking an alert centres the
@@ -43,7 +44,7 @@ function ActiveAlertsPanel({ alerts, selectedId, onSelect, className = "" }) {
                     <span className="shrink-0 text-xs font-bold text-slate-800">{a.id}</span>
                     <AlertSeverityBadge severity={a.severity} className="min-w-0" />
                   </span>
-                  <span className="block truncate text-xs text-slate-700">{a.type}</span>
+                  <span className="block truncate text-xs text-slate-700">{formatEventLabel(a.type)}</span>
                   <span className="block truncate text-[11px] text-slate-400">
                     {a.cameraId} · {a.sector} · {formatTime(a.timestamp)}
                   </span>

@@ -4,6 +4,7 @@ import Button from "../common/Button";
 import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import { CameraIcon, AlertTriangleIcon, ShieldIcon, LayersIcon, XIcon } from "../common/Icons";
 import { formatDateTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 function Section({ label, value }) {
   return (
@@ -64,7 +65,7 @@ function SelectedMapItem({ item, onClose, actions }) {
               label="Status"
               value={
                 <Badge tone={String(item.status).toLowerCase() === "online" ? "online" : "offline"}>
-                  {item.status}
+                  {formatEventLabel(item.status)}
                 </Badge>
               }
             />
@@ -94,7 +95,7 @@ function SelectedMapItem({ item, onClose, actions }) {
       {item.kind === "alert" && (
         <>
           <p className="text-base font-bold text-red-700">{item.id}</p>
-          <p className="text-sm text-slate-700">{item.type}</p>
+          <p className="text-sm text-slate-700">{formatEventLabel(item.type)}</p>
           <div className="mt-2 space-y-1">
             <Section label="Severity" value={<AlertSeverityBadge severity={item.severity} />} />
             <Section label="Camera" value={item.cameraId} />
@@ -115,7 +116,7 @@ function SelectedMapItem({ item, onClose, actions }) {
           <p className="text-base font-bold text-blue-700">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Zone ID" value={item.id} />
-            <Section label="Type" value={<Badge tone="new">{item.type}</Badge>} />
+            <Section label="Type" value={<Badge tone="new">{formatEventLabel(item.type)}</Badge>} />
             <Section label="Camera" value={item.cameraId} />
             <Section label="Risk Level" value={<Badge tone={riskTone(item.riskLevel)}>{(item.riskLevel || "").toUpperCase()}</Badge>} />
           </div>
@@ -134,7 +135,7 @@ function SelectedMapItem({ item, onClose, actions }) {
           <div className="mt-2 space-y-1">
             <Section label="Camera" value={item.cameraId} />
             <Section label="Rule" value={item.rule} />
-            <Section label="Status" value={<Badge tone="online">{item.status}</Badge>} />
+            <Section label="Status" value={<Badge tone="online">{formatEventLabel(item.status)}</Badge>} />
           </div>
           {actions.onViewCamera && (
             <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => actions.onViewCamera(item.cameraId)}>

@@ -7,6 +7,8 @@ import Badge from "../components/common/Badge";
 import { useToast } from "../components/common/Toast";
 import { CheckIcon, UserIcon } from "../components/common/Icons";
 import { useAuth } from "../context/AuthContext";
+import { roleLabel } from "../utils/roles";
+import { formatEventLabel } from "../utils/eventTypeLabels";
 
 /**
  * Authenticated user profile. Operators and administrators can update their own
@@ -56,7 +58,7 @@ function Profile() {
               <p className="text-lg font-semibold text-slate-800">
                 {user?.fullName || user?.name || "—"}
               </p>
-              <Badge tone="info">{user?.role || user?.roleKey || "User"}</Badge>
+              <Badge tone="info">{user?.role || user?.roleKey ? roleLabel(user.role || user.roleKey) : "User"}</Badge>
             </div>
           </div>
         </Card>
@@ -90,7 +92,7 @@ function Profile() {
                 Role
               </label>
               <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-                {user?.role || user?.roleKey || "—"}
+                {user?.role || user?.roleKey ? roleLabel(user.role || user.roleKey) : "—"}
               </p>
             </div>
             <div>
@@ -98,7 +100,7 @@ function Profile() {
                 Account Status
               </label>
               <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-                {(user?.status || "active").replace(/_/g, " ")}
+                {formatEventLabel(user?.status || "active")}
               </p>
             </div>
             <div>

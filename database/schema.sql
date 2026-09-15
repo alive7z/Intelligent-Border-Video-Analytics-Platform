@@ -14,9 +14,6 @@ CREATE DATABASE IF NOT EXISTS ibvap
 
 USE ibvap;
 
--- ------------------------------------------------------------
--- 1. users
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   public_id     CHAR(36) NOT NULL,
@@ -35,9 +32,6 @@ CREATE TABLE IF NOT EXISTS users (
   KEY idx_users_status (status)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 2. cameras
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cameras (
   id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   camera_code    VARCHAR(32) NOT NULL,
@@ -66,9 +60,6 @@ CREATE TABLE IF NOT EXISTS cameras (
   KEY idx_cameras_enabled (enabled)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 3. zones
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS zones (
   id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   zone_code       VARCHAR(32) NOT NULL,
@@ -87,9 +78,6 @@ CREATE TABLE IF NOT EXISTS zones (
     REFERENCES cameras (id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 4. risk_rules
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS risk_rules (
   id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   rule_code            VARCHAR(64) NOT NULL,
@@ -109,9 +97,6 @@ CREATE TABLE IF NOT EXISTS risk_rules (
   KEY idx_risk_rules_enabled (enabled)
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 5. events
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS events (
   id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   event_code   CHAR(36) NOT NULL,
@@ -140,9 +125,6 @@ CREATE TABLE IF NOT EXISTS events (
     REFERENCES cameras (id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 6. alerts
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS alerts (
   id                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   alert_code         CHAR(36) NOT NULL,
@@ -178,9 +160,6 @@ CREATE TABLE IF NOT EXISTS alerts (
     REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 7. plates
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS plates (
   id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   plate_event_code  CHAR(36) NOT NULL,
@@ -203,12 +182,8 @@ CREATE TABLE IF NOT EXISTS plates (
     REFERENCES cameras (id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 8. evidence
--- ------------------------------------------------------------
--- NOTE: This table stores metadata ONLY. Media binaries live under
--- storage/snapshots and storage/clips. No blobs are stored here.
--- ------------------------------------------------------------
+-- Metadata only: media binaries live under storage/snapshots and
+-- storage/clips; no blobs are stored here.
 CREATE TABLE IF NOT EXISTS evidence (
   id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   evidence_code   CHAR(36) NOT NULL,
@@ -235,9 +210,6 @@ CREATE TABLE IF NOT EXISTS evidence (
     REFERENCES cameras (id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 9. audit_logs
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_logs (
   id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id      BIGINT UNSIGNED NULL,
@@ -255,9 +227,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ------------------------------------------------------------
--- 10. system_health
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS system_health (
   id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   component    VARCHAR(64) NOT NULL,

@@ -15,6 +15,7 @@ import QuickActions from "../components/dashboard/QuickActions";
 import { getSummary } from "../services/analyticsApi";
 import { useRealtime } from "../context/RealtimeContext";
 import { SOCKET_EVENTS } from "../services/websocket";
+import { formatEventLabel } from "../utils/eventTypeLabels";
 
 function Dashboard() {
   const [summary, setSummary] = useState(null);
@@ -122,7 +123,6 @@ function Dashboard() {
         subtitle="Command dashboard – real-time border surveillance status"
       />
 
-      {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           type="cameras"
@@ -154,11 +154,10 @@ function Dashboard() {
           label="System Health"
           sub={`Uptime ${summary.uptime}`}
           status={summary.systemHealth === "healthy" ? "healthy" : summary.systemHealth === "degraded" ? "warning" : "critical"}
-          statusText={String(summary.systemHealth || "unknown").replace(/_/g, " ")}
+          statusText={formatEventLabel(summary.systemHealth || "unknown")}
         />
       </div>
 
-      {/* Surveillance / map / trend */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="min-w-0 xl:col-span-1">
           <LiveSurveillance />
@@ -171,7 +170,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Recent alerts / risk + intelligence */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <RecentAlerts />
@@ -182,7 +180,6 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* System health / quick actions */}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <SystemHealth />

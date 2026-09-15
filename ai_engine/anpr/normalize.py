@@ -26,9 +26,8 @@ def normalize_plate_text(raw: str | None) -> str | None:
         return None
     text = raw.upper().strip()
     text = re.sub(r"\s+", " ", text)
-    # Remove unsupported punctuation characters.
     text = "".join(ch for ch in text if ch not in UNSUPPORTED)
-    text = re.sub(r"\s+", "", text)  # drop internal spaces for a compact form
+    text = re.sub(r"\s+", "", text)
     text = text.replace("-", "").strip()
     return text or None
 

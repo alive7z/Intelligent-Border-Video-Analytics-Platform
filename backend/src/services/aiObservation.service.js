@@ -9,7 +9,6 @@ const { toSafeEvent } = require("./event.service");
 const EVENT_TYPES = ["PERSON_DETECTED", "VEHICLE_DETECTED"];
 const OBJECT_TYPES = ["PERSON", "VEHICLE"];
 
-// Validate a single observation object. Throws 400 on malformed fields.
 const validateObservation = (obs) => {
   assertRequired(obs.trackId, "observation.trackId is required");
   assertRequired(obs.eventType, "observation.eventType is required");
@@ -96,7 +95,6 @@ const ingestObservations = async ({ schemaVersion, cameraCode, observations }) =
         ? await eventRepository.findByObservationId(camera.id, String(observationId))
         : null;
     if (existing) {
-      // Duplicate request — skip re-insertion.
       continue;
     }
 

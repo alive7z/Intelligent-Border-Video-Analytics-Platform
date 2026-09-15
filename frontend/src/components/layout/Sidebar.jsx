@@ -371,7 +371,6 @@ export function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Brand */}
       <div
         className={`relative flex h-16 shrink-0 items-center ${
           collapsed ? "justify-center" : "gap-3 px-4"
@@ -407,7 +406,6 @@ export function SidebarContent({
         </div>
       </div>
 
-      {/* Expand / collapse control */}
       {onToggleCollapse && (
         <div
           className={`flex h-11 shrink-0 items-center ${
@@ -436,7 +434,6 @@ export function SidebarContent({
         }`}
       />
 
-      {/* Navigation */}
       <nav
         className={`flex-1 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? "px-2" : "px-3"}`}
         aria-label="Main navigation"
@@ -448,7 +445,6 @@ export function SidebarContent({
         ))}
       </nav>
 
-      {/* System status */}
       <div className="shrink-0 border-t border-white/20 p-2">
         <SystemStatusCard onNavigate={onNavigate} collapsed={collapsed} />
       </div>

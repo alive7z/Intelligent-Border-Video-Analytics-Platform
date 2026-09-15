@@ -2,6 +2,7 @@ import React from "react";
 import DetectionOverlay from "./DetectionOverlay";
 import { CameraIcon, VideoIcon } from "../common/Icons";
 import useCameraPreviewUrl from "../../hooks/useCameraPreviewUrl";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Surveillance preview for a camera card. Shows the live browser-compatible
@@ -44,17 +45,15 @@ function CameraPreview({ camera, showTrackId = false, showAlertBanner = false })
           )}
           <DetectionOverlay detections={camera.detections || []} trackId={showTrackId} />
 
-          {/* LIVE badge */}
           <span className={`absolute left-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase text-white ${isOnline ? "bg-green-500" : "bg-amber-600"}`}>
-            {isOnline ? "LIVE" : camera.status}
+            {isOnline ? "LIVE" : formatEventLabel(camera.status)}
           </span>
 
-          {/* Alert banner */}
           {showAlertBanner && camera.activeAlert && (
             <div className="absolute inset-x-0 bottom-2 flex justify-center">
               <div className="flex items-center gap-1.5 rounded bg-red-600/95 px-2 py-1 text-[11px] font-bold uppercase text-white">
                 <span className="h-1.5 w-1.5 rounded-full bg-white" aria-hidden="true" />
-                High Alert · {camera.activeAlert.type}
+                High Alert · {formatEventLabel(camera.activeAlert.type)}
               </div>
             </div>
           )}

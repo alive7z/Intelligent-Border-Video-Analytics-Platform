@@ -288,16 +288,6 @@ function BorderMap() {
     return hasGeographicMapData(data);
   }, [data]);
 
-  /*
-   * RIGHT ALERT SIDEBAR
-   *
-   * Increased width:
-   * lg  -> 400px
-   * xl  -> 430px
-   * 2xl -> 460px
-   *
-   * This makes the card expand toward the LEFT.
-   */
   const sidebar = (
     <aside
       className={`flex min-w-0 flex-col gap-2 ${
@@ -337,7 +327,6 @@ function BorderMap() {
       }`}
     >
       <div className="card overflow-hidden rounded-xl">
-        {/* Filters */}
         <div className="border-b border-white/20 px-3 py-3 sm:px-4">
           <MapFilters
             filters={filters}
@@ -356,7 +345,6 @@ function BorderMap() {
           />
         </div>
 
-        {/* Location Message */}
         {locationMessage && (
           <div className="border-b border-slate-200 px-3 py-2 sm:px-4">
             <p
@@ -372,7 +360,6 @@ function BorderMap() {
           </div>
         )}
 
-        {/* Map */}
         <div
           className={`relative isolate ${
             fullscreen ? "min-h-0 flex-1" : ""
@@ -389,7 +376,6 @@ function BorderMap() {
             aria-label="Surveillance border map"
           />
 
-          {/* Loading / Error */}
           {(loading || error) && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/90 px-6 text-center backdrop-blur-[2px]">
               {loading ? (
@@ -425,7 +411,6 @@ function BorderMap() {
             </div>
           )}
 
-          {/* Empty Map */}
           {!loading &&
             !error &&
             !hasMappedData &&
@@ -461,7 +446,6 @@ function BorderMap() {
               </div>
             )}
 
-          {/* Map Legend + Layers */}
           {!loading && !error && (
             <>
               <div className="pointer-events-none absolute bottom-3 left-3 z-[400]">
@@ -481,13 +465,6 @@ function BorderMap() {
     </section>
   );
 
-  /*
-   * FULLSCREEN
-   *
-   * Alert panel = 440px
-   * Smaller gap = 8px
-   * Smaller outer padding = 8px
-   */
   if (fullscreen) {
     return (
       <div className="ibvap-map-expanded flex min-h-0 flex-col bg-slate-50">
@@ -502,7 +479,6 @@ function BorderMap() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <PageHeader
         title="Border Map"
         subtitle="Live view of cameras, active alerts, monitored zones and virtual fences"
@@ -530,7 +506,6 @@ function BorderMap() {
         </Button>
       </PageHeader>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           label="Cameras Online"
@@ -583,7 +558,6 @@ function BorderMap() {
         />
       </div>
 
-      {/* Map + Alerts */}
       <div className="flex min-w-0 flex-col gap-2 lg:flex-row">
         {mapArea}
 

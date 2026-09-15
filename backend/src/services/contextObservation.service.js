@@ -23,7 +23,6 @@ const CONTEXT_TYPES = [
 const CONTEXT_SOURCE = "AI_CONTEXT_ENGINE";
 const OBJECT_TYPES = ["PERSON", "VEHICLE"];
 
-// Validate a single context observation. Throws 400 on malformed fields.
 const validateContextObservation = (obs) => {
   assertRequired(obs.observationId, "observation.observationId is required");
   if (typeof obs.observationId !== "string") {
@@ -101,7 +100,6 @@ const ingestContextObservations = async ({ schemaVersion, cameraCode, observatio
         ? await eventRepository.findByObservationId(camera.id, observationId)
         : null;
     if (existing) {
-      // Duplicate request — skip re-insertion (idempotency by observationId).
       continue;
     }
 

@@ -111,7 +111,6 @@ function Login() {
         aria-hidden="true"
       />
 
-      {/* Language selector */}
       <div className="absolute right-5 top-5 flex items-center gap-1.5 sm:right-8 sm:top-8">
         {SUPPORTED_LANGUAGES.map((language) => (
           <button
@@ -130,7 +129,6 @@ function Login() {
       </div>
 
       <div className="relative z-10 w-full max-w-[640px]">
-        {/* Logo */}
         <div className="mb-10 flex justify-center">
           <div className="transition duration-300 hover:scale-105">
             <Logo
@@ -140,9 +138,7 @@ function Login() {
           </div>
         </div>
 
-        {/* Login Card */}
         <section className="card rounded-2xl px-6 py-10 shadow-[0_20px_60px_rgba(37,99,235,0.08)] backdrop-blur-md sm:px-12 sm:py-14">
-          {/* Heading */}
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-[34px]">
               Welcome Back
@@ -153,14 +149,12 @@ function Login() {
             </p>
           </div>
 
-          {/* Form */}
           <form
             onSubmit={handleSubmit}
             className="mt-12"
             noValidate
           >
             <div className="space-y-7">
-              {/* Email */}
               <div className="group relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
                   <svg
@@ -202,7 +196,6 @@ function Login() {
                 />
               </div>
 
-              {/* Password */}
               <div className="group relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
                   <svg
@@ -274,7 +267,6 @@ function Login() {
               </div>
             </div>
 
-            {/* Error */}
             {error && (
               <div
                 role="alert"
@@ -284,7 +276,6 @@ function Login() {
               </div>
             )}
 
-            {/* Sign In Button */}
             <button
               type="submit"
               disabled={loading}
@@ -302,7 +293,6 @@ function Login() {
           </form>
         </section>
 
-        {/* Forgot Password */}
         <div className="mt-10 text-center text-sm sm:text-base">
           <span className="text-slate-400">
             Forgot your password?{" "}
@@ -317,7 +307,6 @@ function Login() {
           </button>
         </div>
 
-        {/* Platform name */}
         <div className="mt-7 text-center">
           <p className="text-xs font-medium tracking-wide text-slate-300">
             IBVAP · Intelligent Border Video Analytics Platform
@@ -325,7 +314,6 @@ function Login() {
         </div>
       </div>
 
-      {/* Forgot Password Modal */}
       <Modal
         open={forgotOpen}
         onClose={() => setForgotOpen(false)}

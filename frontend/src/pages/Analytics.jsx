@@ -12,6 +12,7 @@ import AlertTrendChart from "../components/analytics/AlertTrendChart";
 import CameraHealthCard from "../components/analytics/CameraHealthCard";
 import { getAnalyticsSummary } from "../services/analyticsApi";
 import { SkeletonCard } from "../components/common/Skeleton";
+import { formatEventLabel } from "../utils/eventTypeLabels";
 
 function InsightRow({ label, value }) {
   return (
@@ -50,7 +51,7 @@ function Analytics() {
     const topCamera = (summary.alertsByCamera || [])[0];
     const topType = (summary.eventsByType || [])[0];
     const statusSummary = (summary.alertStatusDistribution || [])
-      .map((row) => `${row.status}: ${row.count}`)
+      .map((row) => `${formatEventLabel(row.status)}: ${row.count}`)
       .join(" · ");
     return [
       { label: "Peak Event Window", value: `${peak.hour}:00 (${peak.count} events)` },
