@@ -8,8 +8,16 @@ documented DEVELOPMENT lower-center strip only when no plate-like structure is
 found. Standard COCO YOLO11n does NOT reliably detect license plates, so we
 never assume it does.
 
-The detector reports honestly which mode/localizer is active and never
-fabricates a plate measurement.
+Candidate priority when a dedicated model IS loaded (Phase 2):
+  1. MODEL     – the plate model runs on the vehicle ROI; any box is mapped
+                 back to full-frame coordinates and kept only when its centre
+                 lies inside the vehicle bbox.
+  2. STRUCTURAL – bright/dark Otsu + geometric gates inside the ROI.
+  3. LEGACY    – the documented lower-center strip (final safety net).
+
+Every detections carries a `method` tag so callers can attribute each read to
+the localizer that produced it. The detector never fabricates a plate
+measurement and reports honestly which mode/localizer is active.
 """
 
 import math
@@ -99,50 +107,74 @@ class PlateDetector:
     def detect(self, frame: np.ndarray, vehicle_bbox: dict) -> list[PlateDetection]:
         """Detect plate regions within the given vehicle bbox (pixel coords).
 
+        Priority when a dedicated model is loaded: MODEL -> STRUCTURAL -> LEGACY.
         Returns an empty list when nothing credible is found. Never guesses.
         """
         if not self._loaded:
             return []
 
         if self._mode == "MODEL" and self._model is not None:
-            try:
-                results = self._model(
-                    frame,
-                    conf=self._confidence,
-                    device="cpu",
-                    verbose=False,
-                )
-                dets = []
-                h, w = frame.shape[:2]
-                for result in results:
-                    if result.boxes is None:
-                        continue
-                    for box in result.boxes:
-                        x1, y1, x2, y2 = box.xyxy[0].tolist()
-                        conf = float(box.conf[0])
-                        x1 = max(0.0, min(x1, w))
-                        y1 = max(0.0, min(y1, h))
-                        x2 = max(0.0, min(x2, w))
-                        y2 = max(0.0, min(y2, h))
-                        if x1 >= x2 or y1 >= y2:
-                            continue
-                        dets.append(PlateDetection(
-                            bbox=PlateBBox(x1=x1, y1=y1, x2=x2, y2=y2),
-                            confidence=round(conf, 4),
-                        ))
-                # Restrict detections to ones inside/overlapping the vehicle bbox.
-                in_vehicle = []
-                for d in dets:
-                    if _overlaps_vehicle(d.bbox, vehicle_bbox):
-                        in_vehicle.append(d)
-                return in_vehicle
-            except Exception as e:  # noqa: BLE001
-                logger.error("ANPR plate model inference failed: %s", e)
-                return []
+            dets = self._model_detect(frame, vehicle_bbox)
+            if dets:
+                return dets
+            logger.debug(
+                "ANPR model found no plate in vehicle ROI; falling back to the "
+                "structural locator (mode=MODEL)"
+            )
+        return self._structural_detect(frame, vehicle_bbox)
 
-        # STRUCTURAL dev mode (no dedicated weights): search the vehicle ROI for
-        # plate-like rectangles; only fall back to the legacy lower-center strip
-        # when nothing credible is found. Keeps MODEL mode untouched.
+    def _model_detect(self, frame: np.ndarray, vehicle_bbox: dict) -> list[PlateDetection]:
+        """Run the dedicated plate model on the vehicle ROI.
+
+        Every box is mapped back to full-frame coordinates; only boxes whose
+        centre lies inside the vehicle bbox are kept (Track A can never be
+        attributed to Plate B). Returns [] on failure or when nothing is found
+        (the caller then falls back to STRUCTURAL / LEGACY).
+        """
+        try:
+            roi, ox, oy, _vh, _vw = _vehicle_roi(frame, vehicle_bbox)
+        except ValueError:
+            return []
+        if roi is None or getattr(roi, "size", 0) == 0:
+            return []
+        try:
+            results = self._model(
+                roi,
+                conf=self._confidence,
+                device="cpu",
+                verbose=False,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.error("ANPR plate model inference failed: %s", e)
+            return []
+        dets = []
+        fh, fw = frame.shape[:2]
+        for result in results:
+            if result.boxes is None:
+                continue
+            for box in result.boxes:
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
+                conf = float(box.conf[0])
+                x1 = max(0.0, min(x1 + ox, fw))
+                y1 = max(0.0, min(y1 + oy, fh))
+                x2 = max(0.0, min(x2 + ox, fw))
+                y2 = max(0.0, min(y2 + oy, fh))
+                if x1 >= x2 or y1 >= y2:
+                    continue
+                bbox = PlateBBox(x1=x1, y1=y1, x2=x2, y2=y2)
+                if not _overlaps_vehicle(bbox, vehicle_bbox):
+                    continue
+                dets.append(PlateDetection(
+                    bbox=bbox,
+                    confidence=round(conf, 4),
+                    method="MODEL",
+                ))
+        return _dedupe_plate_detections(dets)
+
+    def _structural_detect(self, frame: np.ndarray, vehicle_bbox: dict) -> list[PlateDetection]:
+        """STRUCTURAL localizer inside the vehicle ROI; the legacy lower-center
+        strip is the final safety net. Same gates as the documented dev-mode
+        path; candidates are now tagged with their localizer method."""
         x1, y1, x2, y2 = vehicle_bbox["x1"], vehicle_bbox["y1"], vehicle_bbox["x2"], vehicle_bbox["y2"]
         if not all(np.isfinite(v) for v in (x1, y1, x2, y2)):
             return []
@@ -180,6 +212,7 @@ class PlateDetector:
                                    x2=ox + px2, y2=oy + py2),
                     confidence=round(conf, 4),
                     angle=round(angle, 2),
+                    method="STRUCTURAL",
                 ))
             return sorted(dets, key=lambda d: -d.confidence)
 
@@ -193,6 +226,7 @@ class PlateDetector:
         return [PlateDetection(
             bbox=PlateBBox(x1=plate_x1, y1=plate_y1, x2=plate_x2, y2=plate_y2),
             confidence=round(self._confidence, 4),
+            method="LEGACY",
         )]
 
     def _localizer_summary(self) -> str:
@@ -218,6 +252,36 @@ class PlateDetector:
             "confidence": self._confidence,
             "loadErrors": self._load_errors,
         }
+
+
+def _vehicle_roi(frame: np.ndarray, vehicle_bbox: dict):
+    """Return (roi, ox, oy, vh, vw) where (ox, oy) is the ROI's top-left in
+    full-frame pixel coords. Raises ValueError on invalid/degenerate bboxes."""
+    x1, y1, x2, y2 = vehicle_bbox["x1"], vehicle_bbox["y1"], vehicle_bbox["x2"], vehicle_bbox["y2"]
+    if not all(np.isfinite(v) for v in (x1, y1, x2, y2)):
+        raise ValueError("non-finite vehicle bbox")
+    h, w = frame.shape[:2]
+    x1 = max(0.0, min(x1, w))
+    y1 = max(0.0, min(y1, h))
+    x2 = max(0.0, min(x2, w))
+    y2 = max(0.0, min(y2, h))
+    if x1 >= x2 or y1 >= y2:
+        raise ValueError("degenerate vehicle bbox")
+    roi = frame[int(y1):int(y2), int(x1):int(x2)]
+    return roi, x1, y1, y2 - y1, x2 - x1
+
+
+def _dedupe_plate_detections(dets: list[PlateDetection]) -> list[PlateDetection]:
+    """NMS-lite dedupe for plate detector hits (matches structural dedupe)."""
+    merged: list[PlateDetection] = []
+    for d in sorted(dets, key=lambda d: -d.confidence):
+        b = (d.bbox.x1, d.bbox.y1, d.bbox.x2, d.bbox.y2)
+        if all(
+            _iou(b, (m.bbox.x1, m.bbox.y1, m.bbox.x2, m.bbox.y2)) < _STRUCT_DEDUP_IOU
+            for m in merged
+        ):
+            merged.append(d)
+    return merged
 
 
 def _structural_plate_candidates(roi: np.ndarray) -> list[tuple[tuple, float, float]]:
