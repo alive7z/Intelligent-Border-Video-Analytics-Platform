@@ -5,6 +5,67 @@ const logger = require("../utils/logger");
 
 const MIGRATIONS_DIR = path.resolve(__dirname, "../../../database/migrations");
 
+// Split a SQL file into individual statements, honoring string literals,
+// backticks, and comment lines so that `;` inside strings never splits. The
+// pool keeps multipleStatements:false, so each statement runs on its own.
+const splitStatements = (sql) => {
+  const statements = [];
+  let current = "";
+  let quote = null;
+  let lineComment = false;
+  let blockComment = false;
+
+  for (let i = 0; i < sql.length; i += 1) {
+    const ch = sql[i];
+    const next = sql[i + 1];
+
+    if (lineComment) {
+      if (ch === "\n") lineComment = false;
+      continue;
+    }
+    if (blockComment) {
+      if (ch === "*" && next === "/") {
+        blockComment = false;
+        i += 1;
+      }
+      continue;
+    }
+    if (quote) {
+      current += ch;
+      if (ch === "\\" && next) {
+        current += next;
+        i += 1;
+      } else if (ch === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (ch === "-" && next === "-") {
+      lineComment = true;
+      i += 1;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      blockComment = true;
+      i += 1;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") {
+      quote = ch;
+      current += ch;
+      continue;
+    }
+    if (ch === ";") {
+      if (current.trim()) statements.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  if (current.trim()) statements.push(current.trim());
+  return statements;
+};
+
 const ensureMigrationsTable = async (pool) => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -44,9 +105,12 @@ const run = async () => {
     if (applied.has(file)) continue;
 
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
-    logger.info(`Applying migration: ${file}`);
+    const statements = splitStatements(sql);
+    logger.info(`Applying migration: ${file} (${statements.length} statement(s))`);
     try {
-      await pool.query(sql);
+      for (const statement of statements) {
+        await pool.query(statement);
+      }
       await recordMigration(pool, file);
       ran += 1;
     } catch (err) {
