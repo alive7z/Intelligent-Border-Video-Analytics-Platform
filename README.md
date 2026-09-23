@@ -9,11 +9,12 @@
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=nodedotjs&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Deployment-Docker-2496ed?style=flat-square&logo=docker&logoColor=white)
+![AWS EC2](https://img.shields.io/badge/AWS-EC2-ff9900?style=flat-square&logo=amazonwebservices&logoColor=white)
 [![Live Deployment](https://img.shields.io/badge/Live_Deployment-Open_IBVAP-16a34a?style=flat-square)](http://52.66.247.63)
 
 **Live prototype:** [http://52.66.247.63](http://52.66.247.63)
 
-IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to existing CCTV infrastructure. It combines object detection, persistent tracking, spatial and temporal context, explainable risk scoring, evidence integrity, and a realtime command dashboard. A detection is treated as an observation—not automatically as a threat.
+IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to existing CCTV infrastructure. Its hybrid deployment runs the command platform on AWS EC2 and the camera-facing AI runtime on a Mac connected through Tailscale. A detection is treated as an observation—not automatically as a threat.
 
 > **Project status:** functional prototype. Core services, inference workflows, security controls, container deployment, and automated tests are implemented. Field accuracy, throughput, camera compatibility, and operating procedures still require validation on target border hardware and networks.
 
@@ -24,7 +25,7 @@ IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to
 | What problem does it solve? | Continuous monitoring of many passive streams and noisy frame-level alerts. |
 | What is different? | Track continuity plus spatial, temporal, and rule context before prioritization. |
 | Does it replace cameras? | No. It ingests authorized RTSP and HTTP/MJPEG sources through OpenCV/FFmpeg-compatible capture. |
-| Where does inference run? | In a containerized Python edge service; structured observations go to the application backend. |
+| Where does inference run? | On the Mac edge runtime; structured observations reach AWS through the private Tailscale network. |
 | What reaches the browser? | Authenticated APIs, Socket.IO updates, and a short-lived preview proxy—not raw RTSP URLs or camera credentials. |
 | Is it production-deployed? | A public prototype is deployed for evaluation; field qualification is still required. |
 
@@ -132,13 +133,13 @@ The incident key combines camera, stream session, and track identity. Subsequent
 
 ```mermaid
 flowchart TB
-    subgraph Edge[Camera and edge layer]
+    subgraph Edge[Mac edge layer]
         CAM[IP cameras / video sources]
         AI[Python AI service<br/>FastAPI + OpenCV + YOLO + ByteTrack]
         CAM --> AI
     end
 
-    subgraph App[Application layer]
+    subgraph App[AWS EC2 application layer]
         GW[Nginx gateway]
         API[Node.js / Express API<br/>auth, alerts, evidence, administration]
         RT[Socket.IO<br/>authenticated rooms]
@@ -151,11 +152,11 @@ flowchart TB
     subgraph Data[Data and integrity]
         DB[(MySQL 8<br/>authoritative records)]
         FS[(Evidence filesystem)]
-        CACHE[(Optional Redis<br/>ephemeral camera state)]
+        CACHE[(Redis 7<br/>ephemeral runtime state)]
         LEDGER[Optional permissioned ledger<br/>evidence digests and audit roots]
     end
 
-    AI -->|authenticated internal observations| API
+    AI -->|Tailscale + authenticated internal API| API
     AI -->|media candidates| FS
     API --> DB
     API --> FS
@@ -165,7 +166,7 @@ flowchart TB
     PROM[Optional Prometheus + Grafana] -.-> API
 ```
 
-Only Nginx is public in the Compose topology. Application, data, ledger, and monitoring traffic use separate Docker networks. The browser follows `Nginx → backend /api/preview → AI`; it never receives the raw source URL or credentials.
+The public prototype hosts Nginx, React, Node.js, MySQL, and Redis on AWS EC2. The Mac AI service remains private behind Tailscale. The browser follows `AWS Nginx → backend /api/preview → Tailscale → Mac AI`; it never receives the RTSP URL, camera credentials, or the Mac's private address.
 
 ## Technology stack
 
@@ -178,6 +179,7 @@ Only Nginx is public in the Compose topology. Application, data, ledger, and mon
 | Tracking and secondary AI | ByteTrack, dedicated plate YOLO, EasyOCR, YuNet | Track continuity, ANPR, face detection |
 | Persistence | MySQL 8, filesystem evidence, optional Redis | Durable records/media and transient runtime state |
 | Integrity | SHA-256, Ed25519, optional AES-256-GCM, optional local ledger | Verification, signatures, encryption, custody anchoring |
+| Cloud and private networking | AWS EC2, Tailscale | Public command platform and private backend-to-edge connectivity |
 | Delivery and operations | Docker Compose, Nginx, Prometheus, Grafana | Isolated deployment, gateway, optional observability |
 
 Exact dependency versions are locked in npm lockfiles and [AI requirements](ai_engine/requirements.txt).
@@ -274,6 +276,14 @@ IBVAP/
 ```
 
 ## Deployment
+
+### Current hosted prototype
+
+| Location | Running components |
+| --- | --- |
+| AWS EC2 | Nginx, React frontend, Node.js backend, MySQL 8.4, Redis 7 |
+| Mac edge node | FastAPI AI service, YOLO11, ByteTrack, ANPR/EasyOCR, and YuNet face detection |
+| Private link | Tailscale carries backend health, configuration, observations, and preview traffic |
 
 ### Prerequisites
 
