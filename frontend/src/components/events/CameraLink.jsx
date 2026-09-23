@@ -15,11 +15,11 @@ function CameraLink({ camera, event }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <CameraIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">Camera</h3>
+        <CameraIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">Camera</h3>
       </div>
       <p className="text-base font-bold text-blue-700">{cameraCode || "—"}</p>
-      <p className="text-sm text-slate-500">{name}</p>
+      <p className="text-sm text-muted">{name}</p>
       <div className="mt-2">
         <Badge tone={camera?.status === "online" ? "online" : "offline"}>
           {camera?.status || "Unavailable"}
