@@ -18,6 +18,8 @@ import {
   PlusIcon,
   BellIcon,
   CheckIcon,
+  AlertTriangleIcon,
+  ChevronDownIcon,
 } from "../components/common/Icons";
 import {
   getCameraById,
@@ -41,6 +43,7 @@ function CameraDetails() {
   const [error, setError] = useState(false);
   const [ackState, setAckState] = useState({ loading: false, done: false });
   const [infoModal, setInfoModal] = useState(null);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -132,13 +135,13 @@ function CameraDetails() {
   if (error || !camera) {
     return (
       <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
-        <VideoIcon size={28} className="text-slate-300" />
+        <VideoIcon size={28} className="text-disabled" />
         {error ? (
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-secondary">
             Unable to load camera details.
           </p>
         ) : (
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-secondary">
             Camera {cameraId} not found.
           </p>
         )}
@@ -178,7 +181,7 @@ function CameraDetails() {
     <div>
       <Link
         to="/surveillance"
-        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-white"
+        className="btn-focus inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
       >
         <ArrowLeftIcon size={16} />
         Back to Surveillance
@@ -186,7 +189,7 @@ function CameraDetails() {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-primary">
             {camera.id} – {camera.name}
           </h1>
           {isOnline ? (
@@ -228,55 +231,74 @@ function CameraDetails() {
         )}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-10">
         {/* Large video panel */}
-        <div className="xl:col-span-2">
-          {camera.runtime?.adaptiveProcessing && <div className="card p-3 text-xs text-white">
-            Secondary processing: {camera.runtime.adaptiveProcessing.enabled ? "Adaptive" : "Fixed cadence"}. Core risk thresholds are unchanged.
-            {Object.entries(camera.runtime.adaptiveProcessing.tasks || {}).map(([name, task]) => <p key={name} className="mt-1">
-              {name.toUpperCase()}: {task.runs ?? 0} runs · {task.skipped ?? 0} deferred · {Math.round(task.latencyMs || 0)} ms recent mean{task.lastSkipReason ? ` · ${formatEventLabel(task.lastSkipReason)}` : ""}
-            </p>)}
+        <div className="xl:col-span-7">
+          {camera.runtime?.adaptiveProcessing && <div className="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white dark:bg-slate-50">
+            <button
+              type="button"
+              onClick={() => setDiagnosticsOpen((open) => !open)}
+              className="btn-focus flex w-full items-center justify-between px-4 py-3 text-left"
+              aria-expanded={diagnosticsOpen}
+            >
+              <span><span className="block text-sm font-semibold text-primary">AI Diagnostics</span><span className="mt-0.5 block text-xs text-muted">Processing cadence and recent inference latency</span></span>
+              <ChevronDownIcon size={17} className={`text-muted transition-transform ${diagnosticsOpen ? "rotate-180" : ""}`} />
+            </button>
+            {diagnosticsOpen && <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="section-label">Processing mode</p>
+                <p className="mt-1 text-sm font-medium text-secondary">{camera.runtime.adaptiveProcessing.enabled ? "Adaptive" : "Fixed cadence"}</p>
+              </div>
+              {Object.entries(camera.runtime.adaptiveProcessing.tasks || {}).map(([name, task]) => <div key={name} className="border-l border-slate-200 pl-4">
+                <p className="section-label">{formatEventLabel(name)}</p>
+                <p className="mt-1 text-xs text-muted">{task.runs ?? 0} runs · {Math.round(task.latencyMs || 0)} ms</p>
+              </div>)}
+            </div>}
           </div>}
           {camera.runtime?.cameraQuality && (
-            <div className="mb-3 rounded-lg border border-slate-200 px-4 py-3 text-sm text-white">
-              Visibility: {formatEventLabel(camera.runtime.cameraQuality.status)}
-              {camera.runtime.cameraQuality.brightnessStatus && ` · Brightness: ${formatEventLabel(camera.runtime.cameraQuality.brightnessStatus)}`}
+            <div className="mb-3 flex flex-wrap items-center gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+              <AlertTriangleIcon size={18} className="shrink-0 text-amber-600 dark:text-amber-300" />
+              <div>
+                <p className="font-semibold">Camera visibility needs attention</p>
+                <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-100/70">Visibility: {formatEventLabel(camera.runtime.cameraQuality.status)}
+                {camera.runtime.cameraQuality.brightnessStatus && ` · Brightness: ${formatEventLabel(camera.runtime.cameraQuality.brightnessStatus)}`}</p>
               {camera.runtime.cameraQuality.reasons?.length > 0 && (
-                <p className="mt-1 text-xs">{camera.runtime.cameraQuality.reasons.map(formatEventLabel).join(", ")}</p>
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-200">{camera.runtime.cameraQuality.reasons.map(formatEventLabel).join(", ")}</p>
               )}
+              </div>
             </div>
           )}
           <Card pad={false}>
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <VideoIcon size={16} className="text-white" />
-                <span className="font-medium text-slate-800">{camera.id}</span>
-                <span className="text-slate-400">·</span>
+              <div className="flex items-center gap-2 text-sm text-secondary">
+                <VideoIcon size={16} className="text-blue-600" />
+                <span className="font-medium text-primary">{camera.id}</span>
+                <span className="text-muted">·</span>
                 <span>{camera.sector || camera.location}</span>
               </div>
               {isOnline && <Badge tone="danger" dot>LIVE</Badge>}
             </div>
 
-            <div className="relative aspect-video bg-slate-900 dark:bg-[#0b101a]">
+            <div className="relative aspect-video bg-slate-900 dark:bg-[#09090B]">
               {isOnline || isTransitioning ? (
                 <CameraPreview camera={camera} showTrackId />
               ) : isOffline ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-slate-400 dark:bg-[#141c2b]">
+                <div className="text-on-dark-muted absolute inset-0 flex flex-col items-center justify-center bg-slate-800 dark:bg-[#18181B]">
                   <VideoIcon size={40} />
                   <p className="mt-3 text-sm font-semibold uppercase tracking-wide">
                     Camera Offline
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="text-on-dark-muted mt-1 text-xs">
                     Last Seen {camera.lastSeen || "—"} · Stream Disconnected
                   </p>
                 </div>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-slate-400 dark:bg-[#141c2b]">
+                <div className="text-on-dark-muted absolute inset-0 flex flex-col items-center justify-center bg-slate-800 dark:bg-[#18181B]">
                   <VideoIcon size={40} />
                   <p className="mt-3 text-sm font-semibold uppercase tracking-wide">
                     {formatEventLabel(camera.status)}…
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="text-on-dark-muted mt-1 text-xs">
                     {camera.status === "degraded"
                       ? "Receiving frames intermittently · Preview may flicker"
                       : "Reconnecting to live stream · Preview will resume"}
@@ -289,22 +311,22 @@ function CameraDetails() {
         </div>
 
         {/* Right column panels */}
-        <div className="space-y-6">
+        <div className="space-y-5 xl:col-span-3">
           <CameraInfoPanel camera={camera} />
           <ContextStatus context={camera.context} />
         </div>
       </div>
 
       {/* Bottom row */}
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="xl:col-span-1">
           <CurrentDetections detections={camera.detections} />
         </div>
         <div className="xl:col-span-1">
           <Card>
             <div className="mb-3 flex items-center gap-2">
-              <BellIcon size={18} className="text-white" />
-              <h3 className="text-sm font-semibold text-slate-800">
+              <BellIcon size={18} className="text-blue-600" />
+              <h3 className="text-sm font-semibold text-primary">
                 Current Alert
               </h3>
             </div>
@@ -330,7 +352,7 @@ function CameraDetails() {
                 </div>
               )
             ) : (
-              <p className="text-sm text-slate-500">No active alert.</p>
+              <p className="text-sm text-muted">No active alert.</p>
             )}
           </Card>
         </div>
@@ -344,12 +366,12 @@ function CameraDetails() {
         onClose={() => setInfoModal(null)}
         title={infoModal === "evidence" ? "Evidence" : "Incident Report"}
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-secondary">
           {infoModal === "evidence"
             ? "Best snapshots and confirmed plate crops will be available here once the evidence capture service is connected."
             : "Incident report creation will be enabled once the backend case-management service is connected."}
         </p>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-muted">
           This control remains unavailable until the case-management integration is configured.
         </p>
       </Modal>
