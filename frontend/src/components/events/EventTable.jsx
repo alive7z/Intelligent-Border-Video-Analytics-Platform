@@ -21,7 +21,7 @@ function EventTable({ events, canDelete = false, onDelete }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-muted">
                 <th className="px-5 py-3">Event ID</th>
                 <th className="px-5 py-3">Type</th>
                 <th className="px-5 py-3">Camera</th>
@@ -55,14 +55,14 @@ function EventTable({ events, canDelete = false, onDelete }) {
               <div>
                 <Link
                   to={`/events/${e.id}`}
-                  className="font-semibold text-sky-400 hover:underline"
+                  className="font-semibold text-blue-600 hover:underline"
                 >
                   {e.id}
                 </Link>
                 <div className="mt-1">
                   <EventTypeBadge type={e.type} />
                 </div>
-                <p className="mt-0.5 text-xs text-slate-400">
+                <p className="mt-0.5 text-xs text-muted">
                   {e.camera} · {formatEventLabel(e.objectType)}
                   {e.trackId ? ` #${e.trackId.split("-").pop()}` : ""} · {formatDateTime(e.timestamp)}
                 </p>
@@ -76,14 +76,15 @@ function EventTable({ events, canDelete = false, onDelete }) {
             <div className="mt-3 flex items-center gap-2">
               <Link
                 to={`/events/${e.id}`}
-                className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-green-500 bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600 hover:border-green-600"
+                className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:border-blue-500 hover:bg-blue-500"
               >
                 View
               </Link>
               {canDelete && (
                 <Button
-                  variant="danger"
+                  variant="ghost"
                   size="sm"
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
                   onClick={() => onDelete(e)}
                   aria-label={`Delete event ${e.id}`}
                 >
