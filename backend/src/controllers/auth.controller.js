@@ -1,4 +1,5 @@
 const authService = require("../services/auth.service");
+const env = require("../config/env");
 const { sendSuccess } = require("../utils/ApiResponse");
 const { getActor } = require("../utils/actor");
 
@@ -9,6 +10,20 @@ const login = async (req, res) => {
     ipAddress: req.ip,
   });
   return sendSuccess(res, 200, "Login successful", result);
+};
+
+// Public smoke endpoint: lets the Login page decide whether to render the
+// "Explore Demo" section without exposing any credentials or account info.
+const demoAccess = async (req, res) => {
+  return sendSuccess(res, 200, "Demo access status", { enabled: env.DEMO_MODE });
+};
+
+const demoLogin = async (req, res) => {
+  const result = await authService.demoLogin({
+    role: req.body.role,
+    ipAddress: req.ip,
+  });
+  return sendSuccess(res, 200, "Demo access granted", result);
 };
 
 const mfaVerify = async (req, res) => {
@@ -50,4 +65,4 @@ const revokeSessions = async (req, res) => {
   return sendSuccess(res, 200, "User sessions revoked", result);
 };
 
-module.exports = { login, mfaVerify, mfaEnroll, me, updateProfile, logout, revokeSessions };
+module.exports = { login, demoAccess, demoLogin, mfaVerify, mfaEnroll, me, updateProfile, logout, revokeSessions };
