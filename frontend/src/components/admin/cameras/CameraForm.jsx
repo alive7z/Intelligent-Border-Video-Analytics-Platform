@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Modal from "../../common/Modal";
 import Button from "../../common/Button";
 import Input from "../../common/Input";
+import { EyeIcon, EyeOffIcon } from "../../common/Icons";
 
 const EMPTY = {
   id: "",
@@ -32,6 +33,7 @@ const STREAM_PROTOCOLS = ["RTSP", "HTTP", "HLS", "WEBRTC", "OTHER"];
 function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
+  const [showRtsp, setShowRtsp] = useState(false);
 
   React.useEffect(() => {
     if (!open) return;
@@ -86,7 +88,7 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
       size="lg"
       footer={
         !canManage ? (
-          <div className="text-sm text-slate-400">Read-only</div>
+          <div className="text-sm text-muted">Read-only</div>
         ) : (
           <>
             <Button variant="ghost" onClick={onClose}>
@@ -98,7 +100,7 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
       }
     >
       {!canManage && (
-        <p className="mb-4 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-500">
+        <p className="mb-4 rounded-md bg-slate-50 px-3 py-2 text-sm text-muted">
           Your role has read-only access to the Admin area. Editing is disabled.
         </p>
       )}
@@ -131,7 +133,7 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
           placeholder="e.g. Gate 3, Sector 12"
         />
         <div>
-          <label htmlFor="cam-sector" className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label htmlFor="cam-sector" className="mb-1.5 block text-sm font-medium text-secondary">
             Sector
           </label>
           <select
@@ -153,12 +155,22 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
           id="cam-rtsp"
           value={form.rtspUrl}
           onChange={set("rtspUrl")}
-          type="password"
+          type={showRtsp ? "text" : "password"}
           disabled={!canManage}
           placeholder="rtsp://••••••••••••"
           hint={editing
             ? "Leave blank to keep the existing URL; enter a new RTSP URL to replace it"
             : "Masked — never displayed after save"}
+          rightElement={
+            <button
+              type="button"
+              onClick={() => setShowRtsp((current) => !current)}
+              className="text-muted transition hover:text-blue-600 focus:outline-none"
+              aria-label={showRtsp ? "Hide RTSP URL" : "Show RTSP URL"}
+            >
+              {showRtsp ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+            </button>
+          }
         />
         <Input label="Latitude (optional)" id="cam-latitude" type="number" step="any"
           value={form.latitude} onChange={set("latitude")} error={errors.latitude} disabled={!canManage}
@@ -169,7 +181,7 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
           onChange={set("neighbors")} disabled={!canManage}
           hint="Comma-separated configured camera codes for related-activity analysis" />
         <div>
-          <label htmlFor="cam-source-type" className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label htmlFor="cam-source-type" className="mb-1.5 block text-sm font-medium text-secondary">
             Source Type
           </label>
           <select
@@ -187,7 +199,7 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
           </select>
         </div>
         <div>
-          <label htmlFor="cam-protocol" className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label htmlFor="cam-protocol" className="mb-1.5 block text-sm font-medium text-secondary">
             Stream Protocol
           </label>
           <select
@@ -216,7 +228,7 @@ function CameraForm({ open, onClose, onSubmit, editing, canManage }) {
         />
         <label
           htmlFor="cam-enabled"
-          className="flex cursor-pointer items-center gap-3 py-2 text-sm text-slate-700"
+          className="flex cursor-pointer items-center gap-3 py-2 text-sm text-secondary"
         >
           <input
             id="cam-enabled"
