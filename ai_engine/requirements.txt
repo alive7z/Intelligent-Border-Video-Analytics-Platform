@@ -20,6 +20,9 @@ httpx==0.28.1
 
 # YOLO detection + tracking
 ultralytics==8.4.136
+# Ultralytics ByteTrack imports LAP at runtime. Pin the version verified by the
+# current tracker stack so a fresh production container never auto-installs it.
+lap==0.5.13
 torch==2.13.0
 torchvision==0.28.0
 
