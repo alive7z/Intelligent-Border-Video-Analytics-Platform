@@ -11,15 +11,15 @@ function PlaceholderPage({ title, subtitle, planned }) {
     <div>
       <PageHeader title={title} subtitle={subtitle} />
       <div className="card flex flex-col items-start gap-4 p-8">
-        <div className="flex items-center gap-2 text-slate-600">
-          <InfoIcon size={18} className="text-white" />
+        <div className="flex items-center gap-2 text-secondary">
+          <InfoIcon size={18} className="text-blue-600" />
           <span className="text-sm font-medium">
             This page is planned. Final content coming after approval.
           </span>
         </div>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           Planned sections include:{" "}
-          <span className="font-medium text-slate-700">{planned}</span>
+          <span className="font-medium text-secondary">{planned}</span>
         </p>
       </div>
     </div>
