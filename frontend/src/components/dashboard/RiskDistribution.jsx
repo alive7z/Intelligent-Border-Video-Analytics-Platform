@@ -38,12 +38,12 @@ function RiskDistribution() {
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-800">
+        <h3 className="text-sm font-semibold text-primary">
           Risk Distribution
         </h3>
       </div>
       {data.length === 0 ? (
-        <p className="py-10 text-center text-sm text-slate-400">
+        <p className="py-10 text-center text-sm text-muted">
           No alert data available yet.
         </p>
       ) : (
@@ -79,15 +79,15 @@ function RiskDistribution() {
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <p className="text-2xl font-bold text-slate-900">{total}</p>
-                <p className="text-xs text-slate-500">Active Alerts</p>
+                <p className="text-2xl font-bold text-primary">{total}</p>
+                <p className="text-xs text-muted">Active Alerts</p>
               </div>
             </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
             {data.map((d) => (
               <div key={d.name} className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-slate-600">
+                <span className="flex items-center gap-1.5 text-secondary">
                   <span
                     className="inline-block h-2.5 w-2.5 rounded-sm"
                     style={{ backgroundColor: d.color }}
@@ -95,7 +95,7 @@ function RiskDistribution() {
                   />
                   {d.name}
                 </span>
-                <span className="font-medium text-slate-800">{d.value}</span>
+                <span className="font-medium text-primary">{d.value}</span>
               </div>
             ))}
           </div>
