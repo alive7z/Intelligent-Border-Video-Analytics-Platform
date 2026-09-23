@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { login as loginApi, logout as logoutApi, getCurrentUser, updateProfile as updateProfileApi } from "../services/authApi";
+import { login as loginApi, logout as logoutApi, getCurrentUser, demoLogin as demoLoginApi, updateProfile as updateProfileApi } from "../services/authApi";
 import { AUTH_UNAUTHORIZED_EVENT } from "../services/api";
 import { roleLabel, roleKey } from "../utils/roles";
 import {
@@ -107,34 +107,60 @@ export function AuthProvider({ children }) {
     };
   }, [token]);
 
+  // Shared post-auth handling for BOTH normal login and demo login: persists
+  // the token synchronously, normalizes the user, and flips status to
+  // authenticated. Demo and normal sessions are indistinguishable here on
+  // purpose (the backend issues the same JWT/session for both).
+  const completeLogin = useCallback((data) => {
+    if (!data.accessToken || !data.user) {
+      throw new Error("The server returned an invalid login response.");
+    }
+    // Persist the token to storage synchronously so any request issued right
+    // after login (e.g. dashboard mount -> getSummary) sees it immediately,
+    // without waiting for the [token] persist effect to run during render.
+    // Otherwise those requests fire with no Authorization header, get a 401,
+    // and handleUnauthorized() does a full page reload back to login.
+    setToken(data.accessToken);
+    setTokenState(data.accessToken);
+    const normalized = normalizeUser(data.user);
+    setUser(normalized);
+    setStatus("authenticated");
+    setIsLoading(false);
+    return normalized;
+  }, []);
+
   const login = useCallback(async (credentials) => {
     freshLoginRef.current = true;
     setStatus("loading");
     setIsLoading(true);
     try {
       const res = await loginApi(credentials);
-      const data = res.data || {};
-      if (!data.accessToken || !data.user) {
-        throw new Error("The server returned an invalid login response.");
-      }
-      // Persist the token to storage synchronously so any request issued right
-      // after login (e.g. dashboard mount -> getSummary) sees it immediately,
-      // without waiting for the [token] persist effect to run during render.
-      // Otherwise those requests fire with no Authorization header, get a 401,
-      // and handleUnauthorized() does a full page reload back to login.
-      setToken(data.accessToken);
-      setTokenState(data.accessToken);
-      setUser(normalizeUser(data.user));
-      setStatus("authenticated");
-      setIsLoading(false);
-      return normalizeUser(data.user);
+      return completeLogin(res.data || {});
     } catch (err) {
       freshLoginRef.current = false;
       setStatus("error");
       setIsLoading(false);
       throw err;
     }
-  }, []);
+  }, [completeLogin]);
+
+  // Demo login for SIH/exhibition walkthroughs. Only rendered when the backend
+  // reports demo access; the backend gates this behind DEMO_MODE and selects
+  // preconfigured demo accounts. No credentials exist on this side.
+  const loginWithDemo = useCallback(async (role) => {
+    freshLoginRef.current = true;
+    setStatus("loading");
+    setIsLoading(true);
+    try {
+      const res = await demoLoginApi(role);
+      return completeLogin(res.data || {});
+    } catch (err) {
+      freshLoginRef.current = false;
+      setStatus("error");
+      setIsLoading(false);
+      throw err;
+    }
+  }, [completeLogin]);
 
   const logout = useCallback(async () => {
     try {
@@ -176,11 +202,12 @@ export function AuthProvider({ children }) {
       isAuthenticated: !!token,
       isChecking: status === "checking",
       login,
+      loginWithDemo,
       logout,
       updateUser,
       refreshUser,
     }),
-    [user, token, status, isLoading, login, logout, updateUser, refreshUser]
+    [user, token, status, isLoading, login, loginWithDemo, logout, updateUser, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
