@@ -4,7 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-TOKEN="${LEDGER_NODE_TOKEN:-ibvap-ledger-demo-token}"
+: "${LEDGER_NODE_TOKEN:?Set LEDGER_NODE_TOKEN before starting the demo ledger}"
+TOKEN="$LEDGER_NODE_TOKEN"
 CHAIN_ID="${LEDGER_CHAIN_ID:-51201}"
 
 pids=()
