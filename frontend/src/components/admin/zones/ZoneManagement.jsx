@@ -94,15 +94,15 @@ function ZoneManagement() {
           { label: "Virtual Fences", value: counts.fence },
         ].map((k) => (
           <Card key={k.label} className="!p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-400">{k.label}</p>
-            <p className="mt-1 text-2xl font-bold text-slate-800">{k.value}</p>
+            <p className="text-xs uppercase tracking-wide text-muted">{k.label}</p>
+            <p className="mt-1 text-2xl font-bold text-primary">{k.value}</p>
           </Card>
         ))}
       </div>
 
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <p className="text-sm text-white">Manage surveillance zones and virtual fences.</p>
+          <p className="text-sm text-muted">Manage surveillance zones and virtual fences.</p>
           <span className="hidden rounded bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700 sm:inline">
             Engine picks up zone changes on its config refresh (~30s)
           </span>
@@ -126,7 +126,7 @@ function ZoneManagement() {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center gap-3 py-12">
-            <p className="text-sm text-slate-500">Failed to load zones. Please try again.</p>
+            <p className="text-sm text-muted">Failed to load zones. Please try again.</p>
             <Button variant="secondary" size="sm" onClick={load}>
               Retry
             </Button>
@@ -135,7 +135,7 @@ function ZoneManagement() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3 font-semibold">Zone</th>
                   <th className="px-4 py-3 font-semibold">Type</th>
                   <th className="px-4 py-3 font-semibold">Camera</th>
@@ -147,7 +147,7 @@ function ZoneManagement() {
               <tbody>
                 {zones.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
+                    <td colSpan={6} className="px-4 py-10 text-center text-muted">
                       No zones defined.
                     </td>
                   </tr>
@@ -155,16 +155,16 @@ function ZoneManagement() {
                 {zones.map((z) => (
                   <tr key={z.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 font-medium text-slate-800">
-                        <MapPinIcon size={16} className="text-white" />
+                      <div className="flex items-center gap-2 font-medium text-primary">
+                        <MapPinIcon size={16} className="text-blue-600" />
                         {z.id}
                       </div>
-                      <p className="text-xs text-slate-400">{z.name}</p>
+                      <p className="text-xs text-muted">{z.name}</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{formatEventLabel(z.type)}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-secondary">{formatEventLabel(z.type)}</td>
+                    <td className="px-4 py-3 text-secondary">
                       <p className="font-medium">{z.cameraId || "—"}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-muted">
                         {cameras.find((camera) => camera.id === z.cameraId)?.sector || "—"}
                       </p>
                     </td>
@@ -241,26 +241,26 @@ function ZoneManagement() {
                 coordinates={preview.coordinates}
               />
             ) : (
-              <div className="flex aspect-video items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
+              <div className="flex aspect-video items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-muted">
                 Camera information is unavailable for this zone.
               </div>
             )}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-md bg-slate-50 px-3 py-2">
-                <p className="text-xs text-slate-400">Type</p>
-                <p className="font-medium text-slate-700">{formatEventLabel(preview.type)}</p>
+                <p className="text-xs text-muted">Type</p>
+                <p className="font-medium text-secondary">{formatEventLabel(preview.type)}</p>
               </div>
               <div className="rounded-md bg-slate-50 px-3 py-2">
-                <p className="text-xs text-slate-400">Risk Level</p>
+                <p className="text-xs text-muted">Risk Level</p>
                 <Badge tone={riskTone[preview.riskLevel] || "default"}>{formatEventLabel(preview.riskLevel)}</Badge>
               </div>
               <div className="rounded-md bg-slate-50 px-3 py-2">
-                <p className="text-xs text-slate-400">Camera</p>
-                <p className="font-medium text-slate-700">{preview.cameraId || "—"}</p>
+                <p className="text-xs text-muted">Camera</p>
+                <p className="font-medium text-secondary">{preview.cameraId || "—"}</p>
               </div>
               <div className="rounded-md bg-slate-50 px-3 py-2">
-                <p className="text-xs text-slate-400">Coordinates</p>
-                <p className="font-medium text-slate-700">{preview.coordinates?.length || 0} points</p>
+                <p className="text-xs text-muted">Coordinates</p>
+                <p className="font-medium text-secondary">{preview.coordinates?.length || 0} points</p>
               </div>
             </div>
           </div>
