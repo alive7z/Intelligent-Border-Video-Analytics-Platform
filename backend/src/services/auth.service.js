@@ -110,6 +110,44 @@ const login = async ({ email, password, ipAddress }) => {
   return { accessToken, tokenType: "Bearer", expiresIn, user: toSafeUser(currentUser) };
 };
 
+// ─── Secure demo access (SIH/exhabitions) ─────────────────────────────────
+// DEMO_MODE-gated convenience login for dedicated demo accounts. Reuses the
+// exact same JWT/session flow as a completed normal login (B3) so the issued
+// token, token_version, audit trail and RBAC are identical to a real session.
+// Demonstrations must never re-enable this in production.
+const DEMO_LOGIN_ROLES = new Set(["ADMINISTRATOR", "SECURITY_OPERATOR"]);
+
+const demoLogin = async ({ role, ipAddress }) => {
+  if (!env.DEMO_MODE) {
+    throw new ApiError(403, "Demo access is not enabled");
+  }
+
+  const requestedRole = typeof role === "string" ? role.trim().toUpperCase() : "";
+  if (!DEMO_LOGIN_ROLES.has(requestedRole)) {
+    throw new ApiError(400, "Invalid demo role requested");
+  }
+
+  // Only preconfigured is_demo=1 accounts are reachable; an attacker cannot
+  // target arbitrary users. No passwords are stored or compared here.
+  const user = await userRepository.findDemoUserByRole(requestedRole);
+  if (!user) throw new ApiError(404, "Demo account is not configured");
+  if (user.status !== "ACTIVE") throw new ApiError(403, "Demo account is unavailable");
+
+  await userRepository.updateLastLogin(user.id);
+  const currentUser = await userRepository.findUserById(user.id);
+  await auditLogin({ userId: user.id, success: true, ipAddress, email: user.email, details: { method: "demo" } });
+  await securityEvents.recordSecurityEvent({ action: "LOGIN_SUCCESS", userId: user.id, details: { email: user.email, method: "demo" } });
+  metrics.incSuccessfulLogins();
+
+  const accessToken = jwtUtil.generateAccessToken(
+    { sub: currentUser.public_id, userId: currentUser.id, role: currentUser.role },
+    { tokenVersion: currentUser.token_version || 0 }
+  );
+  const expiresIn = env.JWT.EXPIRES_IN || "8h";
+
+  return { accessToken, tokenType: "Bearer", expiresIn, user: toSafeUser(currentUser) };
+};
+
 // ─── MFA verification (B3) ─────────────────────────────────────────────────
 
 const mfaVerify = async ({ mfaChallengeToken, code, ipAddress }) => {
@@ -271,4 +309,4 @@ const adminRevokeSessions = async ({ targetUserId }, actor) => {
   return { tokenVersion: newVersion, user: toSafeUser(await userRepository.findUserById(targetUserId)) };
 };
 
-module.exports = { login, mfaVerify, mfaEnroll, getCurrentUser, updateProfile, logout, adminRevokeSessions };
+module.exports = { login, demoLogin, mfaVerify, mfaEnroll, getCurrentUser, updateProfile, logout, adminRevokeSessions };
