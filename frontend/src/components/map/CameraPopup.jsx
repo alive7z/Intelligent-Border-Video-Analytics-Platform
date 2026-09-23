@@ -19,34 +19,34 @@ function CameraPopup({ camera, onViewCamera, onViewEvents }) {
     <div className="min-w-[220px]">
       <div className="flex items-center gap-2">
         <CameraIcon size={16} className="text-blue-700" />
-        <p className="text-sm font-bold text-slate-900">{camera.id}</p>
+        <p className="text-sm font-bold text-primary">{camera.id}</p>
       </div>
-      <p className="text-sm text-slate-600">{camera.name}</p>
-      <p className="text-xs text-slate-400">{camera.sector}</p>
+      <p className="text-sm text-secondary">{camera.name}</p>
+      <p className="text-xs text-muted">{camera.sector}</p>
 
       <div className="mt-2 space-y-1 text-xs">
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Status:</span>
+          <span className="text-muted">Status:</span>
           <Badge tone={online ? "online" : ["connecting", "reconnecting", "degraded"].includes(status) ? "warning" : "offline"}>
             {status.toUpperCase() || "UNKNOWN"}
           </Badge>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Risk:</span>
+          <span className="text-muted">Risk:</span>
           <Badge tone={riskTone}>{camera.risk ? camera.risk.toUpperCase() : "No active alert"}</Badge>
         </div>
         {online && Array.isArray(camera.detections) && (
           <div className="flex items-center justify-between">
-            <span className="text-slate-500">Detections:</span>
-            <span className="text-slate-700">
+            <span className="text-muted">Detections:</span>
+            <span className="text-secondary">
               {personCount} Person{personCount !== 1 ? "s" : ""} · {vehicleCount} Vehicle
               {vehicleCount !== 1 ? "s" : ""}
             </span>
           </div>
         )}
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Last Update:</span>
-          <span className="text-slate-700">{formatTime(camera.lastUpdate || camera.lastSeen)}</span>
+          <span className="text-muted">Last Update:</span>
+          <span className="text-secondary">{formatTime(camera.lastUpdate || camera.lastSeen)}</span>
         </div>
       </div>
 
@@ -54,14 +54,14 @@ function CameraPopup({ camera, onViewCamera, onViewEvents }) {
         <button
           type="button"
           onClick={onViewCamera}
-          className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50"
         >
           View Camera
         </button>
         <button
           type="button"
           onClick={onViewEvents}
-          className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          className="btn-focus inline-flex flex-1 items-center justify-center rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50"
         >
           View Events
         </button>
