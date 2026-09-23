@@ -90,10 +90,12 @@ function Dashboard() {
             <KpiSkeleton key={i} />
           ))}
         </div>
-        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="card h-72 animate-shimmer" />
-          ))}
+        <div className="mt-6 grid grid-cols-1 gap-5">
+          <div className="card h-[640px] animate-shimmer" />
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <div className="card h-80 animate-shimmer" />
+            <div className="card h-80 animate-shimmer" />
+          </div>
         </div>
       </div>
     );
@@ -123,7 +125,7 @@ function Dashboard() {
         subtitle="Command dashboard – real-time border surveillance status"
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           type="cameras"
           value={summary.camerasOnline}
@@ -158,29 +160,27 @@ function Dashboard() {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="min-w-0 xl:col-span-1">
+      <div className="mt-6 grid grid-cols-1 gap-5">
+        <div className="min-w-0">
           <LiveSurveillance />
         </div>
-        <div className="min-w-0 xl:col-span-1">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <BorderMapPreview />
-        </div>
-        <div className="min-w-0 xl:col-span-1">
           <AlertTrend />
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+      <div className="mt-5 grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
+        <div className="min-w-0 xl:col-span-8">
           <RecentAlerts />
         </div>
-        <div className="space-y-6">
+        <div className="flex flex-col gap-5 xl:col-span-4">
           <RiskDistribution />
           <IntelligenceSummary />
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <SystemHealth />
         </div>
