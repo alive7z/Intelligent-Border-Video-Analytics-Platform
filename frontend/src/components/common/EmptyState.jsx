@@ -17,7 +17,7 @@ function EmptyState({
       ? "text-red-500 bg-red-50 dark:bg-red-500/15"
       : tone === "warning"
       ? "text-orange-500 bg-orange-50 dark:bg-orange-500/15"
-      : "text-slate-400 bg-slate-100 dark:bg-slate-100";
+      : "text-muted bg-slate-100 dark:bg-slate-100";
   return (
     <div
       className={`card flex flex-col items-center justify-center gap-3 p-10 text-center ${className}`}
@@ -28,9 +28,9 @@ function EmptyState({
         {icon}
       </span>
       <div>
-        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</p>
+        <p className="text-primary text-sm font-semibold">{title}</p>
         {description && (
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+          <p className="text-muted mt-1 text-sm">{description}</p>
         )}
       </div>
       {action && <div className="mt-1">{action}</div>}
