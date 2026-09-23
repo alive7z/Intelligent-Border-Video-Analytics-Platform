@@ -14,7 +14,7 @@ function PlaceholderCamera({
 }) {
   return (
     <div
-      className={`relative overflow-hidden bg-slate-900 dark:bg-[#0b101a] ${className}`}
+      className={`relative overflow-hidden bg-slate-900 dark:bg-[#09090B] ${className}`}
       role="img"
       aria-label={label || "Surveillance camera placeholder feed"}
     >
@@ -29,7 +29,7 @@ function PlaceholderCamera({
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 flex flex-col items-center justify-center text-slate-400"
+        className="text-on-dark-muted absolute inset-0 flex flex-col items-center justify-center"
         aria-hidden="true"
       >
         <VideoIcon size={34} />
@@ -41,12 +41,12 @@ function PlaceholderCamera({
       {showBoxes && (
         <div className="absolute inset-0" aria-hidden="true">
           <div className="absolute left-[18%] top-[26%] h-16 w-32 rounded border-2 border-lime-400">
-            <span className="absolute -top-5 left-0 rounded-sm bg-lime-500 px-1 text-[10px] font-bold uppercase text-slate-900">
+            <span className="text-on-bright absolute -top-5 left-0 rounded-sm bg-lime-500 px-1 text-[10px] font-bold uppercase">
               Person
             </span>
           </div>
           <div className="absolute right-[14%] bottom-[20%] h-20 w-40 rounded border-2 border-sky-400">
-            <span className="absolute -top-5 left-0 rounded-sm bg-sky-500 px-1 text-[10px] font-bold uppercase text-slate-900">
+            <span className="text-on-bright absolute -top-5 left-0 rounded-sm bg-sky-500 px-1 text-[10px] font-bold uppercase">
               Vehicle
             </span>
           </div>
