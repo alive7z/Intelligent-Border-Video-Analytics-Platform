@@ -108,13 +108,13 @@ function AlertDetails() {
   if (error || !alert) {
     return (
       <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
-        <AlertTriangleIcon size={28} className="text-slate-300" />
+        <AlertTriangleIcon size={28} className="text-disabled" />
         {error ? (
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-secondary">
             Unable to load alert details.
           </p>
         ) : (
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-secondary">
             Alert {alertId} not found.
           </p>
         )}
@@ -136,17 +136,17 @@ function AlertDetails() {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-primary">
             Alert {alert.id}
           </h1>
-          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            <span className="font-medium text-slate-700">{formatEventLabel(alert.eventType)}</span>
+          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+            <span className="font-medium text-secondary">{formatEventLabel(alert.eventType)}</span>
             <span>·</span>
             <AlertSeverityBadge severity={alert.severity} />
             <span>·</span>
             <AlertStatusBadge status={alert.status} />
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-muted">
             {formatDateTime(alert.timestamp)}
           </p>
         </div>
