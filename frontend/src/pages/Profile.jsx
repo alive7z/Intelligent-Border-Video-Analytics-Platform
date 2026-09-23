@@ -55,7 +55,7 @@ function Profile() {
               <UserIcon size={40} />
             </span>
             <div className="text-center">
-              <p className="text-lg font-semibold text-slate-800">
+              <p className="text-lg font-semibold text-primary">
                 {user?.fullName || user?.name || "—"}
               </p>
               <Badge tone="info">{user?.role || user?.roleKey ? roleLabel(user.role || user.roleKey) : "User"}</Badge>
@@ -64,8 +64,8 @@ function Profile() {
         </Card>
 
         <Card className="lg:col-span-2">
-          <h3 className="text-base font-semibold text-slate-800">Account Details</h3>
-          <p className="text-sm text-slate-500">
+          <h3 className="text-base font-semibold text-primary">Account Details</h3>
+          <p className="text-sm text-muted">
             Role, email and account status are assigned by administrators and cannot be
             changed here.
           </p>
@@ -80,42 +80,42 @@ function Profile() {
               maxLength={120}
             />
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-secondary">
                 Email
               </label>
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-muted">
                 {user?.email || "—"}
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-secondary">
                 Role
               </label>
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-muted">
                 {user?.role || user?.roleKey ? roleLabel(user.role || user.roleKey) : "—"}
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-secondary">
                 Account Status
               </label>
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-muted">
                 {formatEventLabel(user?.status || "active")}
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-secondary">
                 User ID
               </label>
-              <p className="break-all rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <p className="break-all rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-muted">
                 {user?.publicId || "—"}
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
+              <label className="mb-1 block text-sm font-medium text-secondary">
                 Last Login
               </label>
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-muted">
                 {user?.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : "—"}
               </p>
             </div>
