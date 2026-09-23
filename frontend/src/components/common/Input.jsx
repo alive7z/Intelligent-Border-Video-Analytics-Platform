@@ -23,7 +23,7 @@ const Input = React.forwardRef(function Input(
       {label && (
         <label
           htmlFor={id}
-          className="mb-1.5 block text-sm font-medium text-slate-700"
+          className="text-secondary mb-1.5 block text-sm font-medium"
         >
           {label}
         </label>
@@ -45,7 +45,7 @@ const Input = React.forwardRef(function Input(
       {error ? (
         <p className="mt-1 text-xs text-danger">{error}</p>
       ) : hint ? (
-        <p className="mt-1 text-xs text-slate-400">{hint}</p>
+        <p className="text-muted mt-1 text-xs">{hint}</p>
       ) : null}
     </div>
   );
