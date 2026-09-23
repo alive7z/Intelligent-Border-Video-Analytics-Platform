@@ -31,7 +31,20 @@ const mfaLimiter = rateLimit({
   },
 });
 
+const demoLoginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    metrics.incRateLimitBlocks();
+    res.status(429).json({ success: false, message: "Too many attempts, please try again later", data: null, errors: [] });
+  },
+});
+
 router.post("/login", loginLimiter, asyncHandler(authController.login));
+router.get("/demo-access", asyncHandler(authController.demoAccess));
+router.post("/demo-login", demoLoginLimiter, asyncHandler(authController.demoLogin));
 router.post("/mfa/verify", mfaLimiter, asyncHandler(authController.mfaVerify));
 router.post("/mfa/enroll", authenticate, authorizeRoles("ADMINISTRATOR"), asyncHandler(authController.mfaEnroll));
 router.post("/users/:userId/revoke-sessions", authenticate, authorizeRoles("ADMINISTRATOR"), asyncHandler(authController.revokeSessions));
