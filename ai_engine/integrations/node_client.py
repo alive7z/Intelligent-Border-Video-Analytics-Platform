@@ -346,8 +346,13 @@ class NodeClient:
                         return {
                             "sent": True,
                             "status": resp.status_code,
-                            "eventsCreated": len(observations),
+                            "eventsCreated": data.get("eventsCreated", len(observations)),
+                            "eventsUpdated": data.get("eventsUpdated", 0),
                             "alertActions": data.get("alertActions", []) or [],
+                            # Vehicle incidents are event-anchored. Preserve the
+                            # backend correlation so the live pipeline can attach
+                            # the full-scene snapshot to the real incident event.
+                            "eventBindings": data.get("eventBindings", {}) or {},
                         }
                     last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
                     logger.warning("Node risk delivery attempt %d failed: %s", attempt + 1, last_error)
@@ -407,6 +412,12 @@ class NodeClient:
                         self._evidence_deliveries_success += 1
                         self._connected = True
                         data = resp.json().get("data", {}) or {}
+                        logger.info(
+                            "EVIDENCE_TRACE stage=BACKEND_DELIVERY camera=%s attempted=true "
+                            "httpStatus=%s items=%s evidenceCreated=%s",
+                            camera_code, resp.status_code, len(items),
+                            data.get("evidenceCreated", len(items)),
+                        )
                         return {
                             "sent": True,
                             "status": resp.status_code,
