@@ -4,7 +4,7 @@ import { mapRiskReasons } from "../utils/riskReasons.mjs";
 import { incidentTimeline } from "../utils/incidentTimeline.mjs";
 
 test("legacy reason codes remain visible without invented contributions", () => {
-  assert.deepEqual(mapRiskReasons({ reasons: ["FENCE_CROSSING"] }), [{ code: "FENCE_CROSSING", label: "FENCE CROSSING", score: null }]);
+  assert.deepEqual(mapRiskReasons({ reasons: ["FENCE_CROSSING"] }), [{ code: "FENCE_CROSSING", label: "Fence Crossing", score: null }]);
   assert.deepEqual(mapRiskReasons(null), []);
 });
 test("rule weights are not mislabeled as additive score contributions", () => {

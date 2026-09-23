@@ -7,6 +7,7 @@ import AlertSeverityBadge from "../components/alerts/AlertSeverityBadge";
 import AlertStatusBadge from "../components/alerts/AlertStatusBadge";
 import AlertInformation from "../components/alerts/AlertInformation";
 import AlertEvidence from "../components/alerts/AlertEvidence";
+import EvidenceIntegrityPanel from "../components/integrity/EvidenceIntegrityPanel";
 import RiskReasons from "../components/alerts/RiskReasons";
 import IncidentTimeline from "../components/alerts/IncidentTimeline";
 import OperatorActions from "../components/alerts/OperatorActions";
@@ -17,6 +18,7 @@ import { ArrowLeftIcon, AlertTriangleIcon } from "../components/common/Icons";
 import { getAlertById, getIncidentPackage } from "../services/alertApi";
 import { getCameraById } from "../services/cameraApi";
 import { formatDateTime } from "../utils/date";
+import { formatEventLabel } from "../utils/eventTypeLabels";
 import { useRealtime } from "../context/RealtimeContext";
 import { fromSocketAlert } from "../services/alertApi";
 import { SOCKET_EVENTS } from "../services/websocket";
@@ -106,13 +108,13 @@ function AlertDetails() {
   if (error || !alert) {
     return (
       <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
-        <AlertTriangleIcon size={28} className="text-slate-300" />
+        <AlertTriangleIcon size={28} className="text-disabled" />
         {error ? (
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-secondary">
             Unable to load alert details.
           </p>
         ) : (
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-secondary">
             Alert {alertId} not found.
           </p>
         )}
@@ -132,27 +134,26 @@ function AlertDetails() {
         <ArrowLeftIcon size={16} /> Back to Alerts
       </Link>
 
-      {/* Header */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-primary">
             Alert {alert.id}
           </h1>
-          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            <span className="font-medium text-slate-700">{alert.eventType}</span>
+          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-muted">
+            <span className="font-medium text-secondary">{formatEventLabel(alert.eventType)}</span>
             <span>·</span>
             <AlertSeverityBadge severity={alert.severity} />
             <span>·</span>
             <AlertStatusBadge status={alert.status} />
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-muted">
             {formatDateTime(alert.timestamp)}
           </p>
         </div>
 
         {alert.status.toLowerCase() === "resolved" && (
           <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-            Resolved as <span className="font-semibold">{alert.resolution?.type}</span>
+            Resolved as <span className="font-semibold">{alert.resolution?.type ? formatEventLabel(alert.resolution.type) : alert.resolution?.type}</span>
           </div>
         )}
       </div>
@@ -163,6 +164,11 @@ function AlertDetails() {
           {packageUnavailable && <p className="text-sm text-amber-700">Incident package could not be loaded; showing available alert details.</p>}
           {incident?.truncated && <p className="text-sm text-amber-700">Incident history is truncated. Use Event History for older records.</p>}
           <AlertEvidence alert={alert} items={incident?.evidence} />
+          <div className="space-y-3">
+            {(incident?.evidence || []).filter((item) => item.id).map((item) => (
+              <EvidenceIntegrityPanel key={`integrity-${item.id}`} evidenceCode={item.id} evidenceType={item.type || "evidence"} />
+            ))}
+          </div>
           <IncidentTimeline alert={{ ...alert, timeline: incident?.timeline || alert.timeline }} />
           <RelatedEvents alert={{ ...alert, relatedEvents: incident?.events?.map((event) => ({ id: event.event_code, time: formatDateTime(event.occurred_at), type: event.event_type, severity: event.severity })) || [] }} />
         </div>

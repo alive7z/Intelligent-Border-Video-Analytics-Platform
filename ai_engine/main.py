@@ -137,7 +137,6 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
     def _px(p):
         return int(p["x"] * width), int(p["y"] * height)
 
-    # Zone polygons.
     for z in engine.zone_overlays():
         pts = [_px(pt) for pt in z["coordinates"]]
         if len(pts) < 3:
@@ -148,14 +147,12 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         cv2.polylines(annotated, [pts_np], True, color, 2)
         cv2.putText(annotated, z["zoneCode"], pts[0], cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
-    # Virtual fences (lines).
     for f in engine.fence_overlays():
         a = _px(f["a"])
         b = _px(f["b"])
         cv2.line(annotated, a, b, (0, 255, 255), 2)
         cv2.putText(annotated, f["zoneCode"], a, cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
-    # Tracks: bbox, reference point, trajectory.
     for t in tracks:
         x1, y1, x2, y2 = int(t.bbox.x1), int(t.bbox.y1), int(t.bbox.x2), int(t.bbox.y2)
         color = (0, 255, 0) if t.state == "CONFIRMED" else (0, 165, 255)
@@ -170,7 +167,6 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         ry = y2
         cv2.circle(annotated, (rx, ry), 4, (0, 0, 255), -1)
 
-    # Trajectory history polyline for each confirmed track (tracker pixel history).
     for cm in output.tracks:
         if not cm.historyLength:
             continue
@@ -181,14 +177,12 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         if len(pts) >= 2:
             cv2.polylines(annotated, [np.array(pts, np.int32).reshape((-1, 1, 2))], False, (255, 0, 255), 1)
 
-    # Context event labels for this frame.
     y_offset = 20
     for c in output.context:
         text = f"{c.type} | TID {c.trackId}"
         cv2.putText(annotated, text, (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 255), 2)
         y_offset += 20
 
-    # Phase 10: risk score/severity overlay per track.
     risk_y_offset = y_offset + 10
     for r in output.risk:
         color = {
@@ -200,7 +194,6 @@ def _annotate_frame(worker, annotated, tracks, output, width, height,
         cv2.putText(annotated, text, (10, risk_y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         risk_y_offset += 20
 
-    # Phase 12: confirmed plate bbox (green) and face bbox (cyan) overlays.
     for obs in (anpr_obs or []):
         b = obs.bbox
         x1, y1 = int(b.x1), int(b.y1)
@@ -372,7 +365,6 @@ def run_video_pipeline(
         "fencesLoaded": worker.context_engine.fences_loaded(),
     })
 
-    # Phase 10: fetch risk configuration (risk rules + severity thresholds) from Node.
     risk_status = "DISABLED"
     if RISK_ENABLED:
         risk_config_result = asyncio.run(node_client.fetch_risk_config(AI_CAMERA_CODE))
@@ -483,7 +475,6 @@ def run_video_pipeline(
             # receive every currently visible confirmed track for consensus.
             current_confirmed = worker.get_current_confirmed_tracks()
 
-            # Phase 12: drive ANPR + face detection from confirmed tracks.
             frame_anpr_obs = []
             frame_face_obs = []
             confirmed_vehicles = {
@@ -758,7 +749,6 @@ def run_live_pipeline(
         "outputs": [],
     }
 
-    # Fetch camera context configuration (zones/fences) from Node.
     context_status = "DISABLED"
     if CONTEXT_ENABLED:
         config_result = asyncio.run(node_client.fetch_context_config(camera_code))
@@ -778,7 +768,6 @@ def run_live_pipeline(
         "fencesLoaded": worker.context_engine.fences_loaded(),
     })
 
-    # Fetch risk configuration from Node.
     risk_status = "DISABLED"
     if RISK_ENABLED:
         risk_result = asyncio.run(node_client.fetch_risk_config(camera_code))
@@ -813,6 +802,7 @@ def run_live_pipeline(
     seen_track_ids: set = set()
     seen_context_keys: set = set()
     seen_risk_keys: set = set()
+    anpr_gate_logged: set = set()
     # Live outputs are delivered immediately; retain only bounded diagnostics.
     metrics["outputs"] = deque(maxlen=1)
     inference_latencies = deque(maxlen=300)
@@ -923,6 +913,7 @@ def run_live_pipeline(
         _clear_live_session_dedup(
             seen_track_ids, seen_context_keys, seen_risk_keys
         )
+        anpr_gate_logged.clear()
         logger.info("Session reset for %s (stream reconnect)", camera_code)
 
     # Apply a (re-fetched) source config from Node. Website changes to the RTSP
@@ -1137,10 +1128,12 @@ def run_live_pipeline(
                     producer = None
                 # Mint/reset a stream session only after a successful open.
                 # Failed attempts retain exponential backoff state (1,2,4...).
-                if reconnect.policy.attempts > 0:
-                    health.set_status(StreamStatus.RECONNECTING)
+                # Report CONNECTING only right before/while this attempt is in
+                # flight — never while idling in backoff between retries — and
+                # flip to OFFLINE below the moment the attempt fails.
+                health.set_status(StreamStatus.CONNECTING)
                 try:
-                    reader.open()
+                    reader.open_with_timeout()
                     reconnect.begin_session()
                     if reconnect.session_changed() and first_session_established:
                         _reset_session()
@@ -1165,9 +1158,16 @@ def run_live_pipeline(
                     read_gap_active = False
                 except IOError as e:
                     delay = reconnect.on_failure()
-                    health.set_status(StreamStatus.RECONNECTING, str(e))
+                    # The open attempt failed (or was killed by the bounded
+                    # open-timeout). Report OFFLINE immediately — the camera is
+                    # not connected and not attempting right now — and publish it
+                    # to Redis so a stale CONNECTING/RECONNECTING entry can never
+                    # outlive the attempt. It only becomes CONNECTING again when
+                    # the next pass actually begins a new open.
+                    health.set_status(StreamStatus.OFFLINE, str(e))
                     health.set_reconnect_attempts(reconnect.policy.attempts)
                     _refresh_source_info()
+                    _publish_heartbeat()
                     stop_event.wait(
                         min(max(delay, 0.05), STREAM_RECONNECT_MAX_SECONDS)
                     )
@@ -1221,16 +1221,23 @@ def run_live_pipeline(
 
                 if rebuild_reader:
                     read_gap_active = True
-                    health.set_status(StreamStatus.RECONNECTING, reconnect_reason)
+                    # The camera went dark. Once its decoder is fully torn down,
+                    # report OFFLINE — the stream is down and no attempt is being
+                    # made while the retry delay elapses — and publish it to
+                    # Redis. The next loop pass makes a fresh, visibly bounded
+                    # CONNECTING attempt and returns OFFLINE again if it fails,
+                    # so a dead camera never lingers on CONNECTING/RECONNECTING.
                     if not _stop_producer():
                         # Refuse to create a second decoder while the old owner
                         # still exists. Retry cleanup on the next loop.
                         stop_event.wait(0.25)
                         continue
+                    health.set_status(StreamStatus.OFFLINE, reconnect_reason)
                     delay = reconnect.on_failure()
                     health.set_reconnect_attempts(reconnect.policy.attempts)
                     health.record_heartbeat()
                     _refresh_source_info()
+                    _publish_heartbeat()
                     stop_event.wait(
                         min(max(delay, 0.05), STREAM_RECONNECT_MAX_SECONDS)
                     )
@@ -1374,6 +1381,39 @@ def run_live_pipeline(
                 t["trackId"]: t["bbox"]
                 for t in current_confirmed if t["objectType"] == "PERSON"
             }
+            # One diagnostic per vehicle-track gate state. This explains a
+            # zero ANPR run count without weakening detector/tracker/ANPR
+            # thresholds or flooding the live log on every frame.
+            for track in output_dict.get("tracks", []):
+                if track.get("objectType") != "VEHICLE":
+                    continue
+                track_id = track.get("trackId")
+                bbox = track.get("bbox") or {}
+                bbox_width = max(0.0, float(bbox.get("x2", 0)) - float(bbox.get("x1", 0)))
+                bbox_height = max(0.0, float(bbox.get("y2", 0)) - float(bbox.get("y1", 0)))
+                if track.get("state") != "CONFIRMED":
+                    eligible = False
+                    reason = "TRACK_NOT_CONFIRMED"
+                elif not anpr_manager.needs_sampling({track_id}):
+                    eligible = False
+                    reason = "TRACK_FINALIZED"
+                elif frame_age_after_ai_ms > secondary_scheduler.max_age:
+                    eligible = False
+                    reason = "STALE_FRAME"
+                else:
+                    eligible = True
+                    reason = "ELIGIBLE"
+                gate_key = (reconnect.session_id, track_id, reason)
+                if gate_key not in anpr_gate_logged:
+                    anpr_gate_logged.add(gate_key)
+                    logger.info(
+                        "ANPR_GATE camera=%s session=%s trackId=%s vehicleClass=%s "
+                        "bboxWidth=%.1f bboxHeight=%.1f confidence=%.4f eligible=%s reason=%s",
+                        camera_code, reconnect.session_id, track_id,
+                        track.get("vehicleType") or "VEHICLE", bbox_width, bbox_height,
+                        float(track.get("confidence") or 0.0),
+                        str(eligible).lower(), reason,
+                    )
             observed_at = utc_iso()
             observed_src_ms = int(buffered_frame.source_timestamp_ms or 0)
             frame_anpr_obs = []
@@ -2116,7 +2156,8 @@ def _print_metrics(metrics: dict) -> None:
 
 
 def serve_api(video_path: str | None = None, debug_preview: bool = False, save_output: str | None = None,
-              camera_code: str | None = None, all_cameras: bool = False) -> None:
+              camera_code: str | None = None, camera_codes: list[str] | None = None,
+              all_cameras: bool = False) -> None:
     camera_manager = None
     pipeline_thread = None
     if video_path:
@@ -2133,6 +2174,15 @@ def serve_api(video_path: str | None = None, debug_preview: bool = False, save_o
                                        refresh_seconds=SOURCE_CONFIG_REFRESH_SECONDS)
         camera_manager.start()
         logger.info("Camera manager started; discovering enabled cameras from Node")
+    elif camera_codes:
+        camera_manager = CameraManager(
+            NodeClient(),
+            run_live_pipeline,
+            camera_codes=camera_codes,
+            refresh_seconds=SOURCE_CONFIG_REFRESH_SECONDS,
+        )
+        camera_manager.start()
+        logger.info("Camera manager started for configured cameras: %s", ", ".join(camera_codes))
     elif camera_code:
         pipeline_thread = threading.Thread(
             target=run_live_pipeline,
@@ -2170,8 +2220,14 @@ def serve_api(video_path: str | None = None, debug_preview: bool = False, save_o
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="IBVAP AI Engine — Phase 10/13")
     parser.add_argument("--video", type=str, default=None, help="Path to local MP4 video file")
-    parser.add_argument("--camera-code", type=str, default=None,
-                        help="Camera code (e.g. CAM-01) for live RTSP/HTTP/MJPEG input")
+    parser.add_argument(
+        "--camera-code",
+        type=str,
+        action="append",
+        dest="camera_codes",
+        default=None,
+        help="Camera code for live RTSP/HTTP/MJPEG input; repeat to supervise a specific set",
+    )
     parser.add_argument("--all-cameras", action="store_true",
                         help="Discover and supervise all enabled live cameras from Node")
     parser.add_argument("--serve", action="store_true", help="Start FastAPI AI service")
@@ -2179,8 +2235,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--preview", action="store_true", help="Enable optional CV2 preview")
     parser.add_argument("--save-output", type=str, default=None, help="Save annotated MP4 output")
     args = parser.parse_args()
-    if args.all_cameras and (args.camera_code or args.video or args.save_output):
-        parser.error("--all-cameras cannot be combined with a single-camera/video/output option")
+    if args.all_cameras and (args.camera_codes or args.video or args.save_output):
+        parser.error("--all-cameras cannot be combined with a camera/video/output option")
     return args
 
 
@@ -2196,16 +2252,17 @@ def main() -> None:
 
     preview = args.debug_preview or args.preview
     effective_video = args.video or (VIDEO_SOURCE if VIDEO_SOURCE else None)
-    effective_camera = args.camera_code
+    effective_cameras = args.camera_codes or []
 
     if args.all_cameras and effective_video:
         raise SystemExit("CONFIG_ERROR: clear VIDEO_SOURCE when using --all-cameras")
-    if args.serve or effective_video or effective_camera or args.all_cameras:
+    if args.serve or effective_video or effective_cameras or args.all_cameras:
         serve_api(
             video_path=effective_video,
             debug_preview=preview,
             save_output=args.save_output,
-            camera_code=effective_camera,
+            camera_code=effective_cameras[0] if len(effective_cameras) == 1 else None,
+            camera_codes=effective_cameras if len(effective_cameras) > 1 else None,
             all_cameras=args.all_cameras,
         )
     else:

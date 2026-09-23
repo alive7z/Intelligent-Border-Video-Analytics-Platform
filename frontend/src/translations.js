@@ -201,7 +201,7 @@ export const HINDI_TRANSLATIONS = Object.freeze({
   // Dashboard and system health
   "Command dashboard – real-time border surveillance status":
     "कमांड डैशबोर्ड – वास्तविक समय सीमा निगरानी स्थिति",
-  "Active Cameras": "सक्रिय कैमरे",
+  "Configured Cameras": "कॉन्फ़िगर्ड कैमरे",
   "Active Alerts": "सक्रिय अलर्ट",
   "High-Risk Events Today": "आज की उच्च-जोखिम घटनाएँ",
   "ANPR Detections": "एएनपीआर पहचान",

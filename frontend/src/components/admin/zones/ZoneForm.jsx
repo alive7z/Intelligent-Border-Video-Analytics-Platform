@@ -83,7 +83,7 @@ function ZoneForm({ open, onClose, onSubmit, editing, canManage, cameras = [], z
       size="xl"
       footer={
         !canManage ? (
-          <div className="text-sm text-slate-400">Read-only</div>
+          <div className="text-sm text-muted">Read-only</div>
         ) : (
           <>
             <Button variant="ghost" onClick={onClose}>
@@ -115,7 +115,7 @@ function ZoneForm({ open, onClose, onSubmit, editing, canManage, cameras = [], z
           placeholder="e.g. Naka Checkpoint Area"
         />
         <div>
-          <label htmlFor="zone-type" className="mb-1.5 block text-sm font-medium text-slate-700">Type</label>
+          <label htmlFor="zone-type" className="mb-1.5 block text-sm font-medium text-secondary">Type</label>
           <select id="zone-type" value={form.type} onChange={changeType} disabled={!canManage} className="input-field">
             {TYPES.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -123,7 +123,7 @@ function ZoneForm({ open, onClose, onSubmit, editing, canManage, cameras = [], z
           </select>
         </div>
         <div>
-          <label htmlFor="zone-camera" className="mb-1.5 block text-sm font-medium text-slate-700">Camera</label>
+          <label htmlFor="zone-camera" className="mb-1.5 block text-sm font-medium text-secondary">Camera</label>
           <select
             id="zone-camera"
             value={form.cameraId}
@@ -137,10 +137,10 @@ function ZoneForm({ open, onClose, onSubmit, editing, canManage, cameras = [], z
             ))}
           </select>
           {errors.cameraId && <p className="mt-1 text-xs text-danger">{errors.cameraId}</p>}
-          {editing && <p className="mt-1 text-xs text-slate-400">Camera assignment cannot be changed</p>}
+          {editing && <p className="mt-1 text-xs text-muted">Camera assignment cannot be changed</p>}
         </div>
         <div>
-          <label htmlFor="zone-risk" className="mb-1.5 block text-sm font-medium text-slate-700">Risk Level</label>
+          <label htmlFor="zone-risk" className="mb-1.5 block text-sm font-medium text-secondary">Risk Level</label>
           <select id="zone-risk" value={form.riskLevel} onChange={set("riskLevel")} disabled={!canManage} className="input-field">
             {RISK.map((risk) => <option key={risk} value={risk}>{risk}</option>)}
           </select>
@@ -161,7 +161,7 @@ function ZoneForm({ open, onClose, onSubmit, editing, canManage, cameras = [], z
             canEdit={canManage}
           />
         ) : (
-          <div className="flex aspect-video items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-400">
+          <div className="flex aspect-video items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-muted">
             Select a camera to edit its boundary.
           </div>
         )}

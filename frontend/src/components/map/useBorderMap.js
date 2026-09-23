@@ -75,7 +75,6 @@ export function useMapInstance(containerRef, compact = false) {
       scrollWheelZoom: !compact,
     });
 
-    // Layer groups
     const groups = {
       sectors: L.layerGroup().addTo(map),
       zones: L.layerGroup().addTo(map),
@@ -93,7 +92,6 @@ export function useMapInstance(containerRef, compact = false) {
     };
   }, [containerRef, compact]);
 
-  // Base light tiles.
   useEffect(() => {
     if (!mapRef.current) return;
     const { map } = mapRef.current;
@@ -144,7 +142,6 @@ export function useBorderMapLayers({
 
     const sectorFilter = (sector) => filters.sector === "all" || sector === filters.sector;
 
-    // Sectors
     groups.sectors.clearLayers();
     (data.sectors || []).forEach((s) => {
       if (!sectorFilter(s.name)) return;
@@ -163,7 +160,6 @@ export function useBorderMapLayers({
       }
     });
 
-    // Zones
     groups.zones.clearLayers();
     markerIndex.zones = {};
     if (layers.zones) {
@@ -191,7 +187,6 @@ export function useBorderMapLayers({
       });
     }
 
-    // Virtual fences
     groups.fences.clearLayers();
     markerIndex.fences = {};
     if (layers.fences) {
@@ -217,7 +212,6 @@ export function useBorderMapLayers({
       });
     }
 
-    // Cameras
     groups.cameras.clearLayers();
     markerIndex.cameras = {};
     if (layers.cameras) {
@@ -247,7 +241,6 @@ export function useBorderMapLayers({
       });
     }
 
-    // Alerts
     groups.alerts.clearLayers();
     markerIndex.alerts = {};
     if (layers.alerts) {

@@ -19,8 +19,8 @@ function CameraHealthCard({ data = [] }) {
           return (
             <li key={c.name}>
               <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-700">{c.name}</span>
-                <span className="text-slate-500">{v}%</span>
+                <span className="font-medium text-secondary">{c.name}</span>
+                <span className="text-muted">{v}%</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div

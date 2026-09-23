@@ -5,6 +5,7 @@ import Badge from "../common/Badge";
 import Button from "../common/Button";
 import { FileTextIcon } from "../common/Icons";
 import { severityTone, statusTone } from "../../utils/severity";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Latest events for a specific camera with a "View All Events" action.
@@ -14,8 +15,8 @@ function CameraEvents({ cameraId, events = [] }) {
     <Card pad={false}>
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div className="flex items-center gap-2">
-          <FileTextIcon size={18} className="text-white" />
-          <h3 className="text-sm font-semibold text-slate-800">Recent Events</h3>
+          <FileTextIcon size={18} className="text-blue-600" />
+          <h3 className="text-sm font-semibold text-primary">Recent Events</h3>
         </div>
         <Button as={Link} to="/events" variant="secondary" size="sm">
           View All Events
@@ -24,7 +25,7 @@ function CameraEvents({ cameraId, events = [] }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-muted">
               <th className="px-5 py-2.5">Time</th>
               <th className="px-5 py-2.5">Event</th>
               <th className="px-5 py-2.5">Object</th>
@@ -41,14 +42,14 @@ function CameraEvents({ cameraId, events = [] }) {
                   key={e.id || `${e.time}-${e.type}`}
                   className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
                 >
-                  <td className="whitespace-nowrap px-5 py-2.5 text-slate-500">
+                  <td className="whitespace-nowrap px-5 py-2.5 text-muted">
                     {e.time}
                   </td>
-                  <td className="px-5 py-2.5 text-slate-700">{e.type}</td>
-                  <td className="whitespace-nowrap px-5 py-2.5 text-slate-600">
-                    {e.objectType || "—"}
+                  <td className="px-5 py-2.5 text-secondary">{formatEventLabel(e.type)}</td>
+                  <td className="whitespace-nowrap px-5 py-2.5 text-secondary">
+                    {formatEventLabel(e.objectType) || "—"}
                   </td>
-                  <td className="whitespace-nowrap px-5 py-2.5 text-slate-600">
+                  <td className="whitespace-nowrap px-5 py-2.5 text-secondary">
                     {e.trackId != null ? e.trackId : "—"}
                   </td>
                   <td className="whitespace-nowrap px-5 py-2.5">
@@ -57,7 +58,7 @@ function CameraEvents({ cameraId, events = [] }) {
                         {e.riskScore}
                       </Badge>
                     ) : (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-muted">—</span>
                     )}
                   </td>
                   <td className="px-5 py-2.5">
@@ -67,14 +68,14 @@ function CameraEvents({ cameraId, events = [] }) {
                   </td>
                   <td className="px-5 py-2.5">
                     <Badge tone={statusTone[(e.status || "").toLowerCase()] || "default"}>
-                      {e.status}
+                      {formatEventLabel(e.status)}
                     </Badge>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="px-5 py-6 text-center text-sm text-slate-500">
+                <td colSpan="7" className="px-5 py-6 text-center text-sm text-muted">
                   No recent events for this camera.
                 </td>
               </tr>

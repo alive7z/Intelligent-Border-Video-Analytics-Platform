@@ -24,12 +24,12 @@ function SummaryCard({ label, value, tone }) {
     success: "text-green-600",
     danger: "text-red-600",
     warning: "text-orange-600",
-    slate: "text-slate-800",
+    slate: "text-primary",
   }[tone];
   return (
-    <div className="card flex items-center gap-4 p-4">
-      <p className={`text-3xl font-bold ${toneCls}`}>{value}</p>
-      <p className="text-sm font-medium text-slate-600">{label}</p>
+    <div className="flex min-h-[78px] items-center gap-3 border-b border-slate-200 px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+      <p className={`text-2xl font-semibold tracking-tight ${toneCls}`}>{value}</p>
+      <p className="text-sm font-medium text-muted">{label}</p>
     </div>
   );
 }
@@ -147,24 +147,21 @@ function LiveSurveillance() {
         subtitle="Monitor real-time CCTV feeds, AI detections, and active security events."
       />
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="metric-strip grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard label="Total Cameras" value={summary.total} tone="slate" />
         <SummaryCard label="Online" value={summary.online} tone="success" />
         <SummaryCard label="Offline" value={summary.offline} tone="danger" />
         <SummaryCard label="Active Alerts" value={summary.activeAlert} tone="warning" />
       </div>
 
-      {/* Filter bar */}
-      <div className="card mt-6 p-4">
+      <div className="mt-6">
         <CameraFilters filters={filters} onChange={setFilters} sectors={sectors} />
       </div>
 
-      {/* Grid */}
       <div className="mt-6">
         {!loading && !error && (
-          <p className="mb-4 text-sm text-white">
-            Showing <span className="font-medium text-white">{filtered.length}</span>{" "}
+          <p className="mb-4 text-sm text-muted">
+            Showing <span className="font-medium text-secondary">{filtered.length}</span>{" "}
             of {cameras.length} cameras
           </p>
         )}

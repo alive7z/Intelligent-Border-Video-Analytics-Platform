@@ -143,7 +143,7 @@ function OperatorActions({ alert, onAlertUpdate }) {
 
   return (
     <Card>
-      <h3 className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-slate-800">
+      <h3 className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-primary">
         <span>Operator Actions</span>
         <span className="flex items-center gap-2">
           {alert.isSaved && (
@@ -190,7 +190,7 @@ function OperatorActions({ alert, onAlertUpdate }) {
         ) : null}
 
         {!isTerminal && !isAcknowledged && !isInvestigating && canHandle && (!isCritical || isAdmin) ? (
-          <Button variant="secondary" size="md" className="bg-orange-500! text-white! hover:bg-orange-600!" onClick={handleInvestigate} loading={loading}>
+          <Button variant="primary" size="md" onClick={handleInvestigate} loading={loading}>
             <SearchIcon size={16} /> Start Investigation
           </Button>
         ) : isInvestigating && canHandle && (!isCritical || isAdmin) ? (
@@ -233,7 +233,7 @@ function OperatorActions({ alert, onAlertUpdate }) {
               <ShieldIcon size={14} /> {alert.isProtected ? (alert.isSaved ? "Protection managed by Saved Alerts" : "Remove Protection") : "Protect from Cleanup"}
             </Button>
             {alert.isSaved && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 This alert is automatically protected while saved. Unsave it from Saved
                 Alerts to manage protection manually.
               </p>
@@ -254,7 +254,7 @@ function OperatorActions({ alert, onAlertUpdate }) {
 
       <Modal open={escalateOpen} onClose={() => setEscalateOpen(false)} title="Escalate CRITICAL Alert">
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             CRITICAL alerts require administrator authorization. Escalation flags this
             incident for immediate review. You cannot acknowledge or resolve it yourself.
           </p>
@@ -278,7 +278,7 @@ function OperatorActions({ alert, onAlertUpdate }) {
 
       <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Alert">
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             This is a soft delete — the alert is hidden from listings but its audit
             trail is preserved. Protected alerts must be unprotected first.
           </p>

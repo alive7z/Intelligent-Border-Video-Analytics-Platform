@@ -25,11 +25,11 @@ class ErrorBoundary extends React.Component {
       return (
         <div className="flex min-h-[60vh] items-center justify-center p-6">
           <div className="card flex w-full max-w-md flex-col items-center gap-3 p-10 text-center">
-            <AlertTriangleIcon size={28} className="text-slate-300" />
-            <p className="text-sm font-semibold text-slate-700">
+            <AlertTriangleIcon size={28} className="text-disabled" />
+            <p className="text-sm font-semibold text-secondary">
               {this.props.message || "Unable to load this page."}
             </p>
-            <p className="text-xs text-slate-400">{this.state.message}</p>
+            <p className="text-xs text-muted">{this.state.message}</p>
             <Button variant="secondary" size="sm" onClick={this.handleRetry}>
               Retry
             </Button>

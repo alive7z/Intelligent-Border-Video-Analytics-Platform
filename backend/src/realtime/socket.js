@@ -36,7 +36,6 @@ const initializeSocket = (httpServer) => {
     },
   });
 
-  // Register the JWT auth middleware for every connection.
   io.use(socketAuthenticate);
 
   realtimeService.setIO(io);
@@ -71,7 +70,6 @@ const initializeSocket = (httpServer) => {
       `Socket connected: user=${user.publicId} role=${user.role} socket=${socket.id}`
     );
 
-    // Notify the client that the connection is ready and authorized.
     socket.emit(SOCKET_EVENTS.CONNECTION_READY, realtimeService.envelope(SOCKET_EVENTS.CONNECTION_READY, {
       authorized: true,
       role: user.role,

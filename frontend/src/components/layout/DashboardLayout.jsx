@@ -6,8 +6,8 @@ import { useLanguage } from "../../hooks/useLanguage";
 import { Outlet } from "react-router-dom";
 
 /**
- * App shell: expandable navigation rail on desktop (collapsed 76px ⇄ expanded
- * 272px), overlay drawer on mobile/tablet, top header, and main content area.
+ * App shell: compact expandable navigation rail on desktop, overlay drawer on
+ * mobile/tablet, top header, and a consistently padded content area.
  */
 const SIDEBAR_STORAGE = "ibvap-sidebar-state";
 
@@ -54,8 +54,8 @@ export function DashboardLayout() {
     closeDrawer();
   }, [location.pathname]);
 
-const SIDEBAR_W = "w-[272px]";
-  const SIDEBAR_RAIL_W = "w-[76px]";
+  const SIDEBAR_W = "w-[248px]";
+  const SIDEBAR_RAIL_W = "w-[72px]";
 
   // Header is fixed full-width at the top (h-[64px] in Header.jsx) —
   // sidebar and main content start exactly below it.
@@ -64,17 +64,17 @@ const SIDEBAR_W = "w-[272px]";
   const HEADER_OFFSET = "pt-[64px]";
 
   return (
-    <div className="flex min-h-screen flex-col bg-transparent">
+    <div className="app-shell flex min-h-screen flex-col bg-slate-50 transition-colors dark:bg-[#09090B]">
       <Header
         onMenuClick={() => setDrawerOpen(true)}
         lang={lang}
         setLang={setLang}
       />
 
-      <div className={`flex flex-1 flex-col transition-[padding] duration-250 ease-in-out ${HEADER_OFFSET} ${collapsed ? "lg:pl-[76px]" : "lg:pl-[272px]"}`}>
+      <div className={`flex flex-1 flex-col transition-[padding] duration-250 ease-in-out ${HEADER_OFFSET} ${collapsed ? "lg:pl-[72px]" : "lg:pl-[248px]"}`}>
         {/* Desktop sidebar (full or collapsed rail) */}
         <aside
-          className={`sidebar-surface fixed ${SIDEBAR_TOP} left-0 z-30 hidden overflow-visible border-r border-white/20 bg-slate-950/80 shadow-card transition-[width] duration-250 ease-in-out lg:block ${SIDEBAR_H} ${
+          className={`sidebar-surface fixed ${SIDEBAR_TOP} left-0 z-30 hidden overflow-visible border-r border-slate-200 shadow-card transition-[width] duration-250 ease-in-out lg:block ${SIDEBAR_H} ${
             collapsed ? SIDEBAR_RAIL_W : SIDEBAR_W
           }`}
         >
@@ -91,17 +91,16 @@ const SIDEBAR_W = "w-[272px]";
               onClick={closeDrawer}
               aria-hidden="true"
             />
-            <aside className="sidebar-surface absolute inset-y-0 left-0 w-72 animate-[drawerIn_0.25s_ease-out] bg-slate-950/80 shadow-pop">
+            <aside className="sidebar-surface absolute inset-y-0 left-0 w-[280px] animate-[drawerIn_0.25s_ease-out] shadow-pop">
               <SidebarContent onNavigate={closeDrawer} showClose onClose={closeDrawer} />
             </aside>
           </div>
         )}
 
-        {/* Main column */}
         <div className="flex min-h-screen flex-1 flex-col">
           <main
             key={location.pathname}
-            className="page-enter flex-1 px-4 py-6 lg:px-6"
+            className="page-enter flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 2xl:px-10"
           >
             <Outlet />
           </main>

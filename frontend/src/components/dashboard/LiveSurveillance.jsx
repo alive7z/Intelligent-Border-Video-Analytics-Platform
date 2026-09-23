@@ -1,201 +1,193 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Badge from "../common/Badge";
-import StatusIndicator from "../common/StatusIndicator";
-import CameraPreview from "../surveillance/CameraPreview";
+import DashboardCameraCard from "./DashboardCameraCard";
+import { CameraIcon, ArrowRightIcon } from "../common/Icons";
 import {
-  getCameraById,
-  getCameraRuntimeStatus,
+  getAllCameras,
+  fromSocketCamera,
+  fetchRuntimeMap,
   mergeRuntimeCamera,
 } from "../../services/cameraApi";
 import { useRealtime } from "../../context/RealtimeContext";
 import { SOCKET_EVENTS } from "../../services/websocket";
+import { upsertByKey } from "../../utils/realtime";
+import useMediaQuery from "../../hooks/useMediaQuery";
 import {
-  MaximizeIcon,
-  PauseIcon,
-  PlayIcon,
-  CameraIcon,
-  MapPinIcon,
-  VideoIcon,
-} from "../common/Icons";
+  getSingleCameraMaxWidth,
+  getLiveGridTemplate,
+  shouldCenterSingleCamera,
+} from "../../utils/overviewGrid";
 
-const CAMERA_CODE = "CAM-01";
+// One page-level runtime sync cadence (not per card/render). Live truth comes
+// from the backend runtime-status endpoint; the static DB row is the fallback.
 const RUNTIME_SYNC_MS = 5000;
 
-function PreviewMessage({ title, detail, onRetry }) {
+function LiveSurveillanceSkeleton() {
   return (
-    <div className="flex aspect-video flex-col items-center justify-center bg-slate-900 px-4 text-center text-slate-400 dark:bg-[#0b101a]">
-      <VideoIcon size={34} />
-      <p className="mt-2 text-xs font-semibold uppercase tracking-wide">{title}</p>
-      {detail && <p className="mt-1 text-[11px] text-slate-500">{detail}</p>}
-      {onRetry && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="btn-focus mt-3 rounded-md border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
-        >
-          Retry
-        </button>
-      )}
+    <div className="grid grid-cols-1 gap-3">
+      <div className="h-44 animate-shimmer rounded-2xl" />
+      <div className="h-44 animate-shimmer rounded-2xl" />
+    </div>
+  );
+}
+
+function LiveSurveillanceEmpty() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-muted dark:bg-slate-100">
+        <CameraIcon size={22} />
+      </span>
+      <div>
+        <p className="text-sm font-semibold text-primary">
+          No cameras online
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          Live camera feeds will appear here when a camera comes online.
+        </p>
+      </div>
+      <Link
+        to="/surveillance"
+        className="btn-focus inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50 dark:bg-slate-100"
+      >
+        Open Surveillance
+        <ArrowRightIcon size={14} />
+      </Link>
     </div>
   );
 }
 
 /**
- * CAM-01 dashboard preview. It deliberately reuses the same safe camera
- * runtime + short-lived MJPEG preview flow as the Surveillance pages.
+ * Overview "Live Surveillance" section. Shows ONLY cameras that are currently
+ * ONLINE (realtime runtime status) inside a FIXED section size. The camera grid
+ * is CSS auto-fit: landscape cards (min ~280-340px wide) are laid out by the
+ * browser from the online count + container width, so any N cameras fit without
+ * hardcoded counts; overflow scrolls internally. Offline cameras never appear
+ * here. Other pages (Surveillance, Camera Management, Admin, Details) still
+ * list offline cameras.
  */
 function LiveSurveillance() {
-  const [camera, setCamera] = useState(null);
+  const [cameras, setCameras] = useState([]);
+  const [runtimeById, setRuntimeById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [paused, setPaused] = useState(false);
   const { subscribe } = useRealtime();
 
-  const loadCamera = useCallback(async (showLoading = false) => {
-    if (showLoading) setLoading(true);
+  const isDesktopUp = useMediaQuery("(min-width: 1024px)");
+
+  const load = useCallback(() => {
+    setLoading(true);
     setError(false);
-    try {
-      const [cameraResponse, runtime] = await Promise.all([
-        getCameraById(CAMERA_CODE),
-        getCameraRuntimeStatus(CAMERA_CODE).catch(() => null),
-      ]);
-      setCamera(
-        runtime
-          ? mergeRuntimeCamera(cameraResponse.data, runtime)
-          : cameraResponse.data
-      );
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
+    getAllCameras()
+      .then((res) => setCameras(res.data))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, []);
 
-  const syncRuntime = useCallback(async () => {
-    try {
-      const runtime = await getCameraRuntimeStatus(CAMERA_CODE);
-      if (runtime) {
-        setCamera((current) =>
-          current ? mergeRuntimeCamera(current, runtime) : current
-        );
-      }
-    } catch {
-      // Keep the last safe state; the next poll or socket event retries it.
-    }
-  }, []);
+  useEffect(load, [load]);
 
+  // Realtime: apply camera status/update events by camera_code so ONLINE/OFFLINE
+  // changes reflect immediately (metadata only; preview tokens are separate).
   useEffect(() => {
-    loadCamera(true);
-  }, [loadCamera]);
-
-  // Match Surveillance: runtime status is authoritative and is refreshed even
-  // when Redis/Socket.IO is unavailable, so an offline card can recover.
-  useEffect(() => {
-    const timer = setInterval(syncRuntime, RUNTIME_SYNC_MS);
-    return () => clearInterval(timer);
-  }, [syncRuntime]);
-
-  useEffect(() => {
-    const refreshVisibleCamera = (payload) => {
-      if (payload?.data?.cameraCode === CAMERA_CODE) syncRuntime();
+    const applyCamera = (payload) => {
+      const item = fromSocketCamera(payload?.data);
+      if (!item?.id) return;
+      setCameras((prev) => upsertByKey(prev, item, "id"));
     };
     const offs = [
-      subscribe(SOCKET_EVENTS.CAMERA_STATUS, refreshVisibleCamera),
-      subscribe(SOCKET_EVENTS.CAMERA_UPDATED, refreshVisibleCamera),
+      subscribe(SOCKET_EVENTS.CAMERA_STATUS, applyCamera),
+      subscribe(SOCKET_EVENTS.CAMERA_UPDATED, applyCamera),
     ];
     return () => offs.forEach((off) => off());
-  }, [subscribe, syncRuntime]);
+  }, [subscribe]);
 
-  const isOnline = camera?.status === "online";
-  const isTransitioning = ["connecting", "degraded", "reconnecting"].includes(
-    camera?.status
+  // Live runtime sync: one interval for the whole section.
+  const camerasRef = useRef(cameras);
+  useEffect(() => {
+    camerasRef.current = cameras;
+  }, [cameras]);
+
+  const syncingRef = useRef(false);
+  const syncRuntime = useCallback(async () => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+    try {
+      const map = await fetchRuntimeMap(camerasRef.current);
+      setRuntimeById((prev) => ({ ...prev, ...map }));
+    } finally {
+      syncingRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    syncRuntime();
+    const timer = setInterval(syncRuntime, RUNTIME_SYNC_MS);
+    return () => clearInterval(timer);
+  }, [syncRuntime, cameras.length]);
+
+  // Merge runtime truth onto the base rows; then keep ONLY online cameras.
+  // Runtime NEVER fabricates an ONLINE state when absent.
+  const onlineCameras = useMemo(
+    () =>
+      cameras
+        .filter((c) => c.enabled)
+        .map((c) => mergeRuntimeCamera(c, runtimeById[c.id] || null))
+        .filter((c) => c.status === "online")
+        .sort((a, b) => String(a.id || "").localeCompare(String(b.id || ""))),
+    [cameras, runtimeById]
   );
-  const location =
-    camera?.sector || camera?.location || camera?.name || "Location unavailable";
-  const badgeLabel = paused
-    ? "PAUSED"
-    : loading
-      ? "LOADING"
-      : error
-        ? "UNAVAILABLE"
-        : isOnline
-          ? "LIVE"
-          : isTransitioning
-            ? camera.status.toUpperCase()
-            : "OFFLINE";
-  const badgeTone =
-    !paused && isOnline
-      ? "danger"
-      : loading || isTransitioning
-        ? "warning"
-        : "offline";
+
+  const onlineCount = onlineCameras.length;
+  const gridTemplate = getLiveGridTemplate(isDesktopUp);
+  const singleCamera = shouldCenterSingleCamera(onlineCount);
 
   return (
-    <div className="card h-full min-w-0 overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/20 px-5 py-4">
+    <div className="card flex h-auto min-w-0 flex-col overflow-hidden sm:h-[600px] lg:h-[640px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-100/10">
         <div className="flex items-center gap-2">
-          <CameraIcon size={18} className="text-white" />
-          <h3 className="text-sm font-semibold text-slate-800">Live Surveillance</h3>
-          <Badge tone={badgeTone} dot>
-            {badgeLabel}
-          </Badge>
+          <CameraIcon size={18} className="text-blue-600 dark:text-blue-400" />
+          <h3 className="text-sm font-semibold text-primary">
+            Live Surveillance
+          </h3>
+          {!loading && !error && onlineCount > 0 && (
+            <Badge tone="success" dot>
+              {onlineCount} Online
+            </Badge>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setPaused((current) => !current)}
-            disabled={!camera || error}
-            className="btn-focus text-black inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {paused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
-            {paused ? "Resume" : "Pause"}
-          </button>
-          <Link
-            to={`/surveillance/${CAMERA_CODE}`}
-            className="btn-focus inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <MaximizeIcon size={14} /> Expand
-          </Link>
-        </div>
+        <Link
+          to="/surveillance"
+          className="btn-focus inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50 dark:bg-slate-100"
+        >
+          Open Surveillance
+          <ArrowRightIcon size={14} />
+        </Link>
       </div>
 
-      <div className="p-5">
-        <div className="overflow-hidden rounded-lg">
-          {paused ? (
-            <PreviewMessage title="Feed Paused" detail={`${CAMERA_CODE} preview paused`} />
-          ) : loading ? (
-            <PreviewMessage title="Loading Preview" detail={`Connecting to ${CAMERA_CODE}`} />
-          ) : error || !camera ? (
-            <PreviewMessage
-              title="Preview Unavailable"
-              detail={`Unable to load ${CAMERA_CODE}`}
-              onRetry={() => loadCamera(true)}
-            />
-          ) : (
-            <CameraPreview camera={camera} showAlertBanner />
-          )}
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-            <span className="flex items-center gap-1.5 text-slate-600">
-              <CameraIcon size={15} className="text-slate-400" />
-              <span className="font-medium text-slate-800">{camera?.id || CAMERA_CODE}</span>
-            </span>
-            <span className="flex min-w-0 items-center gap-1.5 text-slate-600">
-              <MapPinIcon size={15} className="shrink-0 text-slate-400" />
-              <span className="truncate">{location}</span>
-            </span>
+      <div className="flex min-h-0 flex-1 flex-col p-5">
+        {loading ? (
+          <LiveSurveillanceSkeleton />
+        ) : error ? (
+          <LiveSurveillanceEmpty />
+        ) : onlineCount === 0 ? (
+          <LiveSurveillanceEmpty />
+        ) : (
+          <div
+            className="grid min-h-0 flex-1 w-full gap-4 overflow-y-auto"
+            style={{
+              gridTemplateColumns: gridTemplate,
+              gridAutoRows: "auto",
+              placeContent: singleCamera ? "center" : "start",
+              ...(singleCamera
+                ? { maxWidth: getSingleCameraMaxWidth(), marginInline: "auto" }
+                : {}),
+            }}
+          >
+            {onlineCameras.map((camera) => (
+              <DashboardCameraCard key={camera.id} camera={camera} />
+            ))}
           </div>
-          {isOnline ? (
-            <StatusIndicator status="success" label="Online" pulse={!paused} />
-          ) : isTransitioning ? (
-            <StatusIndicator status="warning" label={camera.status.toUpperCase()} />
-          ) : (
-            <StatusIndicator status="offline" label="Offline" />
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

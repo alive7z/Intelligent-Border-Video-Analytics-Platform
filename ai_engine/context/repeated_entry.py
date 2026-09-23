@@ -20,7 +20,6 @@ class RepeatedEntryDetector:
         first crossed for that zone within the window."""
         entries = self._zone_entries.setdefault(zone_code, [])
         entries.append(now)
-        # Drop entries outside the sliding window.
         self._zone_entries[zone_code] = [t for t in entries if now - t <= self._window_seconds]
 
         if zone_code in self._triggered_once:

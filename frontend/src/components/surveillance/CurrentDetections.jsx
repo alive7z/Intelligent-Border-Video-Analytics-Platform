@@ -14,12 +14,12 @@ function CurrentDetections({ detections = [] }) {
     return (
       <Card>
         <div className="flex items-center gap-2">
-          <BrainIcon size={18} className="text-white" />
-          <h3 className="text-sm font-semibold text-slate-800">
+          <BrainIcon size={18} className="text-blue-600" />
+          <h3 className="text-sm font-semibold text-primary">
             Current Detections
           </h3>
         </div>
-        <p className="mt-3 text-sm text-slate-500">No active detections.</p>
+        <p className="mt-3 text-sm text-muted">No active detections.</p>
       </Card>
     );
   }
@@ -27,8 +27,8 @@ function CurrentDetections({ detections = [] }) {
   return (
     <Card>
       <div className="mb-3 flex items-center gap-2">
-        <BrainIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">
+        <BrainIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">
           Current Detections
         </h3>
       </div>
@@ -36,14 +36,14 @@ function CurrentDetections({ detections = [] }) {
         {detections.map((d, i) => (
           <li key={i} className="py-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-slate-800">
+              <span className="font-medium text-primary">
                 {kindLabel[d.kind] || d.label} #{d.trackId}
               </span>
               <Badge tone="info">{Math.round((d.confidence || 0) * 100)}%</Badge>
             </div>
             {d.plate && (
-              <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono font-medium text-slate-700">
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted">
+                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono font-medium text-secondary">
                   {d.plate}
                 </span>
                 <span>Confidence {Math.round((d.plateConfidence || 0) * 100)}%</span>

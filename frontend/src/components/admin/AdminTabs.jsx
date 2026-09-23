@@ -20,7 +20,7 @@ function AdminTabs({ active, onChange, readOnly }) {
     <div
       role="tablist"
       aria-label="Administration sections"
-      className="mb-6 inline-flex w-full flex-wrap gap-1 rounded-xl border border-cyan-400/40 bg-slate-900/80 p-1 sm:w-auto"
+      className="mb-6 flex w-full gap-1 overflow-x-auto border-b border-slate-200 pb-2"
     >
       {TABS.map((tab) => {
         const selected = active === tab.id;
@@ -36,10 +36,10 @@ function AdminTabs({ active, onChange, readOnly }) {
             aria-selected={selected}
             aria-controls={`admin-panel-${tab.id}`}
             onClick={() => onChange(tab.id)}
-            className={`btn-focus inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors sm:flex-none ${
+            className={`btn-focus relative inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               selected
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-300 hover:bg-white/10 hover:text-white"
+                ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-400/25"
+                : "text-muted hover:bg-slate-100 hover:text-slate-800 dark:hover:text-white/90"
             }`}
           >
             {tab.label}
@@ -48,8 +48,8 @@ function AdminTabs({ active, onChange, readOnly }) {
               <span
                 className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
                   selected
-                    ? "bg-slate-900/10 text-slate-700"
-                    : "bg-white/10 text-slate-300"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-200"
+                    : "bg-slate-100 text-muted"
                 }`}
               >
                 View Only

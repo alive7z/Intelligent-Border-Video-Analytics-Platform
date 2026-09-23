@@ -286,9 +286,13 @@ class TestNodeClientEvidence:
                             "success": True,
                             "data": {
                                 "eventsCreated": 1,
+                                "eventsUpdated": 0,
                                 "alertActions": [
                                     {"observationId": "o1", "action": "CREATED", "alertId": 5, "evidenceRequested": True}
                                 ],
+                                "eventBindings": {
+                                    "o1": {"eventId": "event-1", "incidentAttached": True}
+                                },
                             },
                         },
                     )
@@ -308,4 +312,39 @@ class TestNodeClientEvidence:
         assert actions[0]["action"] == "CREATED"
         assert actions[0]["alertId"] == 5
         assert actions[0]["evidenceRequested"] is True
+        assert result["eventBindings"]["o1"]["eventId"] == "event-1"
         assert json.dumps(result)  # ensure serializable
+
+    def test_restricted_person_alert_keeps_full_scene_snapshot(self, tmp_path):
+        import asyncio
+
+        class FakeNode:
+            is_enabled = True
+
+            def __init__(self):
+                self.items = []
+
+            async def send_evidence(self, camera_code, items):
+                self.items.extend(items)
+                return {"sent": True, "evidenceCreated": len(items)}
+
+        mgr = EvidenceManager(enabled=True, snapshot_dir=tmp_path, clip_dir=tmp_path)
+        image = np.full((240, 320, 3), 120, dtype=np.uint8)
+        mgr.record_frame(image, 1.0, 1000.0, 1)
+        action = {
+            "observationId": "person-risk", "action": "CREATED", "alertId": 19,
+            "alertCode": "alert-19", "evidenceRequested": True,
+        }
+        risk = {
+            "trackId": 4, "objectType": "PERSON", "sourceTimestampMs": 1000,
+            "streamSessionId": "session-1", "occurredAt": "2026-01-01T00:00:00Z",
+            "reasons": [{"code": "RESTRICTED_ZONE_ENTRY"}],
+        }
+        node = FakeNode()
+        result = asyncio.run(mgr.handle_alert_actions(
+            [action], {"person-risk": risk}, node, "CAM-01"
+        ))
+        assert result == {"delivered": 1, "failed": 0}
+        assert len(node.items) == 1
+        assert node.items[0].type == SNAPSHOT
+        assert node.items[0].alert_id == 19

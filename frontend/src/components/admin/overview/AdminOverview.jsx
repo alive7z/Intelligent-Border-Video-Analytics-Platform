@@ -9,6 +9,7 @@ import { getAlertsSummary } from "../../../services/alertApi";
 import { getOverviewAnalytics } from "../../../services/analyticsApi";
 import { getSystemStatus } from "../../../services/cameraApi";
 import { useRealtime } from "../../../context/RealtimeContext";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 /**
  * Admin Overview pane: real aggregate KPIs (alerts, retention posture) plus
@@ -87,9 +88,9 @@ function AdminOverview() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <div className="metric-strip">
         <h2 className="sr-only">Administration Summary</h2>
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/20 bg-white/5 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-px lg:grid-cols-4">
           <PrimaryMetric
             label="Operators"
             value={`${activeOperators} / ${operatorTotal ?? "—"}`}
@@ -103,11 +104,11 @@ function AdminOverview() {
           <PrimaryMetric label="Events Today" value={overview.events?.today ?? "—"} />
           <PrimaryMetric label="Unacknowledged Alerts" value={alertSummary.totalActive ?? "—"} />
         </div>
-      </Card>
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4">
         <SummaryPanel title="Alert Summary">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <AlertMetric label="Medium" value={alertSummary.medium ?? "—"} tone="medium" />
             <AlertMetric label="High" value={alertSummary.high ?? "—"} tone="high" />
             <AlertMetric label="Critical" value={alertSummary.critical ?? "—"} tone="critical" />
@@ -120,7 +121,7 @@ function AdminOverview() {
         </SummaryPanel>
 
         <SummaryPanel title="Operations">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <InlineMetric
               label="Active Operators"
               value={activeOperators}
@@ -150,15 +151,15 @@ function AdminOverview() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <h3 className="text-base font-semibold text-slate-800">Operator Workload</h3>
-          <p className="text-sm text-slate-500">Acknowledged / resolved alerts per operator.</p>
+          <h3 className="text-base font-semibold text-primary">Operator Workload</h3>
+          <p className="text-sm text-muted">Acknowledged / resolved alerts per operator.</p>
           {workload.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-400">No operator activity recorded yet.</p>
+            <p className="mt-4 text-sm text-muted">No operator activity recorded yet.</p>
           ) : (
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
+                  <tr className="border-b border-slate-200 text-xs uppercase text-muted">
                     <th className="px-3 py-2 font-semibold">Operator</th>
                     <th className="px-3 py-2 font-semibold text-right">Acknowledged</th>
                     <th className="px-3 py-2 font-semibold text-right">Resolved</th>
@@ -168,7 +169,7 @@ function AdminOverview() {
                 <tbody>
                   {workload.map((w) => (
                     <tr key={w.id} className="border-b border-slate-100">
-                      <td className="px-3 py-2.5 text-slate-700">{w.fullName}</td>
+                      <td className="px-3 py-2.5 text-secondary">{w.fullName}</td>
                       <td className="px-3 py-2.5 text-right">{w.acknowledgedCount}</td>
                       <td className="px-3 py-2.5 text-right">{w.resolvedCount}</td>
                       <td className="px-3 py-2.5 text-right">
@@ -183,8 +184,8 @@ function AdminOverview() {
         </Card>
 
         <Card>
-          <h3 className="text-base font-semibold text-slate-800">Retention & Storage</h3>
-          <p className="text-sm text-slate-500">Current cleanup policy and data volume.</p>
+          <h3 className="text-base font-semibold text-primary">Retention & Storage</h3>
+          <p className="text-sm text-muted">Current cleanup policy and data volume.</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <RetStat label="Max Normal Events" value={ret.settings?.maxNormalEvents} />
             <RetStat label="HIGH horizon" value={ret.settings?.highAlertHours ? `${ret.settings.highAlertHours}h` : "Keep all"} />
@@ -214,7 +215,7 @@ function formatDuration(value) {
 function SummaryPanel({ title, children }) {
   return (
     <Card>
-      <h3 className="mb-3 text-sm font-semibold text-slate-800">{title}</h3>
+      <h3 className="mb-3 text-sm font-semibold text-primary">{title}</h3>
       {children}
     </Card>
   );
@@ -223,11 +224,11 @@ function SummaryPanel({ title, children }) {
 function PrimaryMetric({ label, value, detail }) {
   return (
     <div className="min-w-0 bg-transparent px-3 py-3 sm:px-4">
-      <p className="min-h-8 text-xs font-semibold uppercase leading-4 tracking-wide text-slate-300 lg:min-h-0">
+      <p className="min-h-8 text-xs font-semibold uppercase leading-4 tracking-wide text-muted lg:min-h-0">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-bold leading-none text-white">{value}</p>
-      {detail && <p className="mt-1 text-xs text-slate-400">{detail}</p>}
+      <p className="mt-1 text-2xl font-bold leading-none text-primary">{value}</p>
+      {detail && <p className="mt-1 text-xs text-muted">{detail}</p>}
     </div>
   );
 }
@@ -242,17 +243,19 @@ const ALERT_TONES = {
 function AlertMetric({ label, value, tone }) {
   const color = ALERT_TONES[tone] || ALERT_TONES.acknowledged;
   return (
-    <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2.5">
-      <span className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 items-center justify-between gap-4 rounded-lg bg-slate-50 px-3 py-2.5">
+      <span className="flex min-w-0 items-center gap-3">
         <span
           className={`h-2 w-2 shrink-0 rounded-full ${color.dot}`}
           aria-hidden="true"
         />
-        <span className="text-xs font-semibold uppercase leading-4 tracking-wide text-slate-600">
+        <span className="min-w-0 text-xs font-semibold uppercase leading-4 tracking-wide text-secondary">
           {label}
         </span>
       </span>
-      <span className={`text-lg font-bold ${color.text}`}>{value}</span>
+      <span className={`shrink-0 text-right text-lg font-bold ${color.text}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -260,10 +263,10 @@ function AlertMetric({ label, value, tone }) {
 function InlineMetric({ label, value, detail }) {
   return (
     <div className="min-w-0 rounded-lg bg-slate-50 px-3 py-2.5">
-      <p className="text-xs font-medium leading-4 text-slate-500">{label}</p>
+      <p className="text-xs font-medium leading-4 text-muted">{label}</p>
       <div className="mt-0.5 flex items-baseline gap-2">
-        <p className="text-lg font-bold leading-tight text-slate-900">{value}</p>
-        {detail && <p className="text-xs text-slate-400">{detail}</p>}
+        <p className="text-lg font-bold leading-tight text-primary">{value}</p>
+        {detail && <p className="text-xs text-muted">{detail}</p>}
       </div>
     </div>
   );
@@ -287,14 +290,14 @@ function SystemMetric({ label, status, value }) {
       ? "text-amber-700"
       : unavailable
         ? "text-red-700"
-        : "text-slate-600";
+        : "text-secondary";
   const displayValue = value || toDisplayStatus(normalized);
 
   return (
     <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2.5">
-      <span className="truncate text-xs font-medium text-slate-500">{label}</span>
+      <span className="truncate text-xs font-medium text-muted">{label}</span>
       <span
-        className={`flex min-w-0 items-center gap-2 text-sm font-semibold ${value ? "text-slate-800" : text}`}
+        className={`flex min-w-0 items-center gap-2 text-sm font-semibold ${value ? "text-primary" : text}`}
       >
         {!value && (
           <span
@@ -309,17 +312,14 @@ function SystemMetric({ label, status, value }) {
 }
 
 function toDisplayStatus(value) {
-  return value
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return formatEventLabel(value);
 }
 
 function RetStat({ label, value }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-      <p className="text-xl font-bold text-slate-800">{value ?? "—"}</p>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-xl font-bold text-primary">{value ?? "—"}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React from "react";
 import Card from "../common/Card";
 import StatusIndicator from "../common/StatusIndicator";
 import { ActivityIcon } from "../common/Icons";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 function lineTone(name, value) {
   if (value === "Clear" || value === "Inactive" || value === "Stationary") {
@@ -31,16 +32,16 @@ function ContextStatus({ context }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <ActivityIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">
+        <ActivityIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">
           Context / Security Status
         </h3>
       </div>
       <ul className="space-y-3">
         {rows.map((r) => (
           <li key={r.name} className="flex items-center justify-between">
-            <span className="text-sm text-slate-500">{r.name}</span>
-            <StatusIndicator status={lineTone(r.name, r.value)} label={r.value} />
+            <span className="text-sm text-muted">{r.name}</span>
+            <StatusIndicator status={lineTone(r.name, r.value)} label={formatEventLabel(r.value)} />
           </li>
         ))}
       </ul>

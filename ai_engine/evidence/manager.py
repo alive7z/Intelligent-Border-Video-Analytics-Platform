@@ -184,6 +184,7 @@ class EvidenceManager:
         self,
         alert_action: dict,
         risk_obs: dict | None,
+        camera_code: str | None = None,
     ) -> list[EvidenceMeta]:
         """Capture one snapshot for a non-incident alert action.
 
@@ -205,11 +206,26 @@ class EvidenceManager:
         snap_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"ibvap:{alert_id}:BEST_SNAPSHOT"))
         snapshot_frame = self._ring.snapshot_frame(target_ms)
         track_id = (risk_obs or {}).get("trackId")
+        source = "ring"
         if track_id is not None:
             candidates = self._vehicle_candidates.get(int(track_id), [])
             if candidates:
                 winner = max(candidates, key=lambda candidate: candidate["score"])
                 snapshot_frame = winner["image"]
+                source = "vehicle_candidate"
+        dimensions = None if snapshot_frame is None else list(snapshot_frame.shape[:2][::-1])
+        logger.info(
+            "EVIDENCE_TRACE stage=CANDIDATE camera=%s session=%s track=%s alert=%s "
+            "event=%s frameAvailable=%s frameDimensions=%s orientation=canonical source=%s",
+            camera_code,
+            (risk_obs or {}).get("streamSessionId"),
+            track_id,
+            alert_id,
+            alert_action.get("eventId"),
+            snapshot_frame is not None,
+            dimensions,
+            source,
+        )
         snapshot = capture_snapshot(
             snapshot_frame,
             snap_id,
@@ -228,6 +244,16 @@ class EvidenceManager:
                 captured_at=captured_at,
             )
             items.append(snapshot_item)
+            logger.info(
+                "EVIDENCE_TRACE stage=FILESYSTEM camera=%s session=%s track=%s alert=%s "
+                "snapshotSelected=true writeResult=success storage=%s bytes=%s",
+                camera_code,
+                (risk_obs or {}).get("streamSessionId"),
+                track_id,
+                alert_id,
+                snapshot["storageReference"],
+                snapshot["fileSizeBytes"],
+            )
         else:
             self._failed_count += 1
             logger.warning("Snapshot capture failed for alert %s", alert_id)
@@ -252,6 +278,17 @@ class EvidenceManager:
                 frame = winner["image"]
                 quality = winner["quality"]
         evidence_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"ibvap:{event_code}:BEST_SNAPSHOT"))
+        dimensions = None if frame is None else list(frame.shape[:2][::-1])
+        logger.info(
+            "EVIDENCE_TRACE stage=CANDIDATE session=%s track=%s event=%s alert=none "
+            "frameAvailable=%s frameDimensions=%s orientation=canonical source=%s",
+            (risk_obs or {}).get("streamSessionId"),
+            track_id,
+            event_code,
+            frame is not None,
+            dimensions,
+            "vehicle_candidate" if quality is not None else "ring",
+        )
         media = capture_snapshot(frame, evidence_id, self._snapshot_dir)
         if not media:
             self._failed_count += 1
@@ -270,6 +307,12 @@ class EvidenceManager:
         self._incident_snapshots[event_code] = item
         self._captured_count += 1
         logger.info("Best incident snapshot selected event=%s track=%s quality=%s", event_code, track_id, quality)
+        logger.info(
+            "EVIDENCE_TRACE stage=FILESYSTEM session=%s track=%s event=%s snapshotSelected=true "
+            "writeResult=success storage=%s bytes=%s",
+            (risk_obs or {}).get("streamSessionId"), track_id, event_code,
+            media["storageReference"], media["fileSizeBytes"],
+        )
         return item
 
     def build_plate_evidence_items(
@@ -425,18 +468,34 @@ class EvidenceManager:
             obs_id = action.get("observationId")
             risk_obs = risk_obs_by_id.get(obs_id)
             reasons = (risk_obs or {}).get("reasons") or []
-            restricted = any(
+            restricted_vehicle_incident = (
+                str((risk_obs or {}).get("objectType", "")).upper() == "VEHICLE"
+                and any(
                 str(reason if isinstance(reason, str) else reason.get("code") or reason.get("type") or "").upper()
                 == "RESTRICTED_ZONE_ENTRY" for reason in reasons
+                )
             )
-            # Restricted incidents are event-anchored as soon as Node returns
-            # the binding, including LOW incidents that have no alert yet.
-            items = [] if restricted else self.build_evidence_items(action, risk_obs)
-            if not restricted:
+            # Only restricted VEHICLE intrusions use the event-anchored
+            # incident path. A person in a restricted zone still needs the
+            # normal alert-anchored full-scene snapshot.
+            items = [] if restricted_vehicle_incident else self.build_evidence_items(
+                action, risk_obs, camera_code=camera_code
+            )
+            if not restricted_vehicle_incident:
                 items += self.build_plate_evidence_items(
                     action, risk_obs, (plate_by_obs or {}).get(obs_id)
                 )
             if not items:
+                logger.info(
+                    "EVIDENCE_TRACE stage=SELECTION camera=%s session=%s track=%s alert=%s "
+                    "candidateCreated=false requested=%s incidentPath=%s",
+                    camera_code,
+                    (risk_obs or {}).get("streamSessionId"),
+                    (risk_obs or {}).get("trackId"),
+                    action.get("alertId"),
+                    action.get("evidenceRequested"),
+                    restricted_vehicle_incident,
+                )
                 if action.get("evidenceRequested") and not self._enabled:
                     failed += 1
                 continue
@@ -445,6 +504,15 @@ class EvidenceManager:
                 delivered += len(items)
                 continue
             try:
+                logger.info(
+                    "EVIDENCE_TRACE stage=DELIVERY camera=%s session=%s track=%s alert=%s "
+                    "attempted=true items=%s",
+                    camera_code,
+                    (risk_obs or {}).get("streamSessionId"),
+                    (risk_obs or {}).get("trackId"),
+                    action.get("alertId"),
+                    len(items),
+                )
                 result = await node_client.send_evidence(camera_code, items)
                 if result.get("sent"):
                     delivered += 1

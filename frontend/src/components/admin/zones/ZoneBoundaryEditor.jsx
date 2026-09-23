@@ -126,12 +126,12 @@ function ZoneBoundaryEditor({
     <div className="space-y-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-slate-800">Camera Boundary Editor</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm font-semibold text-primary">Camera Boundary Editor</p>
+          <p className="text-xs text-muted">
             {cameraCode || "No camera"} · rotation {rotationDegrees}° · normalized [0..1]
           </p>
         </div>
-        <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+        <label className="flex items-center gap-2 text-xs font-medium text-secondary">
           <input
             type="checkbox"
             checked={showAll}
@@ -166,7 +166,7 @@ function ZoneBoundaryEditor({
         )}
 
         {!imageReady && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-center text-xs text-slate-400">
+          <div className="text-on-dark-muted absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-center text-xs">
             <p>{exhausted ? "Current camera frame unavailable" : "Loading current camera frame…"}</p>
             {exhausted && (
               <Button variant="secondary" size="sm" className="mt-2" onClick={retryNow}>
@@ -238,7 +238,7 @@ function ZoneBoundaryEditor({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           {canEdit
             ? isFenceType(zone.type)
               ? displayCoordinates.length < 2
@@ -255,7 +255,7 @@ function ZoneBoundaryEditor({
       </div>
 
       {showAll && (
-        <div className="flex flex-wrap gap-3 text-[11px] text-slate-600">
+        <div className="flex flex-wrap gap-3 text-[11px] text-secondary">
           {Object.entries(ZONE_TYPE_COLORS).map(([label, color]) => (
             <span key={label} className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />

@@ -9,11 +9,11 @@ const dotColors = {
 };
 
 const labelColors = {
-  success: "text-slate-700",
-  warning: "text-slate-700",
-  danger: "text-red-700",
-  info: "text-slate-700",
-  offline: "text-slate-500",
+  success: "text-secondary",
+  warning: "text-secondary",
+  danger: "text-red-700 dark:text-red-300",
+  info: "text-secondary",
+  offline: "text-muted",
 };
 
 /**

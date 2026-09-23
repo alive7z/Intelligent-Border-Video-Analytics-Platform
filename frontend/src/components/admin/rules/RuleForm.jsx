@@ -62,7 +62,7 @@ function RuleForm({ open, onClose, onSubmit, rule, canManage }) {
       size="md"
       footer={
         !canManage ? (
-          <div className="text-sm text-slate-400">Read-only</div>
+          <div className="text-sm text-muted">Read-only</div>
         ) : (
           <>
             <Button variant="ghost" onClick={onClose}>
@@ -90,7 +90,7 @@ function RuleForm({ open, onClose, onSubmit, rule, canManage }) {
         />
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="rule-cat" className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label htmlFor="rule-cat" className="mb-1.5 block text-sm font-medium text-secondary">
               Category
             </label>
             <select id="rule-cat" value={form.category} onChange={set("category")} disabled={!canManage} className="input-field">
@@ -113,7 +113,7 @@ function RuleForm({ open, onClose, onSubmit, rule, canManage }) {
           />
         </div>
         <label className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2.5">
-          <span className="text-sm font-medium text-slate-700">Enabled</span>
+          <span className="text-sm font-medium text-secondary">Enabled</span>
           <input
             type="checkbox"
             checked={form.enabled}
@@ -128,7 +128,7 @@ function RuleForm({ open, onClose, onSubmit, rule, canManage }) {
             generate evidence, so it stays disabled.
           </p>
         )}
-        {!canManage && <p className="text-xs text-slate-400">Read-only access.</p>}
+        {!canManage && <p className="text-xs text-muted">Read-only access.</p>}
       </div>
     </Modal>
   );

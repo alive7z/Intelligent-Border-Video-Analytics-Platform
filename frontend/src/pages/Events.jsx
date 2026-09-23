@@ -30,8 +30,8 @@ const defaultFilters = {
 function SummaryCard({ label, value }) {
   return (
     <div className="card flex items-center gap-4 p-4">
-      <p className="text-3xl font-bold text-slate-900">{value ?? "—"}</p>
-      <p className="text-sm font-medium text-slate-600">{label}</p>
+      <p className="text-3xl font-bold text-primary">{value ?? "—"}</p>
+      <p className="text-sm font-medium text-secondary">{label}</p>
     </div>
   );
 }
@@ -141,35 +141,32 @@ function Events() {
         subtitle="Search and review surveillance events, detections, and security incidents."
       >
         <div className="relative">
-          <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" disabled>
+          <Button variant="secondary" size="sm" disabled>
             <DownloadIcon size={15} /> Export <ChevronDownIcon size={14} />
           </Button>
         </div>
-        <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" onClick={load}>
+        <Button variant="secondary" size="sm" onClick={load}>
           <RefreshIcon size={15} /> Refresh
         </Button>
       </PageHeader>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryCard label="Total Events Today" value={summary?.totalToday} />
         <SummaryCard label="Security Events" value={summary?.securityEvents} />
         <SummaryCard label="ANPR Events" value={summary?.anprEvents} />
       </div>
 
-      {/* Filter bar */}
       <div className="card mt-6 p-4">
         <EventFilters filters={filters} onChange={(next) => { setFilters(next); setPage(1); }} cameras={cameras} />
       </div>
 
-      {/* Event history */}
       <div className="mt-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-white">Event History</h2>
+          <h2 className="text-base font-semibold text-primary">Event History</h2>
           {!loading && !error && (
-            <p className="text-sm text-white">
+            <p className="text-sm text-muted">
               Showing{" "}
-              <span className="font-medium text-white">
+              <span className="font-medium text-secondary">
                 {from}–{to}
               </span>{" "}
               of {pagination.total || 0} events
@@ -183,8 +180,8 @@ function Events() {
           </div>
         ) : error ? (
           <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
-            <AlertTriangleIcon size={28} className="text-slate-300" />
-            <p className="text-sm font-medium text-slate-700">
+            <AlertTriangleIcon size={28} className="text-disabled" />
+            <p className="text-sm font-medium text-secondary">
               Unable to load event history.
             </p>
             <Button variant="secondary" size="sm" onClick={load}>
@@ -200,12 +197,12 @@ function Events() {
             />
             {pageCount > 1 && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted">
                   Page {safePage} of {pageCount}
                 </p>
                 <div className="flex items-center gap-1">
                   <button
-                    className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50 disabled:opacity-50"
                     disabled={safePage <= 1}
                     onClick={() => setPage(safePage - 1)}
                   >
@@ -213,7 +210,7 @@ function Events() {
                   </button>
                   {pageNumbers.map((n, i) =>
                     n === "…" ? (
-                      <span key={`e${i}`} className="px-1 text-xs text-slate-400">
+                      <span key={`e${i}`} className="px-1 text-xs text-muted">
                         …
                       </span>
                     ) : (
@@ -223,7 +220,7 @@ function Events() {
                         className={`btn-focus rounded-lg border px-3 py-1.5 text-xs font-medium ${
                           n === safePage
                             ? "border-blue-700 bg-blue-700 text-white"
-                            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                            : "border-slate-300 bg-white text-secondary hover:bg-slate-50"
                         }`}
                       >
                         {n}
@@ -231,7 +228,7 @@ function Events() {
                     )
                   )}
                   <button
-                    className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50 disabled:opacity-50"
                     disabled={safePage >= pageCount}
                     onClick={() => setPage(safePage + 1)}
                   >
@@ -248,9 +245,9 @@ function Events() {
           </>
         ) : (
           <div className="card flex flex-col items-center justify-center gap-2 p-10 text-center">
-            <FileTextIcon size={28} className="text-slate-300" />
-            <p className="text-sm font-semibold text-slate-700">No events found</p>
-            <p className="text-sm text-slate-500">
+            <FileTextIcon size={28} className="text-disabled" />
+            <p className="text-sm font-semibold text-secondary">No events found</p>
+            <p className="text-sm text-muted">
               No surveillance events match the selected filters.
             </p>
           </div>
@@ -259,9 +256,9 @@ function Events() {
 
       <Modal open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} title="Delete Event">
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             Delete event{" "}
-            <span className="font-semibold text-slate-700">{deleteTarget?.id}</span>? This is a
+            <span className="font-semibold text-secondary">{deleteTarget?.id}</span>? This is a
             soft delete — the event is hidden from listings and its audit trail is preserved.
             Protected events must be unprotected first.
           </p>

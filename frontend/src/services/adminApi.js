@@ -46,6 +46,7 @@ const mapCam = (c) => {
     enabled: Boolean(row.enabled),
     targetFps: row.targetFps != null ? Number(row.targetFps) : null,
     rotationDegrees: Number(row.rotationDegrees || 0),
+    displayRotationDegrees: Number(row.displayRotationDegrees || 0),
     deletedAt: row.deletedAt || null,
     description: row.description || null,
     rtspMasked: "rtsp://***.configured",

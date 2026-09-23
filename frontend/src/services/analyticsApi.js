@@ -62,20 +62,17 @@ export async function getAnalyticsSummary() {
   const ca = cameras.data || {};
   const allCameras = cameraList.data || [];
 
-  // eventsByType: [{name,value}]
   const eventsByType = (ev.byType || []).map((r) => ({
     name: r.event_type,
     value: Number(r.count),
   }));
 
-  // riskDistribution: [{name,value,color}] from alert severity counts.
   const riskDistribution = (al.bySeverity || []).map((r) => ({
     name: r.severity,
     value: Number(r.count),
     color: SEVERITY_COLORS[r.severity] || "#64748b",
   }));
 
-  // alertsByCamera: [{name,alerts}]
   const alertsByCamera = (ca.alertsPerCamera || []).map((r) => ({
     name: r.camera_name || r.camera_code,
     alerts: Number(r.count),

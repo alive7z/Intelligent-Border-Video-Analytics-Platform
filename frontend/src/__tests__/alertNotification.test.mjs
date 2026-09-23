@@ -178,6 +178,6 @@ test("reasonLabel reads first reason without fabrication", () => {
 
 test("eventLabel falls back to the raw type / generic label", () => {
   assert.equal(eventLabel("VIRTUAL_FENCE_CROSSING"), "Virtual Fence Crossing");
-  assert.equal(eventLabel("CUSTOM_EVENT"), "CUSTOM EVENT");
+  assert.equal(eventLabel("CUSTOM_EVENT"), "Custom Event");
   assert.equal(eventLabel(null), "Security Alert");
 });

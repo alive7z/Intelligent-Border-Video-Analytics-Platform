@@ -104,7 +104,6 @@ class ContextEngine:
         self._config_signature: str | None = None
         self._timeout_seconds = 30.0
 
-        # Metrics.
         self._metrics = {
             "tracksEvaluated": 0,
             "zoneEntries": 0,

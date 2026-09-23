@@ -213,7 +213,6 @@ const processRiskEvent = async (event) => {
     return { action: "NONE", eventId: event && event.id };
   }
 
-  // Deduplication by fingerprint (camera + track + reason group window).
   const fingerprint = buildFingerprint(event);
   const incidentKey = buildIncidentKey(event);
   let conn;
@@ -338,7 +337,6 @@ const processRiskEvent = async (event) => {
       };
     }
 
-    // New active incident -> create alert.
     const created = await alertRepository.create({
       alertCode: crypto.randomUUID(),
       eventId: event.id,
@@ -392,7 +390,6 @@ const processRiskEvent = async (event) => {
   }
 };
 
-// Build the safe alertActions response for a batch of decisions.
 const buildAlertActions = (observations, decisions) =>
   observations.map((obs, i) => {
     const d = decisions[i] || { action: "NONE" };

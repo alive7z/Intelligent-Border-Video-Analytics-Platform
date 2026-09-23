@@ -2,7 +2,8 @@ const { getPool } = require("../config/database");
 const { parsePagination, parseSort } = require("../utils/pagination");
 
 const SELECT_COLUMNS = `id, camera_code, name, description, location_name, sector,
-  source_type, stream_protocol, stream_url, target_fps, rotation_degrees, stream_status,
+  source_type, stream_protocol, stream_url, target_fps, rotation_degrees,
+  display_rotation_degrees, stream_status,
   ai_status, enabled, deleted_at, last_seen_at, created_at, updated_at, geographic_config`;
 
 const ALLOWED_SORT = ["created_at", "updated_at", "name", "camera_code", "last_seen_at"];
@@ -140,6 +141,7 @@ const update = async (id, data, conn) => {
     streamUrl: "stream_url",
     targetFps: "target_fps",
     rotationDegrees: "rotation_degrees",
+    displayRotationDegrees: "display_rotation_degrees",
     streamStatus: "stream_status",
     aiStatus: "ai_status",
     enabled: "enabled",

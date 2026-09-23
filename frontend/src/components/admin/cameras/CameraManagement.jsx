@@ -110,7 +110,7 @@ function CameraManagement() {
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="relative">
-          <SearchIcon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black" />
+          <SearchIcon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             className="input-field pl-9"
             placeholder="Search cameras…"
@@ -138,7 +138,7 @@ function CameraManagement() {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center gap-3 py-12">
-            <p className="text-sm text-slate-500">Failed to load cameras. Please try again.</p>
+            <p className="text-sm text-muted">Failed to load cameras. Please try again.</p>
             <Button variant="secondary" size="sm" onClick={load}>
               Retry
             </Button>
@@ -147,7 +147,7 @@ function CameraManagement() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3 font-semibold">Camera</th>
                   <th className="px-4 py-3 font-semibold">Location</th>
                   <th className="px-4 py-3 font-semibold">Sector</th>
@@ -160,7 +160,7 @@ function CameraManagement() {
               <tbody>
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
+                    <td colSpan={7} className="px-4 py-10 text-center text-muted">
                       No cameras match your search.
                     </td>
                   </tr>
@@ -168,18 +168,18 @@ function CameraManagement() {
                 {filtered.map((c) => (
                   <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 font-medium text-slate-800">
-                        <CctvIcon size={16} className="text-white" />
+                      <div className="flex items-center gap-2 font-medium text-primary">
+                        <CctvIcon size={16} className="text-blue-600" />
                         {c.id}
                       </div>
-                      <p className="text-xs text-slate-400">{c.name}</p>
+                      <p className="text-xs text-muted">{c.name}</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{c.location || "—"}</td>
-                    <td className="px-4 py-3 text-slate-600">{c.sector || "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{c.location || "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{c.sector || "—"}</td>
                     <td className="px-4 py-3">
                       <Badge tone={streamTone(c.streamStatus)}>{c.streamStatus}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{c.aiStatus || "—"}</td>
+                    <td className="px-4 py-3 text-secondary">{c.aiStatus || "—"}</td>
                     <td className="px-4 py-3">
                       {c.enabled ? (
                         <Badge tone="success">Enabled</Badge>
@@ -219,7 +219,7 @@ function CameraManagement() {
           </div>
         )}
       </Card>
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs text-muted">
         {filtered.length} of {cameras.length} camera(s) shown. RTSP credentials are always masked.
       </p>
 
@@ -263,10 +263,10 @@ function CameraManagement() {
         <div className="flex items-start gap-3">
           <AlertTriangleIcon size={20} className="mt-0.5 shrink-0 text-rose-500" />
           <div>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-secondary">
               Permanently remove <span className="font-semibold">{deleteTarget?.id}</span>?
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-muted">
               This disables streaming and clears its runtime state. Events and
               alerts already recorded are kept.
             </p>

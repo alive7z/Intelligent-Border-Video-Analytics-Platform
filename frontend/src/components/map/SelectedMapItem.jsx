@@ -4,12 +4,13 @@ import Button from "../common/Button";
 import AlertSeverityBadge from "../alerts/AlertSeverityBadge";
 import { CameraIcon, AlertTriangleIcon, ShieldIcon, LayersIcon, XIcon } from "../common/Icons";
 import { formatDateTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 function Section({ label, value }) {
   return (
     <div className="flex items-center justify-between py-1.5 text-xs">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-800">{value || "—"}</span>
+      <span className="text-muted">{label}</span>
+      <span className="font-medium text-primary">{value || "—"}</span>
     </div>
   );
 }
@@ -42,12 +43,12 @@ function SelectedMapItem({ item, onClose, actions }) {
       <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2">
         <div className="flex items-center gap-2">
           {icon}
-          <h3 className="text-sm font-semibold text-slate-800">Selected</h3>
+          <h3 className="text-sm font-semibold text-primary">Selected</h3>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="btn-focus rounded p-1 text-slate-400 hover:bg-slate-100"
+          className="btn-focus rounded p-1 text-muted hover:bg-slate-100"
           aria-label="Clear selection"
         >
           <XIcon size={16} />
@@ -57,14 +58,14 @@ function SelectedMapItem({ item, onClose, actions }) {
       {item.kind === "camera" && (
         <>
           <p className="text-base font-bold text-blue-700">{item.id}</p>
-          <p className="text-sm text-slate-600">{item.name}</p>
+          <p className="text-sm text-secondary">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Sector" value={item.sector} />
             <Section
               label="Status"
               value={
                 <Badge tone={String(item.status).toLowerCase() === "online" ? "online" : "offline"}>
-                  {item.status}
+                  {formatEventLabel(item.status)}
                 </Badge>
               }
             />
@@ -94,7 +95,7 @@ function SelectedMapItem({ item, onClose, actions }) {
       {item.kind === "alert" && (
         <>
           <p className="text-base font-bold text-red-700">{item.id}</p>
-          <p className="text-sm text-slate-700">{item.type}</p>
+          <p className="text-sm text-secondary">{formatEventLabel(item.type)}</p>
           <div className="mt-2 space-y-1">
             <Section label="Severity" value={<AlertSeverityBadge severity={item.severity} />} />
             <Section label="Camera" value={item.cameraId} />
@@ -115,7 +116,7 @@ function SelectedMapItem({ item, onClose, actions }) {
           <p className="text-base font-bold text-blue-700">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Zone ID" value={item.id} />
-            <Section label="Type" value={<Badge tone="new">{item.type}</Badge>} />
+            <Section label="Type" value={<Badge tone="new">{formatEventLabel(item.type)}</Badge>} />
             <Section label="Camera" value={item.cameraId} />
             <Section label="Risk Level" value={<Badge tone={riskTone(item.riskLevel)}>{(item.riskLevel || "").toUpperCase()}</Badge>} />
           </div>
@@ -130,11 +131,11 @@ function SelectedMapItem({ item, onClose, actions }) {
       {item.kind === "fence" && (
         <>
           <p className="text-base font-bold text-blue-700">{item.id}</p>
-          <p className="text-sm text-slate-600">{item.name}</p>
+          <p className="text-sm text-secondary">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Camera" value={item.cameraId} />
             <Section label="Rule" value={item.rule} />
-            <Section label="Status" value={<Badge tone="online">{item.status}</Badge>} />
+            <Section label="Status" value={<Badge tone="online">{formatEventLabel(item.status)}</Badge>} />
           </div>
           {actions.onViewCamera && (
             <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => actions.onViewCamera(item.cameraId)}>

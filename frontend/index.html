@@ -6,6 +6,16 @@
     <meta name="description" content="IBVAP – Intelligent Border Video Analytics Platform. AI-powered border surveillance using existing CCTV infrastructure." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>IBVAP | Border Surveillance Command System</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("ibvap-theme");
+          const dark = saved === "dark" || (!saved && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

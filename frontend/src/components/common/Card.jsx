@@ -23,13 +23,13 @@ export function CardHeader({ icon, title, subtitle, children, className = "" }) 
       <div className="flex items-center gap-2">
         {icon &&
           React.cloneElement(icon, {
-            className: `${icon.props.className || ""} text-white`.trim(),
+            className: `${icon.props.className || ""} text-blue-600`.trim(),
           })}
         <div>
-          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 text-[15px]">
+          <h3 className="text-primary text-[15px] font-semibold tracking-tight">
             {title}
           </h3>
-          {subtitle && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>}
+          {subtitle && <p className="text-muted mt-1 text-xs leading-5">{subtitle}</p>}
         </div>
       </div>
       {children && <div className="flex items-center gap-2">{children}</div>}

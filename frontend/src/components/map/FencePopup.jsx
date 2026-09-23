@@ -1,6 +1,7 @@
 import React from "react";
 import Badge from "../common/Badge";
 import { LayersIcon } from "../common/Icons";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Virtual fence popup.
@@ -10,21 +11,21 @@ function FencePopup({ fence }) {
     <div className="min-w-[220px]">
       <div className="flex items-center gap-2">
         <LayersIcon size={15} className="text-blue-700" />
-        <p className="text-sm font-bold text-slate-900">{fence.id}</p>
+        <p className="text-sm font-bold text-primary">{fence.id}</p>
       </div>
-      <p className="text-sm text-slate-600">{fence.name}</p>
+      <p className="text-sm text-secondary">{fence.name}</p>
       <div className="mt-2 space-y-1 text-xs">
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Camera:</span>
-          <span className="font-medium text-slate-700">{fence.cameraId}</span>
+          <span className="text-muted">Camera:</span>
+          <span className="font-medium text-secondary">{fence.cameraId}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Rule:</span>
-          <span className="text-slate-700">{fence.rule}</span>
+          <span className="text-muted">Rule:</span>
+          <span className="text-secondary">{fence.rule}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Status:</span>
-          <Badge tone="online">{fence.status}</Badge>
+          <span className="text-muted">Status:</span>
+          <Badge tone="online">{formatEventLabel(fence.status)}</Badge>
         </div>
       </div>
     </div>

@@ -6,11 +6,11 @@ function Kpi({ label, value, sub, icon, tone }) {
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-slate-500">{label}</p>
+        <p className="text-xs font-medium text-muted">{label}</p>
         <span className={`rounded-lg p-1.5 ${tone}`}>{icon}</span>
       </div>
-      <p className="mt-1.5 text-2xl font-bold text-slate-900">{value}</p>
-      {sub && <p className="text-xs text-slate-500">{sub}</p>}
+      <p className="mt-1.5 text-2xl font-bold text-primary">{value}</p>
+      {sub && <p className="text-xs text-muted">{sub}</p>}
     </Card>
   );
 }
@@ -36,29 +36,29 @@ function AnalyticsKpis({ summary }) {
         label="Retained Alerts"
         value={severityTotal}
         sub="All severities"
-        icon={<BellIcon size={16} className="text-white" />}
-        tone="bg-transparent"
+        icon={<BellIcon size={16} className="text-blue-600" />}
+        tone="bg-blue-50"
       />
       <Kpi
         label="High + Critical"
         value={criticalHigh}
         sub="Require attention"
         icon={<AlertTriangleIcon size={16} className="text-red-600" />}
-        tone="bg-transparent"
+        tone="bg-red-50"
       />
       <Kpi
         label="Avg Camera Health"
         value={`${avgHealth}%`}
         sub={`${healthyCams} of ${camHealth.length} healthy`}
         icon={<ActivityIcon size={16} className="text-green-600" />}
-        tone="bg-transparent"
+        tone="bg-green-50"
       />
       <Kpi
         label="Average Alert Risk"
         value={summary.averageRiskScore == null ? "—" : Number(summary.averageRiskScore).toFixed(1)}
         sub="Across retained alerts"
-        icon={<ShieldIcon size={16} className="text-white" />}
-        tone="bg-transparent"
+        icon={<ShieldIcon size={16} className="text-blue-600" />}
+        tone="bg-blue-50"
       />
     </div>
   );

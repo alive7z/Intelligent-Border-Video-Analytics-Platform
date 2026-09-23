@@ -1,24 +1,36 @@
 # Phase 8 — AI detection + tracking dependencies.
+#
+# Phase 4 (2026-09-14): pinned to the verified, regression-tested snapshot.
+# All three upgrade candidates (EasyOCR / OpenCV / PyTorch) were evaluated as
+# already-latest-or-unjustified and KEPT OLD — see
+# docs/IBVAP-PHASE4-DEPENCENCY-VERIFICATION-2026-09-14.md. Re-pin deliberately.
 
-opencv-python>=4.10.0
-numpy>=1.26.0
+opencv-python==5.0.0.93
+numpy==2.4.6
 
 # Internal FastAPI AI service
-fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
-pydantic>=2.8.0
-pydantic-settings>=2.4.0
-python-dotenv>=1.0.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.5
+pydantic-settings==2.15.0
+python-dotenv==1.2.3
 
 # Node.js communication
-httpx>=0.27.0
+httpx==0.28.1
 
 # YOLO detection + tracking
-ultralytics>=8.3.0
-torch>=2.1.0
+ultralytics==8.4.136
+# Ultralytics ByteTrack imports LAP at runtime. Pin the version verified by the
+# current tracker stack so a fresh production container never auto-installs it.
+lap==0.5.13
+torch==2.13.0
+torchvision==0.28.0
 
-# Phase 12 — ANPR plate OCR (lazy-loaded in anpr/ocr.py)
-easyocr>=1.7.0
+# Phase 12 — ANPR plate OCR (lazy-loaded in anpr/ocr.py).
+# NOTE: easyocr's metadata declares opencv-python-headless as a dependency.
+# This project deliberately installs opencv-python (GUI builders, video, dnn)
+# instead; both provide the cv2 module so `pip check`'s note is harmless.
+easyocr==1.7.2
 
 # Tests
-pytest>=8.2.0
+pytest==9.1.1

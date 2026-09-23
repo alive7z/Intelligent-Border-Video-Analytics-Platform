@@ -141,16 +141,24 @@ const runtimeStatusForCamera = async (cameraCode) => {
   let runtime = await redis.getCameraRuntime(cameraCode);
   const redisAvailable = redis.isEnabled() && redis.isHealthy();
 
-  // Redis is only a cache, not a source of truth. A missing/expired entry is
-  // not authoritative (a live camera may simply have no recent heartbeat), so
-  // always ask the AI engine when no runtime entry exists.
-  if (!runtime || String(runtime.status || "").toUpperCase() !== "ONLINE") {
+  // Redis is only a cache within its TTL, never the source of truth. A cached
+  // ONLINE heartbeat is trusted as long as it is unexpired (Python wrote it and
+  // would report the same). A cached NON-ONLINE status (CONNECTING/RECONNECTING/
+  // OFFLINE/...) must NOT be trusted — it can be stale within its TTL and does
+  // not reflect what is happening right now — so always re-ask the AI engine,
+  // the live authority. If the AI is unreachable and the only evidence is a
+  // stale non-ONLINE entry, surface nothing rather than a fake state.
+  const cachedStatus = String(runtime?.status || "").toUpperCase();
+  if (cachedStatus === "ONLINE") {
+    // Trusted until it expires; already validated shape by redis.getCameraRuntime.
+  } else {
     const pythonRuntime = await fetchPythonRuntime(cameraCode);
-    if (
-      pythonRuntime &&
-      (!runtime || String(pythonRuntime.status || "").toUpperCase() === "ONLINE")
-    ) {
+    if (pythonRuntime) {
       runtime = pythonRuntime;
+    } else if (cachedStatus) {
+      // No live authority and no confirmed ONLINE — never present a stale
+      // cache value (e.g. CONNECTING from an earlier attempt) as reality.
+      runtime = null;
     }
   }
 

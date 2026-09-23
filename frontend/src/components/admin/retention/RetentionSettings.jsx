@@ -11,6 +11,7 @@ import { ActivityIcon, RefreshIcon, TrashIcon } from "../../common/Icons";
 import { getRetention, updateRetention, runRetention } from "../../../services/retentionApi";
 import { cleanAllOperationalData } from "../../../services/retentionApi";
 import { useRealtime } from "../../../context/RealtimeContext";
+import { formatEventLabel } from "../../../utils/eventTypeLabels";
 
 const DELETE_ALL_PHRASE = "DELETE ALL DATA";
 
@@ -144,8 +145,8 @@ function RetentionSettings({ readOnly }) {
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-slate-800">Retention Policy</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="text-base font-semibold text-primary">Retention Policy</h3>
+            <p className="text-sm text-muted">
               Automated cleanup protects critical evidence and prunes expired normal events.
               Protected events and alerts always survive cleanup.
             </p>
@@ -181,7 +182,7 @@ function RetentionSettings({ readOnly }) {
               }
             />
           ))}
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-secondary sm:col-span-2">
             <input
               type="checkbox"
               className="accent-blue-700"
@@ -205,8 +206,8 @@ function RetentionSettings({ readOnly }) {
       </Card>
 
       <Card>
-        <h3 className="text-base font-semibold text-slate-800">Storage Snapshot</h3>
-        <p className="text-sm text-slate-500">Live data volume for the retention dashboard.</p>
+        <h3 className="text-base font-semibold text-primary">Storage Snapshot</h3>
+        <p className="text-sm text-muted">Live data volume for the retention dashboard.</p>
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           <Stat label="Total Events" value={stats.events} />
           <Stat label="Normal INFO/LOW" value={stats.normalEvents} />
@@ -221,10 +222,10 @@ function RetentionSettings({ readOnly }) {
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
           {stats.eventsBySeverity && (
             <div>
-              <dt className="text-xs uppercase tracking-wide text-slate-500">Events by severity</dt>
+              <dt className="text-xs uppercase tracking-wide text-muted">Events by severity</dt>
               {Object.entries(stats.eventsBySeverity).map(([s, n]) => (
-                <dd key={s} className="flex justify-between text-sm text-slate-700">
-                  <span>{s}</span>
+                <dd key={s} className="flex justify-between text-sm text-secondary">
+                  <span>{formatEventLabel(s)}</span>
                   <span className="font-semibold">{Number(n || 0).toLocaleString()}</span>
                 </dd>
               ))}
@@ -232,17 +233,17 @@ function RetentionSettings({ readOnly }) {
           )}
           {stats.alertsBySeverity && (
             <div>
-              <dt className="text-xs uppercase tracking-wide text-slate-500">Alerts by severity</dt>
+              <dt className="text-xs uppercase tracking-wide text-muted">Alerts by severity</dt>
               {Object.entries(stats.alertsBySeverity).map(([s, n]) => (
-                <dd key={s} className="flex justify-between text-sm text-slate-700">
-                  <span>{s}</span>
+                <dd key={s} className="flex justify-between text-sm text-secondary">
+                  <span>{formatEventLabel(s)}</span>
                   <span className="font-semibold">{Number(n || 0).toLocaleString()}</span>
                 </dd>
               ))}
             </div>
           )}
           {stats.orphanedEvidence != null && (
-            <div className="flex items-end text-sm text-slate-700">
+            <div className="flex items-end text-sm text-secondary">
               <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 font-medium text-amber-700">
                 {Number(stats.orphanedEvidence).toLocaleString()} orphaned evidence record(s)
               </span>
@@ -250,17 +251,17 @@ function RetentionSettings({ readOnly }) {
           )}
           {stats.evidenceByType && (
             <div>
-              <dt className="text-xs uppercase tracking-wide text-slate-500">Evidence by type</dt>
+              <dt className="text-xs uppercase tracking-wide text-muted">Evidence by type</dt>
               {Object.entries(stats.evidenceByType).map(([type, n]) => (
-                <dd key={type} className="flex justify-between text-sm text-slate-700"><span>{type.replace(/_/g, " ")}</span><span className="font-semibold">{Number(n).toLocaleString()}</span></dd>
+                <dd key={type} className="flex justify-between text-sm text-secondary"><span>{formatEventLabel(type)}</span><span className="font-semibold">{Number(n).toLocaleString()}</span></dd>
               ))}
             </div>
           )}
         </dl>
 
         {runResult && (
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            <p className="font-semibold text-slate-800">
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-secondary">
+            <p className="font-semibold text-primary">
               Last cleanup{runResult.skipped ? " skipped by policy" : " completed"} (
               {runResult.durationMs != null ? `${runResult.durationMs} ms` : ""}
               {runResult.mode ? ` · ${runResult.mode}` : ""})
@@ -311,10 +312,10 @@ function RetentionSettings({ readOnly }) {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <h3 className="text-base font-semibold text-red-800 dark:text-red-300">Danger Zone</h3>
-              <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">
+              <p className="mt-1 text-sm font-medium text-primary">
                 Clean All Operational Data
               </p>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-secondary">
                 Permanently removes all events, alerts, intelligence observations, and evidence.
               </p>
             </div>
@@ -327,7 +328,7 @@ function RetentionSettings({ readOnly }) {
 
       <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Run retention cleanup now">
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             This runs the full cleanup immediately, even when auto-cleanup is off.
             Expired events and resolved alerts are purged; protected items, live
             alerts, and evidence still referenced by an event are preserved. The
@@ -391,8 +392,8 @@ function RetentionSettings({ readOnly }) {
 function Stat({ label, value, formatted = false }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-      <p className="text-2xl font-bold text-slate-800">{value === null || value === undefined ? "—" : formatted ? value : Number(value).toLocaleString()}</p>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-2xl font-bold text-primary">{value === null || value === undefined ? "—" : formatted ? value : Number(value).toLocaleString()}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
     </div>
   );
 }

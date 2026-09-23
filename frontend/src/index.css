@@ -10,8 +10,27 @@
 :root {
   color-scheme: light;
 
+  /* Semantic theme contract. Components should consume these tokens when a
+     value represents meaning (text/surface/border), not a palette shade. */
+  --text-primary: 15 23 42;
+  --text-primary-opacity: 1;
+  --text-secondary: 71 85 105;
+  --text-secondary-opacity: 1;
+  --text-tertiary: 100 116 139;
+  --text-tertiary-opacity: 1;
+  --text-muted: 100 116 139;
+  --text-muted-opacity: 1;
+  --text-disabled: 148 163 184;
+  --text-disabled-opacity: 1;
+  --surface: 255 255 255;
+  --surface-elevated: 255 255 255;
+  --border: 226 232 240;
+
   /* page background */
-  --c-bg: 246 248 251;
+  --c-bg: 248 250 252;
+  --c-surface: var(--surface);
+  --c-surface-raised: var(--surface-elevated);
+  --c-border: var(--border);
 
   /* slate scale (standard Tailwind light values) */
   --c-slate-50: 248 250 252;
@@ -30,6 +49,38 @@
   --c-white: 255 255 255;
 }
 
+.dark {
+  color-scheme: dark;
+  --text-primary: 255 255 255;
+  --text-primary-opacity: 1;
+  --text-secondary: 255 255 255;
+  --text-secondary-opacity: 0.9;
+  --text-tertiary: 255 255 255;
+  --text-tertiary-opacity: 0.75;
+  --text-muted: 255 255 255;
+  --text-muted-opacity: 0.6;
+  --text-disabled: 255 255 255;
+  --text-disabled-opacity: 0.4;
+  --surface: 24 24 27;
+  --surface-elevated: 31 31 35;
+  --border: 63 63 70;
+  --c-bg: 9 9 11;
+  --c-surface: var(--surface);
+  --c-surface-raised: var(--surface-elevated);
+  --c-border: var(--border);
+  --c-slate-50: 24 24 27;
+  --c-slate-100: 31 31 35;
+  --c-slate-200: 42 42 46;
+  --c-slate-300: 63 63 70;
+  --c-slate-400: 161 161 170;
+  --c-slate-500: 161 161 170;
+  --c-slate-600: 212 212 216;
+  --c-slate-700: 228 228 231;
+  --c-slate-800: 244 244 245;
+  --c-slate-900: 250 250 250;
+  --c-slate-950: 255 255 255;
+}
+
 @layer base {
   :root {
     font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -46,33 +97,22 @@
   body {
     min-height: 100vh;
     background-color: rgb(var(--c-bg));
-    color: rgb(var(--c-slate-800));
+    color: rgb(var(--text-primary) / var(--text-primary-opacity));
+    transition: background-color 180ms ease, color 180ms ease;
   }
 
-  /* Fixed blurred backdrop so the page background shows softly through
-     the translucent cards (body directly cannot blur its own image). */
+  /* The authenticated product uses a quiet, solid command-centre canvas.
+     Scenic imagery is intentionally reserved for the sign-in experience. */
   body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image: url("/background.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: blur(6px);
-    transform: scale(1.06);
+    content: none;
   }
 
-  /* Keep the login page's inputs transparent when the browser applies
-     autofill/autofill-hover suggestion backgrounds. The near-infinite
-     transition preserves the glass input surface instead of snapping to
-     the browser's solid autofill white. */
+  /* Keep browser autofill consistent with the design-system input surface. */
   .login-page input:-webkit-autofill,
   .login-page input:-webkit-autofill:hover,
   .login-page input:-webkit-autofill:focus {
-    -webkit-text-fill-color: rgb(255 255 255);
-    caret-color: rgb(255 255 255);
+    -webkit-text-fill-color: rgb(var(--text-primary) / var(--text-primary-opacity));
+    caret-color: rgb(var(--text-primary) / var(--text-primary-opacity));
     transition: background-color 9999s ease-in-out 0s;
   }
 
@@ -83,100 +123,36 @@
 
 @layer components {
   .card {
-    @apply rounded-xl border border-white/20;
-    background-color: rgb(15 23 42 / 0.75);
-    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+    @apply rounded-xl border;
+    background-color: rgb(var(--c-surface));
+    border-color: rgb(var(--c-border));
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 14px rgb(15 23 42 / 0.035);
+    transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
   }
 
-  /* Dark cards: lift slate text and neutral surfaces so content stays readable.
-     Only applies to cards that are dark; light cards keep dark text. */
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-300,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-400,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-500,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-600,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-700,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-800,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .text-slate-900 {
-    color: rgb(var(--c-slate-100));
-  }
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .bg-slate-50,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .bg-slate-100 {
-    background-color: rgba(255, 255, 255, 0.08);
-  }
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .hover\:bg-slate-50:not(.bg-white):hover,
-  .card:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100):not(.bg-slate-200):not(.bg-gray-50):not(.bg-gray-100) .hover\:bg-slate-100:not(.bg-white):hover {
-    background-color: rgba(255, 255, 255, 0.14);
-  }
-
-  /* Light cards keep dark slate text (no overrides applied above). */
-
-  /* Translucent sidebar: lighten its text and neutral surfaces */
   .sidebar-surface {
-    color: rgb(var(--c-slate-100));
-  }
-  .sidebar-surface .text-black,
-  .sidebar-surface .text-slate-400,
-  .sidebar-surface .text-slate-500,
-  .sidebar-surface .text-slate-600,
-  .sidebar-surface .text-slate-700,
-  .sidebar-surface .text-slate-800 {
-    color: rgb(var(--c-slate-100));
-  }
-  .sidebar-surface .bg-slate-50,
-  .sidebar-surface .bg-slate-100 {
-    background-color: rgba(255, 255, 255, 0.08);
-  }
-  .sidebar-surface .hover\:bg-slate-100:hover,
-  .sidebar-surface .hover\:bg-blue-50:hover {
-    background-color: rgba(59, 130, 246, 0.18);
-  }
-  .sidebar-surface .hover\:text-blue-700:hover,
-  .sidebar-surface .hover\:text-slate-700:hover {
-    color: #93c5fd;
-  }
-
-  /* The System Health flyout/tooltip are light surfaces inside the dark
-     sidebar; do not inherit the sidebar's light navigation-label colors. */
-  .system-status-control :is([role="dialog"], [role="tooltip"]),
-  .system-status-control :is([role="dialog"], [role="tooltip"]) :is(.text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700, .text-slate-800) {
-    color: #000 !important;
+    color: rgb(var(--text-secondary) / var(--text-secondary-opacity));
+    background-color: rgb(var(--c-surface));
   }
 
   .input-field {
     @apply w-full rounded-lg border px-3 py-2 text-sm outline-none transition;
-    background-color: rgb(var(--c-white));
-    border-color: rgb(var(--c-slate-300));
-    color: rgb(var(--c-slate-800));
+    min-height: 40px;
+    background-color: rgb(var(--c-surface));
+    border-color: rgb(var(--c-border));
+    color: rgb(var(--text-primary) / var(--text-primary-opacity));
   }
   .input-field::placeholder {
-    color: rgb(var(--c-slate-400));
+    color: rgb(var(--text-disabled) / var(--text-disabled-opacity));
   }
   .input-field:focus {
-    border-color: rgb(var(--c-slate-500));
-    box-shadow: 0 0 0 3px rgb(var(--c-slate-500) / 0.2);
+    border-color: rgb(59 130 246);
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.16);
   }
 
   .btn-focus {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2;
-  }
-
-  /* White controls need black labels even inside dark cards. Scope the
-     override to controls, leaving colored buttons and card text unchanged. */
-  .btn-focus.bg-white,
-  button.bg-white,
-  [role="button"].bg-white {
-    color: #000 !important;
-  }
-
-  .btn-focus.bg-white:hover,
-  button.bg-white:hover,
-  [role="button"].bg-white:hover {
-    color: #fff !important;
-  }
-
-  .btn-focus.bg-white.map-location-button:hover,
-  .btn-focus.bg-white.rounded-full:hover {
-    color: #000 !important;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    --tw-ring-offset-color: rgb(var(--c-bg));
   }
 
   /* Micro-interaction helpers */
@@ -185,12 +161,13 @@
   }
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.10);
+    border-color: rgb(59 130 246 / 0.3);
+    box-shadow: 0 12px 28px rgb(15 23 42 / 0.09);
   }
 
   .icon-btn {
     @apply rounded-lg p-2 transition-colors;
-    color: rgb(var(--c-slate-600));
+    color: rgb(var(--text-secondary) / var(--text-secondary-opacity));
   }
   .icon-btn:hover {
     background-color: rgb(var(--c-slate-100));
@@ -200,9 +177,184 @@
   .page-enter {
     animation: pageFadeIn 0.2s ease-out;
   }
+
+  .app-header {
+    background-color: rgb(var(--c-surface));
+    border-color: rgb(var(--c-border));
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.03);
+  }
+
+  .popup-surface {
+    background-color: rgb(var(--surface-elevated));
+    border-color: rgb(var(--border));
+    color: rgb(var(--text-primary) / var(--text-primary-opacity));
+  }
+
+  .dark .card {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.28), 0 10px 30px rgb(0 0 0 / 0.12);
+  }
+
+  .dark .app-shell .bg-white {
+    background-color: rgb(var(--c-surface-raised));
+  }
+
+  /* Semantic tints stay subtle on charcoal surfaces, including legacy
+     components that do not yet carry a component-specific dark variant. */
+  .dark .bg-blue-50,
+  .dark .bg-blue-100 { background-color: rgb(59 130 246 / 0.14); }
+  .dark .bg-red-50,
+  .dark .bg-red-100 { background-color: rgb(239 68 68 / 0.14); }
+  .dark .bg-orange-50,
+  .dark .bg-orange-100 { background-color: rgb(249 115 22 / 0.14); }
+  .dark .bg-amber-50,
+  .dark .bg-amber-100,
+  .dark .bg-yellow-50,
+  .dark .bg-yellow-100 { background-color: rgb(245 158 11 / 0.14); }
+  .dark .bg-green-50,
+  .dark .bg-green-100,
+  .dark .bg-emerald-50,
+  .dark .bg-emerald-100 { background-color: rgb(34 197 94 / 0.14); }
+  .dark .bg-sky-50,
+  .dark .bg-sky-100 { background-color: rgb(14 165 233 / 0.14); }
+  .dark .hover\:bg-blue-50:hover,
+  .dark .hover\:bg-blue-100:hover { background-color: rgb(59 130 246 / 0.20); }
+  .dark .hover\:bg-red-50:hover,
+  .dark .hover\:bg-red-100:hover { background-color: rgb(239 68 68 / 0.20); }
+  .dark .hover\:bg-orange-50:hover,
+  .dark .hover\:bg-amber-50:hover,
+  .dark .hover\:bg-yellow-50:hover { background-color: rgb(245 158 11 / 0.20); }
+  .dark .hover\:bg-green-50:hover,
+  .dark .hover\:bg-emerald-50:hover { background-color: rgb(34 197 94 / 0.20); }
+
+  .dark .text-blue-600,
+  .dark .text-blue-700,
+  .dark .text-blue-800 { color: rgb(96 165 250); }
+  .dark .text-red-600,
+  .dark .text-red-700,
+  .dark .text-red-800,
+  .dark .text-red-900 { color: rgb(252 165 165); }
+  .dark .text-orange-600,
+  .dark .text-orange-700,
+  .dark .text-orange-800,
+  .dark .text-orange-900 { color: rgb(253 186 116); }
+  .dark .text-amber-600,
+  .dark .text-amber-700,
+  .dark .text-amber-800,
+  .dark .text-amber-900,
+  .dark .text-yellow-600,
+  .dark .text-yellow-700,
+  .dark .text-yellow-800 { color: rgb(252 211 77); }
+  .dark .text-green-600,
+  .dark .text-green-700,
+  .dark .text-green-800,
+  .dark .text-emerald-600,
+  .dark .text-emerald-700,
+  .dark .text-emerald-800 { color: rgb(134 239 172); }
+  .dark .text-sky-600,
+  .dark .text-sky-700,
+  .dark .text-sky-800 { color: rgb(125 211 252); }
+
+  .dark .border-blue-100,
+  .dark .border-blue-200,
+  .dark .border-blue-300 { border-color: rgb(59 130 246 / 0.34); }
+  .dark .border-red-100,
+  .dark .border-red-200,
+  .dark .border-red-300 { border-color: rgb(239 68 68 / 0.34); }
+  .dark .border-orange-100,
+  .dark .border-orange-200,
+  .dark .border-orange-300 { border-color: rgb(249 115 22 / 0.34); }
+  .dark .border-amber-100,
+  .dark .border-amber-200,
+  .dark .border-amber-300,
+  .dark .border-yellow-100,
+  .dark .border-yellow-200,
+  .dark .border-yellow-300 { border-color: rgb(245 158 11 / 0.34); }
+  .dark .border-green-100,
+  .dark .border-green-200,
+  .dark .border-green-300,
+  .dark .border-emerald-100,
+  .dark .border-emerald-200,
+  .dark .border-emerald-300 { border-color: rgb(34 197 94 / 0.34); }
+  .dark .border-sky-100,
+  .dark .border-sky-200,
+  .dark .border-sky-300 { border-color: rgb(14 165 233 / 0.34); }
+
+  .metric-strip {
+    @apply grid overflow-hidden rounded-xl border;
+    background-color: rgb(var(--c-surface));
+    border-color: rgb(var(--c-border));
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.03);
+  }
+
+  .metric-strip > * {
+    border-color: rgb(var(--c-border));
+  }
+
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em];
+    color: rgb(var(--text-tertiary) / var(--text-tertiary-opacity));
+  }
+
+  .login-page {
+    background-color: rgb(var(--c-bg));
+    background-image: radial-gradient(circle at 78% 16%, rgb(37 99 235 / 0.10), transparent 34%);
+  }
+
+  .login-card {
+    background-color: rgb(var(--c-surface));
+    border-color: rgb(var(--c-border));
+    box-shadow: 0 24px 60px rgb(15 23 42 / 0.10);
+  }
+
+  .admin-page table {
+    font-size: 0.8125rem;
+  }
+
+  .admin-page thead tr {
+    background-color: rgb(var(--c-slate-50)) !important;
+  }
+
+  .admin-page tbody tr {
+    border-color: rgb(var(--c-border)) !important;
+  }
+
+  .admin-page tbody tr:hover {
+    background-color: rgb(var(--c-slate-50)) !important;
+  }
 }
 
 @layer utilities {
+  /* Semantic typography utilities. These remain stable across themes while
+     their values come from the theme contract above. */
+  .text-primary {
+    color: rgb(var(--text-primary) / var(--text-primary-opacity));
+  }
+
+  .text-secondary {
+    color: rgb(var(--text-secondary) / var(--text-secondary-opacity));
+  }
+
+  .text-tertiary {
+    color: rgb(var(--text-tertiary) / var(--text-tertiary-opacity));
+  }
+
+  .text-muted {
+    color: rgb(var(--text-muted) / var(--text-muted-opacity));
+  }
+
+  .text-disabled {
+    color: rgb(var(--text-disabled) / var(--text-disabled-opacity));
+  }
+
+  /* Contrast token for light, saturated detection overlays. */
+  .text-on-bright {
+    color: rgb(15 23 42);
+  }
+
+  .text-on-dark-muted {
+    color: rgb(255 255 255 / 0.75);
+  }
+
   .animate-shimmer {
     background: linear-gradient(
       90deg,
@@ -324,6 +476,69 @@
 .ibvap-map-container.leaflet-container,
 .ibvap-map-container .leaflet-container {
   background: #e8edf3;
+}
+
+/* Dark-mode text utilities are normalized separately from the inverted Slate
+   surface scale. This prevents explicit `dark:text-slate-*` utilities from
+   inheriting background-oriented near-black values. */
+.dark .text-black,
+.dark .text-slate-50,
+.dark .text-slate-100,
+.dark .text-slate-800,
+.dark .text-slate-900,
+.dark .text-slate-950,
+.dark .text-gray-900,
+.dark .text-neutral-900,
+.dark .text-zinc-900 {
+  color: rgb(var(--text-primary) / var(--text-primary-opacity));
+}
+
+.dark .text-slate-200,
+.dark .text-slate-300,
+.dark .text-slate-600,
+.dark .text-slate-700,
+.dark .text-gray-200,
+.dark .text-gray-300,
+.dark .text-gray-600,
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-neutral-200,
+.dark .text-neutral-300,
+.dark .text-neutral-600,
+.dark .text-neutral-700,
+.dark .text-neutral-800,
+.dark .text-zinc-200,
+.dark .text-zinc-300,
+.dark .text-zinc-600,
+.dark .text-zinc-700,
+.dark .text-zinc-800 {
+  color: rgb(var(--text-secondary) / var(--text-secondary-opacity));
+}
+
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-neutral-400,
+.dark .text-neutral-500,
+.dark .text-zinc-400,
+.dark .text-zinc-500 {
+  color: rgb(var(--text-muted) / var(--text-muted-opacity));
+}
+
+.dark select option {
+  background-color: rgb(var(--surface-elevated));
+  color: rgb(var(--text-primary) / var(--text-primary-opacity));
+}
+
+/* Native controls do not always inherit the surrounding foreground colour. */
+select,
+option {
+  color: rgb(var(--text-primary) / var(--text-primary-opacity));
+}
+
+.tooltip-trigger:has(:focus-visible) .tooltip-bubble {
+  opacity: 1;
 }
 
 /* ============================================================

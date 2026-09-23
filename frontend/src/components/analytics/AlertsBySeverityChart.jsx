@@ -43,15 +43,15 @@ function AlertsBySeverityChart({ data = [] }) {
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-2xl font-bold text-slate-900">{total}</p>
-            <p className="text-xs text-slate-500">Alerts</p>
+            <p className="text-2xl font-bold text-primary">{total}</p>
+            <p className="text-xs text-muted">Alerts</p>
           </div>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5">
         {data.map((d) => (
           <div key={d.name} className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 text-slate-600">
+            <span className="flex items-center gap-1.5 text-secondary">
               <span
                 className="inline-block h-2.5 w-2.5 rounded-sm"
                 style={{ backgroundColor: d.color || "#94a3b8" }}
@@ -59,7 +59,7 @@ function AlertsBySeverityChart({ data = [] }) {
               />
               {d.name}
             </span>
-            <span className="font-medium text-slate-800">{d.value}</span>
+            <span className="font-medium text-primary">{d.value}</span>
           </div>
         ))}
       </div>

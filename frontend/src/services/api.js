@@ -101,8 +101,6 @@ async function liveRequest(url, options = {}) {
     throw err;
   }
 
-  // Return the backend envelope; service adapters map `data` to the shape the
-  // components expect (pages keep reading `res.data`).
   return body || { success: true, data: null };
 }
 

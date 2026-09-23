@@ -13,6 +13,25 @@ export async function login(credentials) {
   return res;
 }
 
+// GET /auth/demo-access -> whether the backend allows demo logins
+// (DEMO_MODE). Only used to decide whether to show the Explore Demo section.
+export async function getDemoAccess() {
+  const res = await request("/api/auth/demo-access");
+  return res;
+}
+
+// POST /auth/demo-login -> { role: "ADMINISTRATOR" | "SECURITY_OPERATOR" }
+// Authenticates a dedicated demo account with the SAME response shape as a
+// normal login ({ accessToken, tokenType, expiresIn, user }). No passwords,
+// tokens or secrets are stored anywhere in the frontend.
+export async function demoLogin(role) {
+  const res = await request("/api/auth/demo-login", {
+    method: "POST",
+    body: JSON.stringify({ role }),
+  });
+  return res;
+}
+
 // GET /auth/me  -> validate a persisted token and return the current user.
 // The Authorization header is attached automatically by the API client.
 export async function getCurrentUser() {

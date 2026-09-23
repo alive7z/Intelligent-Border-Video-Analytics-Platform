@@ -99,7 +99,6 @@ const start = async () => {
       // Optional/degraded-by-design. Start the reconnecting client without
       // delaying HTTP startup; runtime requests fall back to Python meanwhile.
       if (redis.isEnabled()) redis.getClient();
-      // Start background schedulers (retention + presence) after startup.
       startSchedulers();
     });
 };

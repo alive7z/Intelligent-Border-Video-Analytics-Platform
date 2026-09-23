@@ -9,6 +9,8 @@ import {
   UserIcon,
   SettingsIcon,
   ExternalLinkIcon,
+  SunIcon,
+  MoonIcon,
 } from "../common/Icons";
 import Tooltip from "../common/Tooltip";
 import Logo from "../common/Logo";
@@ -17,12 +19,15 @@ import { SUPPORTED_LANGUAGES } from "../../hooks/useLanguage";
 import { getAlerts, getAlertsSummary } from "../../services/alertApi";
 import { useRealtime } from "../../context/RealtimeContext";
 import { SOCKET_EVENTS } from "../../services/websocket";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
+import { roleLabel } from "../../utils/roles";
+import { useTheme } from "../../hooks/useTheme";
 
 const severityTag = (severity) => {
   if (severity === "CRITICAL") return "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/40";
   if (severity === "HIGH") return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/40";
   if (severity === "MEDIUM") return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/40";
-  return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700/40 dark:text-slate-300 dark:border-slate-600";
+  return "bg-slate-100 text-secondary border-slate-200 dark:bg-white/10 dark:border-white/15";
 };
 
 const relativeTime = (value) => {
@@ -42,7 +47,7 @@ function ProfileDropdown({ onLogout }) {
   const navigate = useNavigate();
 
   const displayName = user?.fullName || user?.name || "—";
-  const roleLabelText = user?.role || "—";
+  const roleLabelText = user?.role || user?.roleKey ? roleLabel(user.role || user.roleKey) : "—";
   const isAdmin = user?.roleKey === "ADMINISTRATOR";
 
   useEffect(() => {
@@ -67,32 +72,32 @@ function ProfileDropdown({ onLogout }) {
           <UserIcon size={16} />
         </span>
         <span className="hidden text-left sm:block">
-          <span className="block text-sm font-medium leading-tight text-black">
+          <span className="block text-sm font-medium leading-tight text-primary">
             {displayName}
           </span>
-          <span className="block text-xs leading-tight text-black">
+          <span className="block text-xs leading-tight text-muted">
             {roleLabelText}
           </span>
         </span>
-        <ChevronDownIcon size={16} className="text-black" />
+        <ChevronDownIcon size={16} className="text-muted" />
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-40 mt-2 w-44 animate-[dropdownIn_0.16s_ease-out] origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white shadow-pop dark:border-slate-700 dark:bg-[#111C2C]"
+          className="popup-surface absolute right-0 top-full z-40 mt-2 w-44 animate-[dropdownIn_0.16s_ease-out] origin-top-right overflow-hidden rounded-xl border shadow-pop"
         >
-          <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <div className="border-b border-slate-100 px-4 py-3 dark:border-white/10">
+            <p className="text-sm font-semibold text-primary">
               {displayName}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted">
               {roleLabelText}
             </p>
           </div>
           <button
             role="menuitem"
-            className="btn-focus flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/20"
+            className="btn-focus flex w-full items-center gap-2 px-4 py-2 text-sm text-secondary transition-colors hover:bg-slate-50 dark:hover:bg-white/20"
             onClick={() => {
               setOpen(false);
               navigate("/profile");
@@ -102,7 +107,7 @@ function ProfileDropdown({ onLogout }) {
           </button>
           {isAdmin && <button
             role="menuitem"
-            className="btn-focus flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/20"
+            className="btn-focus flex w-full items-center gap-2 px-4 py-2 text-sm text-secondary transition-colors hover:bg-slate-50 dark:hover:bg-white/20"
             onClick={() => {
               setOpen(false);
               navigate("/admin");
@@ -112,7 +117,7 @@ function ProfileDropdown({ onLogout }) {
           </button>}
           <button
             role="menuitem"
-            className="btn-focus flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:border-slate-800 dark:text-red-400 dark:hover:bg-red-500/10"
+            className="btn-focus flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2 text-sm text-red-600 transition-colors duration-150 hover:bg-red-50 dark:border-white/10 dark:text-red-400 dark:hover:bg-red-500/10"
             onClick={onLogout}
           >
             <LogOutIcon size={16} /> Logout
@@ -144,18 +149,18 @@ function LanguageSelect({ lang, setLang }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="btn-focus flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-black transition-colors hover:bg-slate-100 dark:hover:bg-white/10"
+        className="btn-focus flex min-h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm text-secondary transition-colors hover:bg-slate-100"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         <GlobeIcon size={16} />
         <span className="hidden md:inline">{current.label}</span>
-        <ChevronDownIcon size={14} className="text-black" />
+        <ChevronDownIcon size={14} className="text-muted" />
       </button>
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 top-full z-40 mt-2 w-32 animate-[dropdownIn_0.16s_ease-out] origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white shadow-pop dark:border-slate-700 dark:bg-[#111C2C]"
+          className="popup-surface absolute right-0 top-full z-40 mt-2 w-32 animate-[dropdownIn_0.16s_ease-out] origin-top-right overflow-hidden rounded-xl border shadow-pop"
         >
           {SUPPORTED_LANGUAGES.map((l) => (
             <button
@@ -165,7 +170,7 @@ function LanguageSelect({ lang, setLang }) {
               className={`btn-focus flex w-full px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50 dark:hover:bg-white/20 ${
                 l.code === lang
                   ? "font-medium text-blue-700 dark:text-blue-500"
-                  : "text-slate-700 dark:text-slate-200"
+                  : "text-secondary"
               }`}
               onClick={() => {
                 setLang(l.code);
@@ -181,31 +186,30 @@ function LanguageSelect({ lang, setLang }) {
   );
 }
 
-function NotificationPanel({ notifications, unreadCount, error, setOpen, ref }) {
+function NotificationPanel({ notifications, unreadCount, error, setOpen }) {
   const navigate = useNavigate();
   return (
     <div
-      className="absolute right-0 top-full z-40 mt-2 w-[360px] max-w-[calc(100vw-2rem)] animate-[dropdownIn_0.16s_ease-out] origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white shadow-pop dark:border-slate-700 dark:bg-[#111C2C]"
-      ref={ref}
+      className="popup-surface absolute right-0 top-full z-40 mt-2 w-[360px] max-w-[calc(100vw-2rem)] animate-[dropdownIn_0.16s_ease-out] origin-top-right overflow-hidden rounded-xl border shadow-pop"
     >
-      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
-        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 dark:border-white/10">
+        <p className="text-sm font-semibold text-primary">
           Notifications
         </p>
-        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/20 dark:text-blue-500">
+        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
           {unreadCount == null ? "—" : unreadCount} active
         </span>
       </div>
       <div className="max-h-72 overflow-auto">
         {notifications.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">
+          <p className="px-4 py-8 text-center text-sm text-muted">
             {error ? "Unable to load notifications." : "No active alerts."}
           </p>
         )}
         {notifications.map((n) => (
           <button
             key={n.id}
-            className="btn-focus w-full border-b border-slate-50 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-[#162235]"
+            className="btn-focus w-full border-b border-slate-50 px-4 py-3 text-left transition-colors duration-150 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/10"
             onClick={() => {
               setOpen(false);
               navigate("/alerts");
@@ -215,16 +219,16 @@ function NotificationPanel({ notifications, unreadCount, error, setOpen, ref }) 
               <span
                 className={`inline-flex rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${severityTag(n.severity)}`}
               >
-                {n.severity}
+                {formatEventLabel(n.severity)}
               </span>
-              <span className="ml-auto text-[11px] text-slate-400">
+              <span className="ml-auto text-[11px] text-muted">
                 {relativeTime(n.timestamp)}
               </span>
             </div>
-            <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
-              {String(n.eventType || "Security alert").replace(/_/g, " ")}
+            <p className="text-sm font-medium text-primary">
+              {formatEventLabel(n.eventType || "Security alert")}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted">
               {n.camera || "Camera unavailable"}
             </p>
           </button>
@@ -236,7 +240,7 @@ function NotificationPanel({ notifications, unreadCount, error, setOpen, ref }) 
           setOpen(false);
           navigate("/alerts");
         }}
-        className="btn-focus flex w-full items-center justify-center gap-1.5 border-t border-slate-100 px-4 py-2.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50 dark:border-slate-800 dark:text-blue-500 dark:hover:bg-white/20"
+        className="btn-focus flex w-full items-center justify-center gap-1.5 border-t border-slate-100 px-4 py-2.5 text-sm font-medium text-blue-700 transition-colors duration-150 hover:bg-blue-50 dark:border-white/10 dark:text-blue-400 dark:hover:bg-white/10"
       >
         <ExternalLinkIcon size={15} /> View All Alerts
       </button>
@@ -253,6 +257,7 @@ export function Header({ onMenuClick, lang, setLang }) {
   const [notificationError, setNotificationError] = useState(false);
   const notifRef = useRef(null);
   const { subscribe } = useRealtime();
+  const { isDark, toggleTheme } = useTheme();
 
   const loadNotifications = React.useCallback(() => {
     if (!user) return;
@@ -302,34 +307,30 @@ export function Header({ onMenuClick, lang, setLang }) {
 
   return (
     <div className="fixed inset-x-0 top-0 z-50">
-      <header
-        className="flex h-[64px] items-center justify-between border-b border-white/20 px-4 transition-colors lg:px-4"
-        style={{
-          background: "linear-gradient(90deg, rgba(255,153,51,0.88) 0%, rgba(255,255,255,0.88) 50%, rgba(19,136,8,0.88) 100%)",
-        }}
-      >
+      <header className="app-header flex h-[64px] items-center justify-between border-b px-4 transition-colors lg:px-6">
         <div className="flex items-center gap-3">
-          {/* Mobile hamburger */}
           <button
             type="button"
             onClick={onMenuClick}
-            className="btn-focus rounded-lg p-2 text-black transition-colors hover:bg-white/50 lg:hidden"
+            className="btn-focus rounded-lg p-2 text-secondary transition-colors hover:bg-slate-100 lg:hidden"
             aria-label="Open navigation menu"
           >
             <MenuIcon size={20} />
           </button>
 
-          <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-black/20 bg-white shadow-md sm:flex">
+          <div className="relative hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:flex">
             <Logo size={28} rounded={false} />
+            <span className="absolute -bottom-0.5 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded bg-amber-400" aria-hidden="true" />
           </div>
 
           <div>
-            <h1 className="text-base font-semibold leading-tight text-slate-900">
-              IBVAP – Intelligent Border Video Analytics Platform
+            <h1 className="text-sm font-semibold leading-tight text-primary sm:text-base">
+              <span className="mr-1.5">IBVAP</span>
+              <span className="hidden font-normal text-muted md:inline">Intelligent Border Video Analytics Platform</span>
             </h1>
 
-            <p className="text-xs text-black">
-              Border Surveillance Command Dashboard
+            <p className="text-xs text-muted">
+              Border surveillance command centre
             </p>
           </div>
         </div>
@@ -337,12 +338,23 @@ export function Header({ onMenuClick, lang, setLang }) {
         <div className="flex items-center gap-1.5 lg:gap-2">
           <LanguageSelect lang={lang} setLang={setLang} />
 
-          <div className="relative">
+          <Tooltip label={isDark ? "Use light theme" : "Use dark theme"} side="bottom">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="btn-focus flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-colors hover:bg-slate-100 hover:text-slate-800 dark:hover:text-white/90"
+              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+            >
+              {isDark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+            </button>
+          </Tooltip>
+
+          <div className="relative" ref={notifRef}>
             <Tooltip label="Notifications" side="bottom">
               <button
                 type="button"
                 onClick={() => setNotifOpen((o) => !o)}
-                className="btn-focus relative flex h-9 w-9 items-center justify-center rounded-lg text-black transition-colors hover:bg-white/50 hover:text-slate-900"
+                className="btn-focus relative flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-colors hover:bg-slate-100 hover:text-slate-800 dark:hover:text-white/90"
                 aria-label="Notifications"
                 aria-expanded={notifOpen}
               >
@@ -357,7 +369,6 @@ export function Header({ onMenuClick, lang, setLang }) {
 
             {notifOpen && (
               <NotificationPanel
-                ref={notifRef}
                 notifications={notifications}
                 unreadCount={unreadCount}
                 error={notificationError}
@@ -369,7 +380,6 @@ export function Header({ onMenuClick, lang, setLang }) {
           <ProfileDropdown onLogout={handleLogout} />
         </div>
       </header>
-      <div className="h-px w-full bg-white/20" />
     </div>
   );
 }

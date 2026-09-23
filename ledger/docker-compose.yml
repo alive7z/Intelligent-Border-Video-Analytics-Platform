@@ -1,0 +1,45 @@
+# Standalone ledger-only development stack. The root docker-compose.yml is the
+# authoritative full IBVAP deployment.
+x-ledger-common: &ledger-common
+  build: .
+  restart: unless-stopped
+  environment:
+    LEDGER_NODE_TOKEN: ${LEDGER_NODE_TOKEN:?Set LEDGER_NODE_TOKEN before starting the ledger}
+  expose:
+    - "8541"
+    - "8542"
+    - "8543"
+  networks:
+    - ledger
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  bop:
+    <<: *ledger-common
+    command: ["--node-id", "BOP", "--bind", "0.0.0.0", "--port", "8541", "--chain-id", "51201", "--peers", "sector-hq:8542,command-centre:8543"]
+    volumes:
+      - bop-data:/ledger/data/BOP
+
+  sector-hq:
+    <<: *ledger-common
+    command: ["--node-id", "Sector-HQ", "--bind", "0.0.0.0", "--port", "8542", "--chain-id", "51201", "--peers", "bop:8541,command-centre:8543"]
+    volumes:
+      - sector-data:/ledger/data/Sector-HQ
+
+  command-centre:
+    <<: *ledger-common
+    command: ["--node-id", "Command-Centre", "--bind", "0.0.0.0", "--port", "8543", "--chain-id", "51201", "--peers", "bop:8541,sector-hq:8542"]
+    volumes:
+      - command-data:/ledger/data/Command-Centre
+
+volumes:
+  bop-data:
+  sector-data:
+  command-data:
+
+networks:
+  ledger:
+    internal: true

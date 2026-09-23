@@ -16,6 +16,7 @@ import {
   shouldNotifyUpdate,
 } from "../../utils/alertNotification.mjs";
 import { XIcon, ExternalLinkIcon } from "./Icons";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 /**
  * Audio for the custom alert beep (public/audio/alert-beep.mp3). The Web
@@ -231,7 +232,6 @@ export default function AlertNotification() {
             role="alert"
             aria-live="assertive"
           >
-            {/* Pulse dot */}
             <span className={`absolute left-0 top-0 h-full w-1 ${s.pulse} animate-pulse`} />
 
             <div className="flex items-start gap-3 pl-4 pr-3 py-3">
@@ -240,7 +240,7 @@ export default function AlertNotification() {
                   <span className={`inline-flex rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${s.badge}`}>
                     {a.severity} ALERT
                   </span>
-                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                  <span className="text-[11px] font-medium text-secondary">
                     {a.cameraCode}
                   </span>
                 </div>
@@ -248,7 +248,7 @@ export default function AlertNotification() {
                   {eventLabel(a.eventType)}
                 </p>
                 {a.reason && (
-                  <p className={`text-xs mt-0.5 ${s.sub} truncate`}>{a.reason}</p>
+                  <p className={`text-xs mt-0.5 ${s.sub} truncate`}>{formatEventLabel(a.reason)}</p>
                 )}
                 {a.riskScore != null && !a.reason && (
                   <p className={`text-xs mt-0.5 ${s.sub}`}>
@@ -272,7 +272,7 @@ export default function AlertNotification() {
                 <button
                   type="button"
                   onClick={() => dismiss(a.id)}
-                  className="btn-focus rounded p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="btn-focus rounded p-1 text-muted transition-colors hover:text-slate-600 dark:hover:text-white/90"
                   aria-label="Dismiss alert"
                 >
                   <XIcon size={14} />

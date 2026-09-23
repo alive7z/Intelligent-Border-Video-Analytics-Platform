@@ -47,12 +47,12 @@ function SummaryCard({
   value,
   helper,
   dotClass = "bg-slate-400",
-  valueClass = "text-slate-900",
+  valueClass = "text-primary",
 }) {
   return (
     <div className="card px-4 py-4 sm:px-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-slate-600">{label}</p>
+        <p className="text-sm font-medium text-secondary">{label}</p>
 
         <span
           className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`}
@@ -67,7 +67,7 @@ function SummaryCard({
           {value}
         </p>
 
-        <p className="pb-1 text-right text-[11px] leading-4 text-slate-400">
+        <p className="pb-1 text-right text-[11px] leading-4 text-muted">
           {helper}
         </p>
       </div>
@@ -288,16 +288,6 @@ function BorderMap() {
     return hasGeographicMapData(data);
   }, [data]);
 
-  /*
-   * RIGHT ALERT SIDEBAR
-   *
-   * Increased width:
-   * lg  -> 400px
-   * xl  -> 430px
-   * 2xl -> 460px
-   *
-   * This makes the card expand toward the LEFT.
-   */
   const sidebar = (
     <aside
       className={`flex min-w-0 flex-col gap-2 ${
@@ -337,8 +327,7 @@ function BorderMap() {
       }`}
     >
       <div className="card overflow-hidden rounded-xl">
-        {/* Filters */}
-        <div className="border-b border-white/20 px-3 py-3 sm:px-4">
+        <div className="border-b border-slate-200 px-3 py-3 sm:px-4">
           <MapFilters
             filters={filters}
             onChange={setFilters}
@@ -356,7 +345,6 @@ function BorderMap() {
           />
         </div>
 
-        {/* Location Message */}
         {locationMessage && (
           <div className="border-b border-slate-200 px-3 py-2 sm:px-4">
             <p
@@ -372,7 +360,6 @@ function BorderMap() {
           </div>
         )}
 
-        {/* Map */}
         <div
           className={`relative isolate ${
             fullscreen ? "min-h-0 flex-1" : ""
@@ -389,14 +376,13 @@ function BorderMap() {
             aria-label="Surveillance border map"
           />
 
-          {/* Loading / Error */}
           {(loading || error) && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/90 px-6 text-center backdrop-blur-[2px]">
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-50/95 px-6 text-center">
               {loading ? (
                 <>
                   <Loader />
 
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted">
                     Loading surveillance map...
                   </p>
                 </>
@@ -407,7 +393,7 @@ function BorderMap() {
                     className="text-red-500"
                   />
 
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-secondary">
                     Unable to load map data.
                   </p>
 
@@ -425,26 +411,24 @@ function BorderMap() {
             </div>
           )}
 
-          {/* Empty Map */}
           {!loading &&
             !error &&
             !hasMappedData &&
             !location && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/95 px-6 text-center backdrop-blur-[2px]">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-50/95 px-6 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
                   <MapPinIcon
                     size={20}
-                    className="text-slate-300"
+                    className="text-blue-600"
                   />
                 </div>
 
-                <p className="mt-3 text-sm font-semibold text-white">
-                  No mapped data available
+                <p className="mt-3 text-sm font-semibold text-primary">
+                  No camera locations configured
                 </p>
 
-                <p className="mt-1 max-w-sm text-xs leading-5 text-slate-300">
-                  Cameras, zones and virtual fences with geographic
-                  coordinates will appear here.
+                <p className="mt-1 max-w-sm text-xs leading-5 text-muted">
+                  Add geographic coordinates to cameras, zones, and virtual fences to display them here.
                 </p>
 
                 <Button
@@ -461,7 +445,6 @@ function BorderMap() {
               </div>
             )}
 
-          {/* Map Legend + Layers */}
           {!loading && !error && (
             <>
               <div className="pointer-events-none absolute bottom-3 left-3 z-[400]">
@@ -481,16 +464,9 @@ function BorderMap() {
     </section>
   );
 
-  /*
-   * FULLSCREEN
-   *
-   * Alert panel = 440px
-   * Smaller gap = 8px
-   * Smaller outer padding = 8px
-   */
   if (fullscreen) {
     return (
-      <div className="ibvap-map-expanded flex min-h-0 flex-col bg-slate-50">
+      <div className="ibvap-map-expanded flex min-h-0 flex-col bg-slate-50 dark:bg-[#09090B]">
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 p-2 lg:grid-cols-[minmax(0,1fr)_auto]">
           {mapArea}
 
@@ -502,15 +478,13 @@ function BorderMap() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <PageHeader
         title="Border Map"
         subtitle="Live view of cameras, active alerts, monitored zones and virtual fences"
       >
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
-          className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white"
           onClick={loadData}
           aria-label="Refresh map data"
         >
@@ -520,9 +494,8 @@ function BorderMap() {
         </Button>
 
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
-          className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white"
           onClick={toggleFullscreen}
           aria-label="Toggle full screen map"
         >
@@ -530,7 +503,6 @@ function BorderMap() {
         </Button>
       </PageHeader>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           label="Cameras Online"
@@ -555,7 +527,7 @@ function BorderMap() {
           valueClass={
             summary.alerts
               ? "text-red-600"
-              : "text-slate-900"
+              : "text-primary"
           }
         />
 
@@ -578,12 +550,11 @@ function BorderMap() {
           valueClass={
             summary.highRisk
               ? "text-amber-600"
-              : "text-slate-900"
+              : "text-primary"
           }
         />
       </div>
 
-      {/* Map + Alerts */}
       <div className="flex min-w-0 flex-col gap-2 lg:flex-row">
         {mapArea}
 

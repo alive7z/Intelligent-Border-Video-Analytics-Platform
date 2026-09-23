@@ -18,7 +18,7 @@ function AcknowledgeModal({ open, onClose, onConfirm, loading }) {
       title="Acknowledge Alert"
       size="sm"
     >
-      <p className="text-sm text-slate-600">Acknowledge this alert?</p>
+      <p className="text-sm text-secondary">Acknowledge this alert?</p>
       <div className="mt-5 flex justify-end gap-3">
         <Button variant="secondary" size="md" onClick={handleClose} disabled={loading}>
           Cancel

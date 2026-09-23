@@ -2,12 +2,13 @@ import React from "react";
 import Card from "../common/Card";
 import { UserIcon } from "../common/Icons";
 import { formatTime } from "../../utils/date";
+import { formatEventLabel } from "../../utils/eventTypeLabels";
 
 function Row({ label, value }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-medium text-slate-800">
+      <span className="text-sm text-muted">{label}</span>
+      <span className="text-sm font-medium text-primary">
         {value == null || value === "" ? "—" : value}
       </span>
     </div>
@@ -34,15 +35,15 @@ function ObjectInformation({ event }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <UserIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+        <UserIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">{title}</h3>
       </div>
 
       {isAnpr && event.anpr ? (
         <dl className="divide-y divide-slate-100 text-sm">
           <Row label="Plate Number" value={event.anpr.plate} />
           <Row label="OCR Confidence" value={`${Math.round((event.anpr.ocrConfidence || 0) * 100)}%`} />
-          <Row label="Vehicle Type" value={event.anpr.vehicleType} />
+          <Row label="Vehicle Type" value={formatEventLabel(event.anpr.vehicleType)} />
           <Row label="Vehicle Track" value={event.trackId} />
           <Row label="Camera" value={`${event.anpr.camera} · ${event.cameraName}`} />
           <Row label="Location" value={event.location} />
@@ -55,7 +56,7 @@ function ObjectInformation({ event }) {
           <Row label="Detection Confidence" value={`${Math.round((event.face.confidence || 0) * 100)}%`} />
           <Row label="Timestamp" value={formatTime(event.face.timestamp)} />
           <dl className="pt-2">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted">
               Face detected — no identity match (person identification not yet integrated).
             </p>
           </dl>
@@ -65,14 +66,14 @@ function ObjectInformation({ event }) {
           <Row label="Track ID" value={event.trackId} />
           <Row label="Vehicle Number" value={event.vehiclePlate || "Plate not confirmed"} />
           <Row label="OCR Confidence" value={event.anpr?.ocrConfidence == null ? "—" : `${Math.round(event.anpr.ocrConfidence * 100)}%`} />
-          <Row label="Vehicle Type" value={event.object.vehicleType} />
-          <Row label="Direction" value={event.object.direction} />
+          <Row label="Vehicle Type" value={formatEventLabel(event.object.vehicleType)} />
+          <Row label="Direction" value={formatEventLabel(event.object.direction)} />
           <Row label="Confidence" value={`${Math.round((event.object.confidence || 0) * 100)}%`} />
         </dl>
       ) : isVehicle ? (
         <dl className="divide-y divide-slate-100 text-sm">
           <Row label="Track ID" value={event.trackId} />
-          <Row label="Direction" value={event.context?.direction} />
+          <Row label="Direction" value={formatEventLabel(event.context?.direction)} />
           <Row label="Confidence" value={`${Math.round((event.confidence || 0) * 100)}%`} />
         </dl>
       ) : event.object ? (
@@ -86,7 +87,7 @@ function ObjectInformation({ event }) {
       ) : (
         <dl className="divide-y divide-slate-100 text-sm">
           <Row label="Track ID" value={event.trackId} />
-          <Row label="Object Type" value={event.objectType} />
+          <Row label="Object Type" value={formatEventLabel(event.objectType)} />
           <Row label="Confidence" value={`${Math.round((event.confidence || 0) * 100)}%`} />
         </dl>
       )}

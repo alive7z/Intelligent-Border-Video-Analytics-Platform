@@ -229,7 +229,7 @@ function Intelligence() {
         title="Intelligence"
         subtitle="Review AI-generated vehicle, ANPR, and face detection intelligence from connected CCTV cameras."
       >
-        <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" onClick={refreshAll}>
+        <Button variant="secondary" size="sm" onClick={refreshAll}>
           <RefreshIcon size={15} /> Refresh
         </Button>
       </PageHeader>
@@ -249,8 +249,8 @@ function Intelligence() {
         <div className="pt-4">
           {tab === "anpr" && (
             <div>
-              <h2 className="text-base font-semibold text-white">ANPR Events</h2>
-              <p className="mb-4 text-sm text-white/70">
+              <h2 className="text-base font-semibold text-primary">ANPR Events</h2>
+              <p className="mb-4 text-sm text-muted">
                 Detected vehicle number plates from surveillance cameras.
               </p>
               <div className="card mb-4 p-4">
@@ -272,8 +272,8 @@ function Intelligence() {
 
           {tab === "face" && (
             <div>
-              <h2 className="text-base font-semibold text-white">Face Detection Events</h2>
-              <p className="mb-4 text-sm text-white/70">
+              <h2 className="text-base font-semibold text-primary">Face Detection Events</h2>
+              <p className="mb-4 text-sm text-muted">
                 Detected face regions associated with tracked persons.
               </p>
               <div className="card mb-4 p-4">
@@ -295,8 +295,8 @@ function Intelligence() {
 
           {tab === "vehicle" && (
             <div>
-              <h2 className="text-base font-semibold text-white">Vehicle Intelligence</h2>
-              <p className="mb-4 text-sm text-white/70">
+              <h2 className="text-base font-semibold text-primary">Vehicle Intelligence</h2>
+              <p className="mb-4 text-sm text-muted">
                 Review detected and tracked vehicle activity across surveillance cameras.
               </p>
               <div className="card mb-4 p-4">
@@ -333,8 +333,8 @@ function renderBody({ loading, error, retry, emptyMsg, records, table, paginatio
   if (error)
     return (
       <div className="card flex flex-col items-center justify-center gap-3 p-10 text-center">
-        <AlertTriangleIcon size={28} className="text-slate-300" />
-        <p className="text-sm font-medium text-slate-700">
+        <AlertTriangleIcon size={28} className="text-disabled" />
+        <p className="text-sm font-medium text-secondary">
           Unable to load intelligence data.
         </p>
         <Button variant="secondary" size="sm" onClick={retry}>
@@ -345,8 +345,8 @@ function renderBody({ loading, error, retry, emptyMsg, records, table, paginatio
   if (!records.length)
     return (
       <div className="card flex flex-col items-center justify-center gap-2 p-10 text-center">
-        <AlertTriangleIcon size={28} className="text-slate-300" />
-        <p className="text-sm font-semibold text-slate-700">{emptyMsg}</p>
+        <AlertTriangleIcon size={28} className="text-disabled" />
+        <p className="text-sm font-semibold text-secondary">{emptyMsg}</p>
       </div>
     );
   return (

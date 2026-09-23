@@ -1,4 +1,22 @@
 import request, { buildUrl } from "./api";
+import {
+  normalizeLiveStatus,
+  liveRuntimeStatus,
+  databaseStatus,
+  mergeRuntimeCamera,
+  fromSocketCamera,
+} from "../utils/cameraStatus";
+
+// Status/mapping helpers live in utils/cameraStatus.js (dependency-free and
+// unit-tested directly). Re-exported here so existing cameraApi consumers keep
+// their current import sites.
+export {
+  normalizeLiveStatus,
+  liveRuntimeStatus,
+  databaseStatus,
+  mergeRuntimeCamera,
+  fromSocketCamera,
+};
 
 // Single mapper: backend camera (canonical camelCase app shape) -> the shape
 // the UI components expect. Honest values only — the "Mobile Demo Camera"
@@ -21,6 +39,8 @@ function mapCamera(c) {
     aiStatus: c.aiStatus,
     sourceType: c.sourceType,
     streamProtocol: c.streamProtocol,
+    rotationDegrees: Number(c.rotationDegrees || 0),
+    displayRotationDegrees: Number(c.displayRotationDegrees || 0),
     enabled: Boolean(c.enabled),
     lastSeen: c.lastSeenAt || null,
     lastUpdate: c.lastSeenAt || null,
@@ -102,62 +122,6 @@ export async function getCameraRuntimeStatus(id) {
   return res?.data?.camera || null;
 }
 
-// Normalize backend status tokens (DB stream_status / Redis runtime.status) to
-// the lowercase UI states the components render.
-export function normalizeLiveStatus(raw) {
-  switch ((raw || "").toUpperCase()) {
-    case "ONLINE":
-      return "online";
-    case "CONNECTING":
-      return "connecting";
-    case "DEGRADED":
-      return "degraded";
-    case "RECONNECTING":
-      return "reconnecting";
-    case "OFFLINE":
-      return "offline";
-    case "ERROR":
-      return "error";
-    case "NOT_CONFIGURED":
-      return "offline";
-    default:
-      return "offline";
-  }
-}
-
-// Merge a runtime-status payload onto an already-mapped camera. Runtime is the
-// live truth when present (Redis or the Python fallback); the static DB row is
-// used only as a fallback. Never fabricates ONLINE.
-export function mergeRuntimeCamera(base, raw) {
-  if (!raw) return base;
-  const c = raw.camera || raw;
-  const live = Boolean(c.live);
-  const runtime = c.runtime || null;
-  const runtimeStatus = runtime?.status || null;
-  const liveStatus = live && runtimeStatus ? runtimeStatus : null;
-
-  return {
-    ...base,
-    id: c.cameraCode || base.id,
-    cameraCode: c.cameraCode || base.cameraCode,
-    name: c.name || base.name,
-    locationName: c.locationName || base.locationName,
-    location: c.locationName || base.locationName || base.name,
-    sector: c.sector || base.sector,
-    status: normalizeLiveStatus(liveStatus || c.streamStatus),
-    streamStatus: runtimeStatus || c.streamStatus,
-    aiStatus: c.aiStatus || base.aiStatus,
-    sourceType: c.sourceType || base.sourceType,
-    streamProtocol: c.streamProtocol || base.streamProtocol,
-    enabled: c.enabled !== undefined ? Boolean(c.enabled) : base.enabled,
-    lastSeen: runtime?.lastFrameAt || c.lastSeenAt || base.lastSeen,
-    framesProcessed: runtime?.framesProcessed ?? base.framesProcessed,
-    reconnectAttempts: runtime?.reconnectAttempts ?? 0,
-    live,
-    runtime,
-  };
-}
-
 // Backend exposes no /cameras/:id/events route; reuse the events list filtered
 // by camera_code and map into the compact shape CameraDetails expects.
 export function getCameraEvents(id) {
@@ -211,33 +175,4 @@ export async function fetchRuntimeMap(cameras = []) {
 }
 
 // Adapter for realtime socket camera payloads (camelCase from the server
-// serializer) -> the view shape the components use.
-export function fromSocketCamera(p) {
-  if (!p) return null;
-  return {
-    id: p.cameraCode,
-    cameraCode: p.cameraCode,
-    name: p.name,
-    location: p.locationName || p.name,
-    locationName: p.locationName || null,
-    sector: p.sector || null,
-    description: null,
-    status: normalizeLiveStatus(p.streamStatus),
-    streamStatus: p.streamStatus,
-    aiStatus: p.aiStatus,
-    sourceType: p.sourceType,
-    streamProtocol: p.streamProtocol,
-    enabled: Boolean(p.enabled),
-    lastSeen: p.lastSeenAt || null,
-    lastUpdate: p.lastSeenAt || null,
-    fps: null,
-    latency: null,
-    detections: [],
-    activeAlert: null,
-    context: null,
-    risk: null,
-    severity: null,
-    lat: null,
-    lng: null,
-  };
-}
+// serializer) -> the view shape the components use. Defined in utils/cameraStatus.js.

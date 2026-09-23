@@ -28,7 +28,7 @@ function ResolveAlertModal({ open, onClose, onConfirm, loading }) {
     <Modal open={open} onClose={handleClose} title="Resolve Alert" size="sm">
       <label
         htmlFor="res-type"
-        className="mb-1.5 block text-sm font-medium text-slate-700"
+        className="mb-1.5 block text-sm font-medium text-secondary"
       >
         Resolution Type
       </label>

@@ -65,7 +65,6 @@ class RiskEngine:
         self._tracks: dict[int, TrackRiskState] = {}
         self._camera_code: str = ""
 
-        # Metrics.
         self._metrics = {
             "tracksRiskEvaluated": 0,
             "riskEvaluations": 0,
@@ -381,7 +380,6 @@ class RiskEngine:
             state.reasons = reasons
             state.last_evaluation_at = now
 
-            # Metrics.
             self._metrics["tracksRiskEvaluated"] += 1
             if severity == "INFO":
                 self._metrics["infoStates"] += 1

@@ -18,14 +18,14 @@ function MapLayers({ layers, onChange }) {
     <div className="card pointer-events-auto p-3">
       <div className="mb-2 flex items-center gap-2">
         <LayersIcon size={15} className="text-blue-700" />
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
           Layers
         </p>
       </div>
       <ul className="space-y-2">
         {layerDefinitions.map((l) => (
           <li key={l.id}>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-secondary">
               <input
                 type="checkbox"
                 checked={!!layers[l.id]}

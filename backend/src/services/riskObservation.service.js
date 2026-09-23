@@ -65,7 +65,6 @@ const mergeIncidentContext = (existing, cameraId, obs, observationId) => {
   };
 };
 
-// Validate a single risk observation. Throws 400 on malformed fields.
 const validateRiskObservation = (obs) => {
   assertRequired(obs.observationId, "observation.observationId is required");
   if (typeof obs.observationId !== "string") {

@@ -3,6 +3,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 const env = require("./config/env");
 const corsOptions = require("./config/cors");
+const securityHeaders = require("./middleware/securityHeaders.middleware");
+const mtls = require("./middleware/mtls.middleware");
 const requestLogger = require("./middleware/requestLogger.middleware");
 const notFound = require("./middleware/notFound.middleware");
 const errorHandler = require("./middleware/error.middleware");
@@ -12,7 +14,9 @@ const app = express();
 
 app.set("trust proxy", 1);
 
+app.use(mtls);
 app.use(helmet());
+app.use(securityHeaders);
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));

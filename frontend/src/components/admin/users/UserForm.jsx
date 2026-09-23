@@ -57,7 +57,7 @@ function UserForm({ open, onClose, onSubmit, editing, canManage }) {
       size="md"
       footer={
         !canManage ? (
-          <div className="text-sm text-slate-400">Read-only</div>
+          <div className="text-sm text-muted">Read-only</div>
         ) : (
           <>
             <Button variant="ghost" onClick={onClose}>
@@ -73,7 +73,7 @@ function UserForm({ open, onClose, onSubmit, editing, canManage }) {
         <Input label="Username" id="user-uname" value={form.username} onChange={set("username")} error={errors.username} disabled={!canManage} />
         <Input label="Email" id="user-email" type="email" value={form.email} onChange={set("email")} disabled={!canManage} />
         <div>
-          <label htmlFor="user-role" className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
+          <label htmlFor="user-role" className="mb-1.5 block text-sm font-medium text-secondary">Role</label>
           <select id="user-role" value={form.role} onChange={set("role")} disabled={!canManage} className="input-field">
             {ROLES.map((r) => (
               <option key={r} value={r}>
@@ -94,7 +94,7 @@ function UserForm({ open, onClose, onSubmit, editing, canManage }) {
             hint="Never displayed after creation"
           />
         )}
-        {!canManage && <p className="text-xs text-slate-400">Read-only access.</p>}
+        {!canManage && <p className="text-xs text-muted">Read-only access.</p>}
       </div>
     </Modal>
   );

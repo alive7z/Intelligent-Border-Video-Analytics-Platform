@@ -1,6 +1,8 @@
 // Pure decision + normalization logic for the realtime alert popup/beep.
 // Kept free of React/DOM so it is unit-testable with `node --test`.
 
+import { formatEventLabel } from "./eventTypeLabels.js";
+
 const NOTIFICATION_SEVERITIES = new Set(["MEDIUM", "HIGH", "CRITICAL"]);
 
 // Custom alert sound shipped with the app (public/audio/alert-beep.mp3).
@@ -104,8 +106,7 @@ const EVENT_LABELS = {
 export function eventLabel(type) {
   const t = String(type || "");
   if (!t) return "Security Alert";
-  const upper = t.toUpperCase();
-  return EVENT_LABELS[upper] || upper.replace(/_/g, " ");
+  return EVENT_LABELS[t.toUpperCase()] || formatEventLabel(t);
 }
 
 export function reasonLabel(data) {

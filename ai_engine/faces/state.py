@@ -43,7 +43,6 @@ class FaceState:
         if len(st.observations) > 10:
             st.observations = st.observations[-10:]
 
-        # Keep the best confidence + its bbox for the confirmation.
         if face_conf > st.best_confidence:
             st.best_confidence = face_conf
             st.best_bbox = bbox

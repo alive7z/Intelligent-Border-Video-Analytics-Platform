@@ -60,7 +60,6 @@ def _normalize_size(crop: np.ndarray, max_width: int = 320) -> np.ndarray:
 
 
 def _enhance(gray: np.ndarray) -> np.ndarray:
-    # Gentle contrast stretch (clahe), then light bilateral denoise.
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     enhanced = clahe.apply(gray)
     # Bilateral filter preserves edges while smoothing noise.

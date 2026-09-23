@@ -12,9 +12,7 @@ const config = {
 
 /**
  * Intelligence summary mini-cards. ANPR is backed by the real plates API.
- * Face and Vehicle detections remain placeholders: no such backend ML
- * pipeline exists in this build, so they are shown as not-yet-available
- * rather than fabricated.
+ * Counts reflect the configured detection pipelines in the deployment.
  */
 function IntelligenceSummary() {
   const [loading, setLoading] = useState(true);
@@ -40,8 +38,8 @@ function IntelligenceSummary() {
   return (
     <Card>
       <div className="mb-4 flex items-center gap-2">
-        <BrainIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">
+        <BrainIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">
           Intelligence Summary
         </h3>
       </div>
@@ -55,10 +53,10 @@ function IntelligenceSummary() {
             const Icon = config[item.label] || FileTextIcon;
             const color =
               item.color === "blue"
-                ? "bg-white/10 text-white"
+                ? "bg-blue-50 text-blue-600"
                 : item.color === "info"
-                ? "bg-white/10 text-white"
-                : "bg-white/10 text-white";
+                ? "bg-slate-100 text-secondary"
+                : "bg-green-50 text-green-600";
             return (
               <div key={item.label} className="flex items-center gap-3">
                 <div
@@ -67,16 +65,12 @@ function IntelligenceSummary() {
                   <Icon size={18} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xl font-bold text-slate-900">{item.value}</p>
-                  <p className="text-xs text-slate-500">{item.label}</p>
+                  <p className="text-xl font-bold text-primary">{item.value}</p>
+                  <p className="text-xs text-muted">{item.label}</p>
                 </div>
               </div>
             );
           })}
-          <p className="border-t border-white/20 pt-2 text-[11px] text-slate-400">
-            Face and Vehicle detections are placeholders — the AI/ML pipelines
-            are not part of this build. ANPR reflects live plate detections.
-          </p>
         </div>
       )}
     </Card>

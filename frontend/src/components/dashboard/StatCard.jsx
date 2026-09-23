@@ -16,11 +16,11 @@ const iconMap = {
 };
 
 const accentMap = {
-  cameras: { bg: "bg-white/10", text: "text-white" },
-  alerts: { bg: "bg-white/10", text: "text-white" },
-  highRisk: { bg: "bg-white/10", text: "text-white" },
-  anpr: { bg: "bg-white/10", text: "text-white" },
-  health: { bg: "bg-white/10", text: "text-white" },
+  cameras: { bg: "bg-blue-50", text: "text-blue-600" },
+  alerts: { bg: "bg-amber-50", text: "text-amber-600" },
+  highRisk: { bg: "bg-red-50", text: "text-red-600" },
+  anpr: { bg: "bg-blue-50", text: "text-blue-600" },
+  health: { bg: "bg-green-50", text: "text-green-600" },
 };
 
 /**
@@ -37,21 +37,21 @@ function StatCard({ type, icon, value, label, sub, status, statusText }) {
       ? "text-warning"
       : status === "critical"
       ? "text-danger"
-      : "text-slate-500";
+      : "text-muted";
 
   return (
-    <div className="card flex items-start gap-4 p-5">
+    <div className="card flex min-h-[108px] items-center gap-3 p-4">
       <div
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${accent.bg} ${accent.text}`}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${accent.bg} ${accent.text}`}
       >
-        <Icon size={22} />
+        <Icon size={18} />
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-bold tracking-tight text-slate-900">
+        <p className="text-primary text-2xl font-semibold tracking-tight">
           {value}
         </p>
-        <p className="text-sm font-medium text-slate-700">{label}</p>
-        {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
+        <p className="text-secondary mt-0.5 text-sm font-medium">{label}</p>
+        {sub && <p className="text-muted mt-0.5 text-xs">{sub}</p>}
         {statusText && (
           <p className={`mt-1 inline-flex items-center gap-1.5 text-xs font-medium ${statusTone}`}>
             <span
