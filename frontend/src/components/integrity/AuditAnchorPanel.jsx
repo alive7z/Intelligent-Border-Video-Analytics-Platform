@@ -10,8 +10,8 @@ import { formatDateTime } from "../../utils/date";
 function Stat({ label, value, tone }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className={`mt-0.5 text-lg font-bold ${tone || "text-slate-900"}`}>{value}</p>
+      <p className="text-xs text-muted">{label}</p>
+      <p className={`mt-0.5 text-lg font-bold ${tone || "text-primary"}`}>{value}</p>
     </div>
   );
 }
@@ -65,13 +65,13 @@ export default function AuditAnchorPanel() {
       </div>
 
       {latest && (
-        <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-secondary">
           <p className="font-mono break-all">
             batch {latest.batchNumber ?? latest.index ?? "—"} · {latest.batchHash ? latest.batchHash.slice(0, 10) + "…" : "no hash"}
             {latest.ledgerStatus === "ANCHORED" ? " · on-chain" : " · pending"}
           </p>
-          {latest.anchoredAt ? <p className="mt-1 text-slate-500">anchored {formatDateTime(latest.anchoredAt)}</p> : null}
-          {latest.ledgerTxHash ? <p className="mt-1 break-all text-slate-500">tx <span className="font-mono">{latest.ledgerTxHash}</span></p> : null}
+          {latest.anchoredAt ? <p className="mt-1 text-muted">anchored {formatDateTime(latest.anchoredAt)}</p> : null}
+          {latest.ledgerTxHash ? <p className="mt-1 break-all text-muted">tx <span className="font-mono">{latest.ledgerTxHash}</span></p> : null}
         </div>
       )}
 
