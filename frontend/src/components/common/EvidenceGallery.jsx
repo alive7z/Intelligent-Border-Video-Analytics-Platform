@@ -35,13 +35,13 @@ export default function EvidenceGallery({ items = [], title = "Incident Evidence
     return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [selected?.id]);
   return <Card>
-    <h3 className="mb-3 text-sm font-semibold text-slate-800">{title}</h3>
-    <div className="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-slate-900 p-2 text-center text-sm text-slate-300">
+    <h3 className="mb-3 text-sm font-semibold text-primary">{title}</h3>
+    <div className="text-on-dark-muted flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-slate-900 p-2 text-center text-sm">
       {loading ? <Loader label="Loading evidence…" /> : url ? (
         <img src={url} alt={`${formatEventLabel(selected.type)} evidence from ${selected.cameraCode || "camera"}`} className="h-full w-full object-contain" />
       ) : <p>{unavailable ? "Evidence metadata could not be loaded." : failed ? "The stored evidence file is unavailable." : emptyMessage}</p>}
     </div>
-    {showVehicleStatus && <div className="mt-3 space-y-1 text-xs text-slate-500">
+    {showVehicleStatus && <div className="mt-3 space-y-1 text-xs text-muted">
       {!hasSnapshot && <p>No snapshot available</p>}
       {!hasPlate && <p>Plate not confirmed</p>}
     </div>}
@@ -50,6 +50,6 @@ export default function EvidenceGallery({ items = [], title = "Incident Evidence
         {item.type === "SNAPSHOT" ? "BEST SNAPSHOT" : item.type === "PLATE" ? "PLATE CROP" : `${formatEventLabel(item.type)} ${index + 1}`}
       </Button>)}
     </div>
-    {selected && <p className="mt-3 break-all text-xs text-slate-500">{selected.id} · {selected.cameraCode} · {formatDateTime(selected.capturedAt)}{selected.type === "FACE" ? " · Face detection only; identity unknown" : ""}</p>}
+    {selected && <p className="mt-3 break-all text-xs text-muted">{selected.id} · {selected.cameraCode} · {formatDateTime(selected.capturedAt)}{selected.type === "FACE" ? " · Face detection only; identity unknown" : ""}</p>}
   </Card>;
 }
