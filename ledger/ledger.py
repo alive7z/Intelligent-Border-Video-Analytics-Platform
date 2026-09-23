@@ -428,6 +428,11 @@ def main():
     parser.add_argument("--peers", default="", help="comma-separated host:port")
     parser.add_argument("--chain-id", default=CHAIN_ID)
     parser.add_argument("--allow-clear", action="store_true", help="enable POST /clear (demo only)")
+    # Deployment-only: containers need an externally reachable listen address,
+    # e.g. 0.0.0.0. Host/demo runs keep the repo default of loopback.
+    parser.add_argument(
+        "--bind", default="127.0.0.1", help="interface to bind (containers: 0.0.0.0)"
+    )
     args = parser.parse_args()
 
     node = Node(args.node_id, args.port, args.token, [p for p in args.peers.split(",") if p], chain_id=args.chain_id, enable_clear=args.allow_clear)
@@ -444,8 +449,8 @@ def main():
 
         node.dispatch = dispatch_with_clear
 
-    httpd = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(node))
-    print(f"ledger node {args.node_id} listening on 127.0.0.1:{args.port} height={node.store.height()}", flush=True)
+    httpd = ThreadingHTTPServer((args.bind, args.port), make_handler(node))
+    print(f"ledger node {args.node_id} listening on {args.bind}:{args.port} height={node.store.height()}", flush=True)
     httpd.serve_forever()
 
 
