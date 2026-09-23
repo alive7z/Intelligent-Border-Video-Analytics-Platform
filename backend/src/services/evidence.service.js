@@ -7,6 +7,7 @@ const cameraRepository = require("../repositories/camera.repository");
 const realtimeService = require("../realtime/realtime.service");
 const ApiError = require("../utils/ApiError");
 const env = require("../config/env");
+const logger = require("../utils/logger");
 const { assertRequired, assertOneOf } = require("../utils/validation");
 
 // Evidence binaries live on the shared local filesystem under the repo's
@@ -108,7 +109,18 @@ const ingestEvidence = async ({ schemaVersion, cameraCode, evidence }) => {
     ) {
       throw new ApiError(400, "evidence.storageReference must be a relative file path");
     }
-    resolveStorageReference(storageRef);
+    const absolutePath = resolveStorageReference(storageRef);
+    let fileStat = null;
+    try {
+      fileStat = fs.statSync(absolutePath);
+    } catch (_err) {
+      fileStat = null;
+    }
+    logger.info(
+      `EVIDENCE_TRACE stage=FILESYSTEM camera=${cameraCode} evidence=${it.evidenceId} ` +
+      `event=${it.eventId || "none"} alert=${it.alertId || "none"} ` +
+      `exists=${Boolean(fileStat?.isFile())} bytes=${fileStat?.size ?? "unknown"}`
+    );
 
     let event = null;
     let alert = null;
@@ -178,6 +190,11 @@ const ingestEvidence = async ({ schemaVersion, cameraCode, evidence }) => {
     });
 
     created.push(toSafeEvidence(evidenceRow));
+    logger.info(
+      `EVIDENCE_TRACE stage=DATABASE camera=${cameraCode} evidence=${it.evidenceId} ` +
+      `row=${evidenceRow.id || "none"} inserted=${evidenceRow.wasCreated !== false} ` +
+      `event=${eventId || "none"} alert=${alertId || "none"}`
+    );
     if (evidenceRow.wasCreated !== false) {
       newCount += 1;
       if (eventId) changedEventIds.add(eventId);
@@ -185,6 +202,10 @@ const ingestEvidence = async ({ schemaVersion, cameraCode, evidence }) => {
       // canonical record, open a chain-of-custody, then (async) anchor to the
       // permissioned ledger. Fire-safe: integrity failures never abort capture.
       if (env.EVIDENCE_INTEGRITY_ENABLED && evidenceRow.id) {
+        logger.info(
+          `EVIDENCE_TRACE stage=INTEGRITY camera=${cameraCode} evidence=${it.evidenceId} ` +
+          "scheduled=true"
+        );
         void require("../security/integrity.service").onEvidenceIngested({
           rowId: evidenceRow.id,
           evidenceId: it.evidenceId,
