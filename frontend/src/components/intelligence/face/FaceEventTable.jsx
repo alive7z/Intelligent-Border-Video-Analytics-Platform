@@ -9,7 +9,7 @@ function ActionButton({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="btn-focus inline-flex items-center rounded-lg border border-green-500 bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 hover:border-green-600"
+      className="btn-focus inline-flex items-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:border-blue-500 hover:bg-blue-500"
     >
       View
     </button>
@@ -26,7 +26,7 @@ function FaceEventTable({ events, onView }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium uppercase tracking-wide text-muted">
                 <th className="px-5 py-3">Related Event</th>
                 <th className="px-5 py-3">Person Track</th>
                 <th className="px-5 py-3">Camera</th>
@@ -41,14 +41,14 @@ function FaceEventTable({ events, onView }) {
               {events.map((f) => (
                 <tr key={f.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                   <td className="px-5 py-3 font-medium text-blue-700">{f.id}</td>
-                  <td className="px-5 py-3 text-slate-700">{f.trackId}</td>
-                  <td className="px-5 py-3 text-slate-600">{f.cameraId}</td>
-                  <td className="px-5 py-3 text-slate-600">{f.location || "—"}</td>
+                  <td className="px-5 py-3 text-secondary">{f.trackId}</td>
+                  <td className="px-5 py-3 text-secondary">{f.cameraId}</td>
+                  <td className="px-5 py-3 text-secondary">{f.location || "—"}</td>
                   <td className="px-5 py-3">
                     <ConfidenceBadge value={f.confidence} />
                   </td>
                   <td className="px-5 py-3"><EvidenceImage evidenceId={f.evidenceId} compact /></td>
-                  <td className="whitespace-nowrap px-5 py-3 text-slate-500">
+                  <td className="whitespace-nowrap px-5 py-3 text-muted">
                     {formatTime(f.timestamp)}
                   </td>
                   <td className="px-5 py-3 text-right">
@@ -66,13 +66,13 @@ function FaceEventTable({ events, onView }) {
           <div key={f.id} className="card p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-3">
-                <EyeIcon size={20} className="text-slate-300" />
+                <EyeIcon size={20} className="text-disabled" />
                 <div>
                   <p className="font-semibold text-blue-700">{f.id}</p>
-                  <p className="text-sm text-slate-700">
+                  <p className="text-sm text-secondary">
                     {f.trackId} · {f.cameraId}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-muted">
                     {f.location || "—"} · {formatTime(f.timestamp)}
                   </p>
                 </div>
@@ -83,7 +83,7 @@ function FaceEventTable({ events, onView }) {
             <button
               type="button"
               onClick={() => onView(f)}
-              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-green-500 bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600 hover:border-green-600"
+              className="btn-focus mt-3 inline-flex w-full items-center justify-center rounded-lg border border-blue-600 bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:border-blue-500 hover:bg-blue-500"
             >
               View
             </button>
