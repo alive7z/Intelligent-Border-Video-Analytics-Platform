@@ -25,6 +25,17 @@ const findUserByPublicId = async (publicId) => {
   return rows[0] || null;
 };
 
+// Demo accounts are the only users eligible for /auth/demo-login: they are
+// explicitly marked is_demo=1 (migration). Only one demo account per role is
+// expected; the lowest id wins if more exist.
+const findDemoUserByRole = async (role) => {
+  const [rows] = await getPool().execute(
+    "SELECT id, public_id, full_name, email, password_hash, role, status, last_login_at, mfa_secret_enc, mfa_key_id, mfa_enabled, token_version, failed_login_attempts, locked_until, created_at, updated_at FROM users WHERE role = ? AND is_demo = 1 ORDER BY id ASC LIMIT 1",
+    [role]
+  );
+  return rows[0] || null;
+};
+
 const recordFailedAttempt = async ({ userId, email, attempts, lockedUntil }) => {
   // Lock an account (progressive delay) without requiring the row to exist.
   if (userId) {
@@ -124,6 +135,7 @@ module.exports = {
   findUserByEmail,
   findUserById,
   findUserByPublicId,
+  findDemoUserByRole,
   updateLastLogin,
   updateFullName,
   auditInsert,
