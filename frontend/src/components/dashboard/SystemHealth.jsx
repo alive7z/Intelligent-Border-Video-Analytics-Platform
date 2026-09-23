@@ -15,7 +15,7 @@ const toneMap = (status) => {
     case "OFFLINE":
       return { dot: "bg-danger", text: "text-danger" };
     default:
-      return { dot: "bg-slate-400", text: "text-slate-500" };
+      return { dot: "bg-slate-400", text: "text-muted" };
   }
 };
 
@@ -76,15 +76,15 @@ function SystemHealth() {
   return (
     <Card>
       <div className="mb-4 flex items-center gap-2">
-        <ActivityIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">System Health</h3>
+        <ActivityIcon size={18} className="text-blue-600" />
+        <h3 className="text-primary text-sm font-semibold">System Health</h3>
       </div>
       {loading ? (
         <div className="flex justify-center py-8">
           <Loader />
         </div>
       ) : rows.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-400">
+        <p className="text-muted py-8 text-center text-sm">
           System health is unavailable right now.
         </p>
       ) : (
@@ -101,13 +101,13 @@ function SystemHealth() {
                     className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`}
                     aria-hidden="true"
                   />
-                  <span className="truncate text-sm text-slate-700">{s.name}</span>
+                  <span className="text-secondary truncate text-sm">{s.name}</span>
                 </span>
                 <span className="text-right">
                   <span className={`block text-sm font-medium ${tone.text}`}>
                     {s.status}
                   </span>
-                  <span className="block text-xs text-slate-400">{s.detail}</span>
+                  <span className="text-muted block text-xs">{s.detail}</span>
                 </span>
               </li>
             );
