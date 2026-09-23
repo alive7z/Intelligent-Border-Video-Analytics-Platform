@@ -17,8 +17,8 @@ import { formatEventLabel } from "../utils/eventTypeLabels";
 function InsightRow({ label, value }) {
   return (
     <div className="flex items-center justify-between border-b border-slate-100 py-1.5 text-xs last:border-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-800">{value}</span>
+      <span className="text-muted">{label}</span>
+      <span className="font-medium text-primary">{value}</span>
     </div>
   );
 }
@@ -71,7 +71,7 @@ function Analytics() {
   return (
     <div className="space-y-5">
       <PageHeader title="Analytics" subtitle="Detection, alert and camera health analytics">
-        <Button variant="ghost" size="sm" className="border border-white/20 text-white transition-colors hover:bg-white/10 hover:text-white" onClick={load} aria-label="Refresh analytics">
+        <Button variant="secondary" size="sm" onClick={load} aria-label="Refresh analytics">
           <RefreshIcon size={15} /> Refresh
         </Button>
       </PageHeader>
@@ -100,7 +100,7 @@ function Analytics() {
       {error && (
         <div className="card flex flex-col items-center justify-center gap-3 py-12 text-center">
           <AlertTriangleIcon size={30} className="text-red-500" />
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <p className="text-sm font-medium text-secondary">
             Unable to load analytics data.
           </p>
           <Button variant="secondary" size="sm" onClick={load}>
@@ -125,8 +125,8 @@ function Analytics() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <CameraHealthCard data={summary.cameraHealth || []} />
             <Card className="p-4">
-              <h3 className="mb-2 text-sm font-semibold text-slate-800">Insights</h3>
-              <p className="mb-3 text-xs text-slate-500">
+              <h3 className="mb-2 text-sm font-semibold text-primary">Insights</h3>
+              <p className="mb-3 text-xs text-muted">
                 Key observations derived from the current analytics window.
               </p>
               <div className="divide-y divide-slate-100">
