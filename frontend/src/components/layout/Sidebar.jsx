@@ -16,7 +16,6 @@ import {
   ChevronLeftIcon,
 } from "../common/Icons";
 import Tooltip from "../common/Tooltip";
-import Logo from "../common/Logo";
 import { getAlertsSummary } from "../../services/alertApi";
 import { getSystemStatus } from "../../services/cameraApi";
 import { useAuth } from "../../hooks/useAuth";
@@ -58,14 +57,14 @@ function NavItem({ item, collapsed }) {
       to={item.to}
       aria-label={collapsed ? item.label : undefined}
       className={({ isActive }) =>
-        `btn-focus group relative flex h-11 items-center transition-all duration-200 ${
+        `btn-focus group relative flex h-11 items-center transition-colors duration-150 ${
           collapsed
             ? "mx-auto w-10 justify-center rounded-lg"
             : "w-full gap-3 rounded-lg px-3"
         } ${
           isActive
-            ? "bg-blue-600 text-white shadow-md hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
-            : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-300"
+            ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-400/20"
+            : "text-secondary hover:bg-slate-100 hover:text-slate-900 dark:hover:text-white"
         }`
       }
     >
@@ -189,7 +188,7 @@ function SystemStatusCard({ onNavigate, collapsed }) {
       aria-expanded={open}
       aria-haspopup="dialog"
       aria-label="System health"
-      className="btn-focus mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition-colors hover:bg-slate-100 dark:hover:bg-[#111C2C]"
+      className="btn-focus mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 transition-colors hover:bg-slate-100"
     >
       <span className="relative flex h-3 w-3">
         <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${overallDot} opacity-60 dark:opacity-50`} />
@@ -203,17 +202,17 @@ function SystemStatusCard({ onNavigate, collapsed }) {
       onClick={() => setOpen((o) => !o)}
       aria-expanded={open}
       aria-haspopup="dialog"
-      className="btn-focus card-hover w-full rounded-xl border border-white/20 bg-slate-50 p-3 text-left dark:bg-[#111C2C]"
+      className="btn-focus w-full rounded-lg bg-slate-50 px-3 py-2.5 text-left transition-colors hover:bg-slate-100"
     >
       <div className="mb-1 flex items-center gap-2">
         <span className="relative flex h-2.5 w-2.5">
           <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${overallDot} opacity-60 dark:opacity-50`} />
           <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${overallDot}`} />
         </span>
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        <span className="text-sm font-medium text-secondary">
           {overallLabel}
         </span>
-        <span className="ml-auto text-slate-400">
+        <span className="ml-auto text-muted">
           <svg
             width="14"
             height="14"
@@ -229,7 +228,7 @@ function SystemStatusCard({ onNavigate, collapsed }) {
           </svg>
         </span>
       </div>
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted">
         Tap to view system status
       </p>
     </button>
@@ -244,7 +243,7 @@ function SystemStatusCard({ onNavigate, collapsed }) {
           label={
             <span className="flex flex-col items-start">
               <span className="block">{overallLabel}</span>
-              <span className="block text-[10px] font-normal text-slate-500 dark:text-slate-400">
+              <span className="block text-[10px] font-normal text-muted">
                 View system status
               </span>
             </span>
@@ -260,37 +259,37 @@ function SystemStatusCard({ onNavigate, collapsed }) {
         <div
           role="dialog"
           aria-label="System health"
-          className="absolute bottom-0 left-full z-50 mb-0 ml-2 w-72 animate-[expandDown_0.2s_ease-out] origin-bottom-left overflow-hidden rounded-xl border border-slate-200 bg-white shadow-pop dark:border-slate-700 dark:bg-[#111C2C]"
+          className="popup-surface absolute bottom-0 left-full z-50 mb-0 ml-2 w-72 animate-[expandDown_0.2s_ease-out] origin-bottom-left overflow-hidden rounded-xl border shadow-pop"
         >
-          <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5 dark:border-slate-800">
+          <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5 dark:border-white/10">
             <HeartPulseIcon
               size={16}
               className="text-blue-700 dark:text-blue-500"
             />
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-primary">
               System Health
             </p>
           </div>
           <div className="max-h-72 overflow-auto p-2">
             <div className="mb-1 flex items-center justify-between rounded-lg px-2 py-1.5 text-sm">
-              <span className="text-slate-600 dark:text-slate-300">
+              <span className="text-secondary">
                 Camera Streams
               </span>
-              <span className="font-medium text-slate-800 dark:text-slate-100">
+              <span className="font-medium text-primary">
                 {totalCams === null
                   ? "Loading…"
                   : `${onlineCams} / ${totalCams} Online`}
               </span>
             </div>
             {healthRows.length === 0 ? (
-              <div className="px-2 py-1.5 text-sm text-slate-400">Loading…</div>
+              <div className="px-2 py-1.5 text-sm text-muted">Loading…</div>
             ) : (
               healthRows.map((s) => (
                 <div
                   key={s.name}
                   className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-white/10"
                 >
-                  <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                  <span className="flex items-center gap-2 text-secondary">
                     <span
                       className={`h-2 w-2 shrink-0 rounded-full ${toneDot[s.status] || toneDot.Unknown}`}
                       aria-hidden="true"
@@ -305,7 +304,7 @@ function SystemStatusCard({ onNavigate, collapsed }) {
                           ? "text-warning"
                           : s.status === "OFFLINE"
                             ? "text-danger"
-                            : "text-slate-500"
+                            : "text-muted"
                     }`}
                   >
                     {s.status}
@@ -321,7 +320,7 @@ function SystemStatusCard({ onNavigate, collapsed }) {
               onNavigate?.();
               navigate("/analytics");
             }}
-            className="btn-focus flex w-full items-center gap-2 border-t border-slate-200 px-3 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:border-slate-800 dark:text-blue-500 dark:hover:bg-white/10"
+            className="btn-focus flex w-full items-center gap-2 border-t border-slate-200 px-3 py-2.5 text-sm font-medium text-blue-700 transition-colors duration-150 hover:bg-blue-50 dark:border-white/10 dark:text-blue-400 dark:hover:bg-white/10"
           >
             <ExternalLinkIcon size={15} /> View System Health
           </button>
@@ -371,24 +370,17 @@ export function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      <div
-        className={`relative flex h-16 shrink-0 items-center ${
-          collapsed ? "justify-center" : "gap-3 px-4"
-        }`}
-      >
+      <div className={`relative flex h-14 shrink-0 items-center ${collapsed ? "justify-center" : "justify-between px-3"}`}>
         {showClose && (
           <button
             type="button"
             onClick={onClose}
-            className="btn-focus absolute right-3 top-4 z-10 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10"
+            className="btn-focus absolute right-3 top-4 z-10 rounded-lg p-1.5 text-muted hover:bg-slate-100 dark:hover:bg-white/10"
             aria-label="Close navigation menu"
           >
             <XIcon size={20} />
           </button>
         )}
-        <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-black/20 bg-white shadow-md sm:flex">
-          <Logo size={28} rounded={false} />
-        </div>
         <div
           aria-hidden={collapsed}
           className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-[180ms] ease-in-out ${
@@ -397,40 +389,23 @@ export function SidebarContent({
               : "max-w-[180px] opacity-100 delay-100"
           }`}
         >
-          <p className="text-lg font-bold leading-tight tracking-tight text-black dark:text-white">
-            IBVAP
-          </p>
-          <p className="text-[11px] leading-tight text-slate-500 dark:text-slate-400">
-            Border Surveillance
-          </p>
         </div>
-      </div>
-
-      {onToggleCollapse && (
-        <div
-          className={`flex h-11 shrink-0 items-center ${
-            collapsed ? "justify-center" : "justify-start px-3"
-          }`}
-        >
+        {onToggleCollapse && (
           <button
             type="button"
             onClick={onToggleCollapse}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={`btn-focus flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-              collapsed
-                ? "border border-white/20 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-[#111C2C] dark:hover:text-slate-200"
-                : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-[#111C2C] dark:hover:text-slate-200"
-            }`}
+            className="btn-focus flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-slate-100 hover:text-slate-800 dark:hover:text-white/90"
           >
             {collapsed ? <MenuIcon size={17} /> : <ChevronLeftIcon size={17} />}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <div
-        className={`shrink-0 border-t border-white/20 ${
-          collapsed ? "mx-2 my-2" : "mx-3 my-2"
+        className={`shrink-0 border-t border-slate-200 ${
+          collapsed ? "mx-2 mb-2" : "mx-3 mb-2"
         }`}
       />
 
@@ -445,7 +420,7 @@ export function SidebarContent({
         ))}
       </nav>
 
-      <div className="shrink-0 border-t border-white/20 p-2">
+      <div className="shrink-0 border-t border-slate-200 p-2.5">
         <SystemStatusCard onNavigate={onNavigate} collapsed={collapsed} />
       </div>
     </div>
