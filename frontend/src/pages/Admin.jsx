@@ -35,8 +35,8 @@ function AccessDenied() {
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
           <ShieldIcon size={24} className="text-red-600" />
         </div>
-        <h2 className="text-lg font-semibold text-slate-800">Access Denied</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-primary">Access Denied</h2>
+        <p className="mt-1 text-sm text-muted">
           Your role does not permit access to system administration.
         </p>
       </Card>
@@ -82,8 +82,8 @@ export function OperatorConsole() {
             <OperatorKpi label="Average Resolve" value={analytics.analytics?.avgResolveMinutes != null ? `${analytics.analytics.avgResolveMinutes}m` : "—"} />
           </div>
           <Card>
-            <h3 className="text-base font-semibold text-slate-800">Assigned Cameras</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="text-base font-semibold text-primary">Assigned Cameras</h3>
+            <p className="text-sm text-muted">
               Cameras you are responsible for monitoring.
             </p>
             {analytics.assignedCameras?.length ? (
@@ -93,22 +93,22 @@ export function OperatorConsole() {
                     key={c.cameraCode}
                     className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3"
                   >
-                    <p className="font-medium text-slate-800">{c.name || c.cameraCode}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="font-medium text-primary">{c.name || c.cameraCode}</p>
+                    <p className="text-xs text-muted">
                       {c.cameraCode} · {c.locationName || "—"}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-slate-400">
+              <p className="mt-4 text-sm text-muted">
                 No cameras assigned yet. Contact an administrator.
               </p>
             )}
           </Card>
         </>
       ) : (
-        <Card className="text-center text-sm text-slate-500">
+        <Card className="text-center text-sm text-muted">
           Unable to load your operator console.
         </Card>
       )}
@@ -119,8 +119,8 @@ export function OperatorConsole() {
 function OperatorKpi({ label, value }) {
   return (
     <Card>
-      <p className="text-3xl font-bold text-slate-900">{value}</p>
-      <p className="mt-1 text-sm font-medium text-slate-600">{label}</p>
+      <p className="text-3xl font-bold text-primary">{value}</p>
+      <p className="mt-1 text-sm font-medium text-secondary">{label}</p>
     </Card>
   );
 }
@@ -130,7 +130,7 @@ function AdminContent({ readOnly }) {
   const Panel = PANELS[active] || PANELS.overview;
 
   return (
-    <div>
+    <div className="admin-page">
       <PageHeader
         title="Administration"
         subtitle="Manage cameras, operators, retention, and platform settings."
