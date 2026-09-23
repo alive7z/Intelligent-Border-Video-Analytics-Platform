@@ -13,9 +13,9 @@ import { useAdminAccess } from "../useAdminAccess";
 import RuleForm from "./RuleForm";
 
 const PIPELINE = [
-  { label: "Detection", icon: CctvIcon, tone: "text-white" },
-  { label: "Context", icon: ActivityIcon, tone: "text-slate-600" },
-  { label: "Behavior", icon: BrainIcon, tone: "text-slate-600" },
+  { label: "Detection", icon: CctvIcon, tone: "text-blue-600" },
+  { label: "Context", icon: ActivityIcon, tone: "text-secondary" },
+  { label: "Behavior", icon: BrainIcon, tone: "text-secondary" },
   { label: "Risk", icon: ShieldIcon, tone: "text-orange-600" },
   { label: "Action", icon: AlertTriangleIcon, tone: "text-red-600" },
 ];
@@ -60,10 +60,10 @@ function RiskRules() {
   return (
     <>
       <Card className="mb-6">
-        <p className="mb-3 text-sm font-semibold text-slate-800">
+        <p className="mb-3 text-sm font-semibold text-primary">
           How a single detection becomes an action
         </p>
-        <p className="mb-4 text-xs text-slate-500">
+        <p className="mb-4 text-xs text-muted">
           A single detection is not automatically critical — it must pass through context and
           behavior weighting before escalating.
         </p>
@@ -72,10 +72,10 @@ function RiskRules() {
             const Icon = p.icon;
             return (
               <React.Fragment key={p.label}>
-                {i > 0 && <ArrowRightIcon size={16} className="mx-1 text-slate-300" />}
+                {i > 0 && <ArrowRightIcon size={16} className="mx-1 text-disabled" />}
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                   <Icon size={16} className={`${p.tone}`} />
-                  <span className="text-sm font-medium text-slate-700">{p.label}</span>
+                  <span className="text-sm font-medium text-secondary">{p.label}</span>
                 </div>
               </React.Fragment>
             );
@@ -84,7 +84,7 @@ function RiskRules() {
       </Card>
 
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-white">Risk Rules</p>
+        <p className="text-sm font-semibold text-primary">Risk Rules</p>
       </div>
       <Card pad={false} className="mb-6 overflow-hidden">
         {loading ? (
@@ -95,7 +95,7 @@ function RiskRules() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3 font-semibold">Rule</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
                   <th className="px-4 py-3 font-semibold">Weight</th>
@@ -107,8 +107,8 @@ function RiskRules() {
                 {rules.map((r) => (
                   <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-800">{r.rule}</p>
-                      <p className="text-xs text-slate-400">{r.description}</p>
+                      <p className="font-medium text-primary">{r.rule}</p>
+                      <p className="text-xs text-muted">{r.description}</p>
                     </td>
                     <td className="px-4 py-3">
                       <Badge tone="info">{r.category}</Badge>
@@ -120,7 +120,7 @@ function RiskRules() {
                       {r.runtimeSupported === false ? (
                         <span>
                           <Badge tone="offline">Unavailable</Badge>
-                          <p className="mt-1 text-xs text-slate-400">
+                          <p className="mt-1 text-xs text-muted">
                             No AI-engine producer
                           </p>
                         </span>
