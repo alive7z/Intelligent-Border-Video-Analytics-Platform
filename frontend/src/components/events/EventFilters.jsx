@@ -42,11 +42,11 @@ function EventFilters({ filters, onChange, cameras }) {
       <div className="relative min-w-[220px] flex-1 sm:flex-none">
         <SearchIcon
           size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
         />
         <input
           type="search"
-          className="input-field !pl-9 placeholder:text-black"
+          className="input-field !pl-9"
           placeholder="Search event ID, camera, object, plate..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
