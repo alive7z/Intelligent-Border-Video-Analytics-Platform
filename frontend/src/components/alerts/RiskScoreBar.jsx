@@ -24,14 +24,14 @@ const barColor = {
 function RiskScoreBar({ score }) {
   const hasScore = score != null && !Number.isNaN(Number(score));
   if (!hasScore) {
-    return <span className="text-sm text-slate-400">—</span>;
+    return <span className="text-sm text-muted">—</span>;
   }
   const cat = riskCategory(score);
   const pct = Math.max(0, Math.min(100, score));
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-semibold text-slate-800">{score}</span>
-      <span className="text-xs text-slate-400">/100</span>
+      <span className="text-sm font-semibold text-primary">{score}</span>
+      <span className="text-xs text-muted">/100</span>
       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
         <div
           className="h-full rounded-full"
