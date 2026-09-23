@@ -1,0 +1,13 @@
+# Optional Linux edge override for camera networks that cannot be reached from
+# Docker bridge networking. Use only with the HTTP gateway or set
+# AI_NODE_API_URL to a trusted HTTPS public origin.
+services:
+  ai-engine:
+    network_mode: host
+    networks: !reset []
+    environment:
+      NODE_API_URL: ${AI_NODE_API_URL:-http://127.0.0.1/api}
+
+  backend:
+    environment:
+      AI_INTERNAL_URL: http://host.docker.internal:8001
