@@ -13,14 +13,14 @@ const badgeTone = {
   PARTIALLY_VERIFIED: "border-amber-300 bg-amber-50 text-amber-800",
   TAMPERED: "border-rose-300 bg-rose-50 text-rose-800",
   NOT_ANCHORED: "border-sky-300 bg-sky-50 text-sky-800",
-  UNKNOWN: "border-slate-300 bg-slate-50 text-slate-700",
+  UNKNOWN: "border-slate-300 bg-slate-50 text-secondary",
 };
 
 function Check({ label, status }) {
   const ok = /^(VERIFIED|MATCH|VALID|HASH_MATCH|SIGNATURE_VALID|LEDGER_ANCHORED|CUSTODY_*VALID.*)$/i.test(status || "");
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
-      <span className="text-xs font-medium text-slate-600">{label}</span>
+      <span className="text-xs font-medium text-secondary">{label}</span>
       <span className={`text-[11px] font-semibold ${ok ? "text-emerald-700" : "text-rose-700"}`}>{formatEventLabel(status) || "—"}</span>
     </div>
   );
@@ -81,7 +81,7 @@ export default function EvidenceIntegrityPanel({ evidenceCode, evidenceType = "e
   const checks = verdict?.checks || {};
   const status = verdict?.status || (record?.ledgerStatus === "ANCHORED" ? "VERIFIED" : "NOT_ANCHORED");
   const anchor = record?.ledgerTxHash ? (
-    <p className="mt-3 break-all rounded-md bg-white/70 px-3 py-2 text-[11px] text-slate-600">
+    <p className="mt-3 break-all rounded-md bg-white/70 px-3 py-2 text-[11px] text-secondary">
       tx <span className="font-mono">{record.ledgerTxHash}</span>
       {record.ledgerBlockNumber ? ` · block ${record.ledgerBlockNumber}` : ""}
       {record.ledgerStatus === "ANCHORED" ? " · on-chain" : " · pending anchor"}
@@ -93,8 +93,8 @@ export default function EvidenceIntegrityPanel({ evidenceCode, evidenceType = "e
     <Card className="mt-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-800">Evidence integrity · {formatEventLabel(evidenceType)}</p>
-          <p className="text-xs text-slate-500">Capture → hash → sign → custody → ledger → verify</p>
+          <p className="text-sm font-semibold text-primary">Evidence integrity · {formatEventLabel(evidenceType)}</p>
+          <p className="text-xs text-muted">Capture → hash → sign → custody → ledger → verify</p>
         </div>
         <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ${badgeTone[status] || badgeTone.UNKNOWN}`}>
           {verifying ? "Verifying…" : formatEventLabel(status)}
