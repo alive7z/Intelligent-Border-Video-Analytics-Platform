@@ -8,8 +8,8 @@ import { formatEventLabel } from "../../utils/eventTypeLabels";
 function Row({ label, value }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-medium text-slate-800">
+      <span className="text-sm text-muted">{label}</span>
+      <span className="text-sm font-medium text-primary">
         {value == null || value === "" ? "—" : value}
       </span>
     </div>
@@ -28,8 +28,8 @@ function EventRiskContext({ event }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <ActivityIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">Risk Context</h3>
+        <ActivityIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">Risk Context</h3>
       </div>
 
       {hasRisk ? (
@@ -41,7 +41,7 @@ function EventRiskContext({ event }) {
           <Row label="Severity" value={<AlertSeverityBadge severity={event.severity} />} />
         </dl>
       ) : (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           No risk assessment was stored for this event.
         </p>
       )}
