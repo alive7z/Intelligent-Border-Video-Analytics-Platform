@@ -6,7 +6,7 @@ import Badge from "../../common/Badge";
 import Modal from "../../common/Modal";
 import EmptyState from "../../common/EmptyState";
 import { TableSkeleton } from "../../common/Skeleton";
-import { UserIcon, RefreshIcon, CameraIcon, PlusIcon, TrashIcon } from "../../common/Icons";
+import { UserIcon, RefreshIcon, CameraIcon, PlusIcon, TrashIcon, MoreHorizontalIcon } from "../../common/Icons";
 import {
   getOperators,
   getOperatorById,
@@ -153,22 +153,22 @@ function OperatorManagement({ readOnly = false }) {
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-semibold text-slate-800">Operators</h3>
-          <p className="text-sm text-slate-500">
+          <h3 className="text-base font-semibold text-primary">Operators</h3>
+          <p className="text-sm text-muted">
             Security operator accounts, presence, and camera assignments.
           </p>
         </div>
         <div className="flex gap-2">
           {!readOnly && <Button size="sm" onClick={() => setCreateOpen(true)}><PlusIcon size={15} /> Add Operator</Button>}
-          <Button variant="secondary" size="sm" onClick={load}><RefreshIcon size={15} /> Refresh</Button>
+          <Button className="dark:text-white" variant="secondary" size="sm" onClick={load}><RefreshIcon size={15} /> Refresh</Button>
         </div>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Input id="operator-search" label="Search" placeholder="Name or email" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
-        <div><label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="operator-presence">Presence</label><select id="operator-presence" className="input-field" value={presence} onChange={(e) => { setPresence(e.target.value); setPage(1); }}><option value="">All</option><option value="ONLINE">Online</option><option value="IDLE">Idle</option><option value="OFFLINE">Offline</option></select></div>
-        <div><label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="operator-status">Account Status</label><select id="operator-status" className="input-field" value={accountStatus} onChange={(e) => { setAccountStatus(e.target.value); setPage(1); }}><option value="">All</option><option value="ACTIVE">Active</option><option value="INACTIVE">Disabled</option></select></div>
-        <div><label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="operator-camera">Assigned Camera</label><select id="operator-camera" className="input-field" value={cameraFilter} onChange={(e) => { setCameraFilter(e.target.value); setPage(1); }}><option value="">All Cameras</option>{cameras.map((camera) => <option key={camera.cameraCode} value={camera.cameraCode}>{camera.cameraCode}</option>)}</select></div>
+        <div><label className="mb-1.5 block text-sm font-medium text-secondary" htmlFor="operator-presence">Presence</label><select id="operator-presence" className="input-field" value={presence} onChange={(e) => { setPresence(e.target.value); setPage(1); }}><option value="">All</option><option value="ONLINE">Online</option><option value="IDLE">Idle</option><option value="OFFLINE">Offline</option></select></div>
+        <div><label className="mb-1.5 block text-sm font-medium text-secondary" htmlFor="operator-status">Account Status</label><select id="operator-status" className="input-field" value={accountStatus} onChange={(e) => { setAccountStatus(e.target.value); setPage(1); }}><option value="">All</option><option value="ACTIVE">Active</option><option value="INACTIVE">Disabled</option></select></div>
+        <div><label className="mb-1.5 block text-sm font-medium text-secondary" htmlFor="operator-camera">Assigned Camera</label><select id="operator-camera" className="input-field" value={cameraFilter} onChange={(e) => { setCameraFilter(e.target.value); setPage(1); }}><option value="">All Cameras</option>{cameras.map((camera) => <option key={camera.cameraCode} value={camera.cameraCode}>{camera.cameraCode}</option>)}</select></div>
       </div>
 
       <div className="mt-4">
@@ -192,7 +192,7 @@ function OperatorManagement({ readOnly = false }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
+                <tr className="border-b border-slate-200 text-xs uppercase text-muted">
                   <th className="px-3 py-2 font-semibold">Operator</th>
                   <th className="px-3 py-2 font-semibold">Status</th>
                   <th className="px-3 py-2 font-semibold">Presence</th>
@@ -207,9 +207,9 @@ function OperatorManagement({ readOnly = false }) {
                 {operators.map((op) => (
                   <tr key={op.id} className="border-b border-slate-100">
                     <td className="px-3 py-2.5">
-                      <p className="font-medium text-slate-800">{op.fullName || op.email}</p>
-                      <p className="text-xs text-slate-400">{op.email}</p>
-                      <p className="text-xs text-slate-400">{op.publicId || `DB-${op.id}`} · {roleLabel(op.role || "SECURITY_OPERATOR")}</p>
+                      <p className="font-medium text-primary">{op.fullName || op.email}</p>
+                      <p className="text-xs text-muted">{op.email}</p>
+                      <p className="text-xs text-muted">{op.publicId || `DB-${op.id}`} · {roleLabel(op.role || "SECURITY_OPERATOR")}</p>
                     </td>
                     <td className="px-3 py-2.5">
                       {op.status === "ACTIVE" ? (
@@ -219,43 +219,29 @@ function OperatorManagement({ readOnly = false }) {
                       )}
                     </td>
                     <td className="px-3 py-2.5">{onlineBadge(op)}</td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-slate-500">{op.lastSeenAt ? formatDateTime(op.lastSeenAt) : "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-muted">{op.lastSeenAt ? formatDateTime(op.lastSeenAt) : "—"}</td>
                     <td className="px-3 py-2.5">
-                      <span className="inline-flex items-center gap-1 text-slate-600">
+                      <span className="inline-flex items-center gap-1 text-secondary">
                         <CameraIcon size={15} /> {op.assignedCameraCount ?? (op.assignedCameras || []).length}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-xs text-slate-600">
+                    <td className="px-3 py-2.5 text-xs text-secondary">
                       <p>Received {op.analytics?.alertsReceived ?? 0} · Pending {op.analytics?.pendingAlerts ?? 0}</p>
                       <p>Ack {op.analytics?.alertsAcknowledged ?? 0} · Resolved {op.analytics?.alertsResolved ?? 0}</p>
                       <p>MED {op.analytics?.mediumAcknowledged ?? 0} · HIGH {op.analytics?.highAcknowledged ?? 0} · CRIT esc {op.analytics?.criticalEscalated ?? 0}</p>
                     </td>
-                    <td className="px-3 py-2.5 text-xs text-slate-600">{op.analytics?.avgAcknowledgeMinutes != null ? `${op.analytics.avgAcknowledgeMinutes}m avg ack` : "—"}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-2">
-                        {!readOnly && (
-                          <>
-                            <Button variant="secondary" size="sm" onClick={() => openAssign(op)}>
-                              Assign Cameras
-                            </Button>
-                            <Button
-                              variant={op.status === "ACTIVE" ? "danger" : "success"}
-                              size="sm"
-                              loading={busyId === op.id}
-                              onClick={() => toggleEnabled(op)}
-                            >
-                              {op.status === "ACTIVE" ? "Disable" : "Enable"}
-                            </Button>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => setRemoveTarget(op)}
-                            >
-                              <TrashIcon size={14} /> Remove
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                    <td className="px-3 py-2.5 text-xs text-secondary">{op.analytics?.avgAcknowledgeMinutes != null ? `${op.analytics.avgAcknowledgeMinutes}m avg ack` : "—"}</td>
+                    <td className="relative px-3 py-2.5 text-right">
+                      {!readOnly && <details className="relative inline-block text-left">
+                        <summary className="btn-focus flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-lg text-muted hover:bg-slate-100 hover:text-slate-800 dark:hover:text-white/90 [&::-webkit-details-marker]:hidden" aria-label={`Actions for ${op.fullName || op.email}`}>
+                          <MoreHorizontalIcon size={18} />
+                        </summary>
+                        <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-pop dark:bg-slate-50">
+                          <button className="btn-focus w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-secondary hover:bg-slate-50" onClick={() => openAssign(op)}>Assign cameras</button>
+                          <button className="btn-focus w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-secondary hover:bg-slate-50" disabled={busyId === op.id} onClick={() => toggleEnabled(op)}>{op.status === "ACTIVE" ? "Disable account" : "Enable account"}</button>
+                          <button className="btn-focus flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 hover:bg-red-50" onClick={() => setRemoveTarget(op)}><TrashIcon size={14} /> Remove operator</button>
+                        </div>
+                      </details>}
                     </td>
                   </tr>
                 ))}
@@ -267,7 +253,7 @@ function OperatorManagement({ readOnly = false }) {
 
       {!loading && !error && <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <select className="input-field w-auto" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>{PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n} per page</option>)}</select>
-        <div className="flex items-center gap-2"><Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button><span className="text-sm text-slate-500">Page {page} of {Math.max(1, pagination.totalPages || 0)}</span><Button variant="secondary" size="sm" disabled={page >= (pagination.totalPages || 0)} onClick={() => setPage((p) => p + 1)}>Next</Button></div>
+        <div className="flex items-center gap-2"><Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button><span className="text-sm text-muted">Page {page} of {Math.max(1, pagination.totalPages || 0)}</span><Button variant="secondary" size="sm" disabled={page >= (pagination.totalPages || 0)} onClick={() => setPage((p) => p + 1)}>Next</Button></div>
       </div>}
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Create Operator">
@@ -283,22 +269,23 @@ function OperatorManagement({ readOnly = false }) {
         open={Boolean(assigning)}
         onClose={() => setAssigning(null)}
         title={`Assign Cameras — ${assigning?.fullName || assigning?.email || ""}`}
+        size="lg"
       >
         <ModalContent loading={detailLoading}>
-          <p className="mb-3 text-sm text-slate-500">
+          <p className="mb-3 text-sm text-muted">
             Select the cameras this operator is responsible for.
           </p>
           {cameras.length === 0 ? (
-            <p className="text-sm text-slate-400">No cameras configured.</p>
+            <p className="text-sm text-muted">No cameras configured.</p>
           ) : (
-            <div className="grid max-h-72 grid-cols-1 gap-1 overflow-y-auto sm:grid-cols-2">
+            <div className="grid max-h-[420px] grid-cols-1 gap-2 overflow-y-auto pr-1">
               {cameras.map((c) => {
                 const id = c.objectId ?? c.id;
                 const checked = selected.includes(id);
                 return (
                   <label
                     key={id}
-                    className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm"
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors ${checked ? "border-blue-300 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-500/10" : "border-slate-200 bg-white hover:border-slate-300 dark:bg-slate-50"}`}
                   >
                     <input
                       type="checkbox"
@@ -310,22 +297,26 @@ function OperatorManagement({ readOnly = false }) {
                         )
                       }
                     />
-                    <span className="flex min-w-0 flex-col">
-                      <span className="truncate font-medium text-slate-700">{c.name || c.cameraCode}</span>
-                      <span className="truncate text-xs text-slate-400">{c.cameraCode}</span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate font-medium text-primary">{c.name || c.cameraCode}</span>
+                      <span className="truncate text-xs text-muted">{c.cameraCode} · {c.sector || c.location || "Unassigned sector"} · {(c.status || (c.enabled === false ? "Disabled" : "Available")).toString()}</span>
                     </span>
+                    <span className={`text-xs font-medium ${checked ? "text-blue-600" : "text-muted"}`}>{checked ? "Assigned" : "Available"}</span>
                   </label>
                 );
               })}
             </div>
           )}
-          <div className="mt-4 flex justify-end gap-2">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+            <p className="text-sm font-medium text-secondary">{selected.length} camera{selected.length === 1 ? "" : "s"} selected</p>
+            <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setAssigning(null)}>
               Cancel
             </Button>
             <Button variant="primary" size="sm" loading={busyId === assigning?.id} onClick={saveAssignment}>
               Save Assignments
             </Button>
+            </div>
           </div>
         </ModalContent>
       </Modal>
@@ -335,8 +326,8 @@ function OperatorManagement({ readOnly = false }) {
         onClose={() => !removing && setRemoveTarget(null)}
         title="Remove operator"
       >
-        <p className="text-sm text-slate-500">
-          Remove <span className="font-semibold text-slate-700">{removeTarget?.fullName || removeTarget?.email}</span> from the system? This permanently deletes the account and its camera assignments.
+        <p className="text-sm text-muted">
+          Remove <span className="font-semibold text-secondary">{removeTarget?.fullName || removeTarget?.email}</span> from the system? This permanently deletes the account and its camera assignments.
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" size="sm" disabled={removing} onClick={() => setRemoveTarget(null)}>
