@@ -15,7 +15,7 @@ function Loader({ size = "md", label = "Loading...", className = "" }) {
         className={`${px} animate-spin rounded-full border-2 border-blue-200 border-t-blue-700`}
         aria-hidden="true"
       />
-      {label && <span className="text-sm text-slate-500">{label}</span>}
+      {label && <span className="text-sm text-muted">{label}</span>}
     </div>
   );
 }
