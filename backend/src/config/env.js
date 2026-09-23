@@ -44,6 +44,12 @@ const env = {
   EVIDENCE_KEY_V2: process.env.EVIDENCE_KEY_V2 || "",
   EVIDENCE_KEY_V2_ID: process.env.EVIDENCE_KEY_V2_ID || "ev-enc-v2",
 
+  // Secure demo access for SIH/exhibition walkthroughs. When DEMO_MODE=true,
+  // /auth/demo-login authenticates dedicated is_demo accounts (DRY password
+  // flow in auth.service.demoLogin). Production keeps this off: the endpoint
+  // rejects and the Login page hides the Explore Demo section.
+  DEMO_MODE: process.env.DEMO_MODE === "true",
+
   // Phase 14 — Admin MFA (TOTP) + account lockout.
   MFA_ADMIN_REQUIRED: process.env.MFA_ADMIN_REQUIRED === "true",
   MFA_ISSUER: process.env.MFA_ISSUER || "IBVAP",
