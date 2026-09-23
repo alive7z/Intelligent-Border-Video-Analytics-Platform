@@ -17,7 +17,7 @@ function ActiveAlertsPanel({ alerts, selectedId, onSelect, className = "" }) {
       <div className="mb-2 flex shrink-0 items-center justify-between border-b border-slate-100 pb-2">
         <div className="flex items-center gap-2">
           <BellIcon size={16} className="text-blue-700" />
-          <h3 className="text-sm font-semibold text-slate-800">Active Alerts</h3>
+          <h3 className="text-sm font-semibold text-primary">Active Alerts</h3>
         </div>
         <Badge tone="high">{alerts.length}</Badge>
       </div>
@@ -41,11 +41,11 @@ function ActiveAlertsPanel({ alerts, selectedId, onSelect, className = "" }) {
                 />
                 <span className="min-w-0 flex-1">
                   <span className="mb-0.5 flex min-w-0 items-center gap-1.5">
-                    <span className="shrink-0 text-xs font-bold text-slate-800">{a.id}</span>
+                    <span className="shrink-0 text-xs font-bold text-primary">{a.id}</span>
                     <AlertSeverityBadge severity={a.severity} className="min-w-0" />
                   </span>
-                  <span className="block truncate text-xs text-slate-700">{formatEventLabel(a.type)}</span>
-                  <span className="block truncate text-[11px] text-slate-400">
+                  <span className="block truncate text-xs text-secondary">{formatEventLabel(a.type)}</span>
+                  <span className="block truncate text-[11px] text-muted">
                     {a.cameraId} · {a.sector} · {formatTime(a.timestamp)}
                   </span>
                 </span>
