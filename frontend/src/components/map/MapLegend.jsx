@@ -16,12 +16,12 @@ const legendItems = [
 function MapLegend() {
   return (
     <div className="card pointer-events-auto p-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
         Legend
       </p>
       <ul className="space-y-1.5">
         {legendItems.map((it) => (
-          <li key={it.label} className="flex items-center gap-2 text-xs text-slate-700">
+          <li key={it.label} className="flex items-center gap-2 text-xs text-secondary">
             <span
               className={`inline-block h-3 w-3 rounded-sm ${it.swatch} ${
                 it.swatch.includes("border-t-2") ? "h-0" : ""
