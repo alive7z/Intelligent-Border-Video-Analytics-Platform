@@ -10,9 +10,9 @@ import { CheckCircleIcon, AlertTriangleIcon, InfoIcon, XIcon } from "./Icons";
 const ToastContext = createContext(null);
 
 const toneStyles = {
-  success: { wrap: "border-green-200 bg-white dark:bg-slate-100 dark:border-green-500/40", icon: <CheckCircleIcon size={17} className="text-green-600" /> },
-  error: { wrap: "border-red-200 bg-white dark:bg-slate-100 dark:border-red-500/40", icon: <AlertTriangleIcon size={17} className="text-red-600" /> },
-  info: { wrap: "border-slate-200 bg-white dark:bg-slate-100 dark:border-slate-600", icon: <InfoIcon size={17} className="text-slate-500 dark:text-slate-400" /> },
+  success: { wrap: "popup-surface border-green-200 dark:border-green-500/40", icon: <CheckCircleIcon size={17} className="text-green-600" /> },
+  error: { wrap: "popup-surface border-red-200 dark:border-red-500/40", icon: <AlertTriangleIcon size={17} className="text-red-600" /> },
+  info: { wrap: "popup-surface", icon: <InfoIcon size={17} className="text-muted" /> },
 };
 
 export function ToastProvider({ children }) {
@@ -45,11 +45,11 @@ export function ToastProvider({ children }) {
               role="status"
             >
               <span className="mt-0.5 shrink-0">{s.icon}</span>
-              <p className="flex-1 text-sm text-slate-700 dark:text-slate-200">{t.message}</p>
+              <p className="flex-1 text-sm text-secondary">{t.message}</p>
               <button
                 type="button"
                 onClick={() => dismiss(t.id)}
-                className="btn-focus shrink-0 rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600"
+                className="btn-focus shrink-0 rounded p-0.5 text-muted transition-colors hover:text-slate-600 dark:hover:text-white/75"
                 aria-label="Dismiss notification"
               >
                 <XIcon size={14} />
