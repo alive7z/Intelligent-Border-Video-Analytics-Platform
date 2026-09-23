@@ -6,14 +6,15 @@ import React from "react";
  */
 function PageHeader({ title, subtitle, children }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-white lg:text-[28px]">
+        <p className="section-label mb-2">Command centre</p>
+        <h1 className="text-primary text-[26px] font-semibold leading-tight tracking-tight lg:text-[30px]">
           {title}
         </h1>
 
         {subtitle && (
-          <p className="mt-1 text-sm text-white/70">
+          <p className="text-muted mt-1.5 max-w-2xl text-sm leading-6">
             {subtitle}
           </p>
         )}
