@@ -35,6 +35,18 @@ const normalizeRotationDegrees = (value) => {
   return degrees;
 };
 
+// Display-only orientation (browser render). Signed and independent of the AI
+// pipeline's rotationDegrees; the browser applies it on top of the already
+// processed preview frame. Bounded so typos fail loudly instead of spinning.
+const DISPLAY_ROTATION_LIMIT = 360;
+const normalizeDisplayRotationDegrees = (value) => {
+  const degrees = Number(value);
+  if (!Number.isInteger(degrees) || Math.abs(degrees) > DISPLAY_ROTATION_LIMIT) {
+    throw new ApiError(400, "displayRotationDegrees must be an integer between -360 and 360");
+  }
+  return degrees;
+};
+
 // Target processing FPS is optional; must be a positive number, capped to keep
 // the AI engine from being asked to saturate on a low-power edge device.
 const TARGET_FPS_MAX = 60;
@@ -94,6 +106,7 @@ const toSafeCamera = (camera) => {
     streamProtocol: camera.stream_protocol || null,
     targetFps: camera.target_fps === null || camera.target_fps === undefined ? null : Number(camera.target_fps),
     rotationDegrees: Number(camera.rotation_degrees || 0),
+    displayRotationDegrees: Number(camera.display_rotation_degrees || 0),
     streamStatus: camera.stream_status || null,
     aiStatus: camera.ai_status || null,
     enabled: Boolean(camera.enabled),
@@ -162,6 +175,9 @@ const createCamera = async (data, actor) => {
   if (data.rotationDegrees !== undefined) {
     data.rotationDegrees = normalizeRotationDegrees(data.rotationDegrees);
   }
+  if (data.displayRotationDegrees !== undefined) {
+    data.displayRotationDegrees = normalizeDisplayRotationDegrees(data.displayRotationDegrees);
+  }
 
   const enabled =
     data.enabled !== undefined ? parseBoolean(data.enabled, "enabled") : true;
@@ -217,6 +233,9 @@ const updateCamera = async (cameraId, data, actor) => {
   }
   if (data.rotationDegrees !== undefined) {
     data.rotationDegrees = normalizeRotationDegrees(data.rotationDegrees);
+  }
+  if (data.displayRotationDegrees !== undefined) {
+    data.displayRotationDegrees = normalizeDisplayRotationDegrees(data.displayRotationDegrees);
   }
   if (data.enabled !== undefined) {
     data.enabled = parseBoolean(data.enabled, "enabled");
