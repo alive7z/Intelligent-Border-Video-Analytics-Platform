@@ -23,13 +23,13 @@ function Pagination({ total, page, pageSize, onChange }) {
 
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-      <p className="text-xs text-white">
-        Showing <span className="font-medium text-white">{from}–{to}</span> of {total} records
+      <p className="text-xs text-muted">
+        Showing <span className="font-medium text-secondary">{from}–{to}</span> of {total} records
       </p>
       {pageCount > 1 && (
         <div className="flex items-center gap-1">
           <button
-            className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50 disabled:opacity-50"
             disabled={safePage <= 1}
             onClick={() => onChange(safePage - 1)}
           >
@@ -37,7 +37,7 @@ function Pagination({ total, page, pageSize, onChange }) {
           </button>
           {items.map((it, i) =>
             it === "…" ? (
-              <span key={`e${i}`} className="px-1 text-xs text-slate-400">
+              <span key={`e${i}`} className="px-1 text-xs text-muted">
                 …
               </span>
             ) : (
@@ -47,7 +47,7 @@ function Pagination({ total, page, pageSize, onChange }) {
                 className={`btn-focus rounded-lg border px-3 py-1.5 text-xs font-medium ${
                   it === safePage
                     ? "border-blue-700 bg-blue-700 text-white"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    : "border-slate-300 bg-white text-secondary hover:bg-slate-50"
                 }`}
               >
                 {it}
@@ -55,7 +55,7 @@ function Pagination({ total, page, pageSize, onChange }) {
             )
           )}
           <button
-            className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="btn-focus rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50 disabled:opacity-50"
             disabled={safePage >= pageCount}
             onClick={() => onChange(safePage + 1)}
           >
