@@ -9,6 +9,9 @@
 ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=nodedotjs&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Deployment-Docker-2496ed?style=flat-square&logo=docker&logoColor=white)
+[![Live Deployment](https://img.shields.io/badge/Live_Deployment-Open_IBVAP-16a34a?style=flat-square)](http://52.66.247.63)
+
+**Live prototype:** [http://52.66.247.63](http://52.66.247.63)
 
 IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to existing CCTV infrastructure. It combines object detection, persistent tracking, spatial and temporal context, explainable risk scoring, evidence integrity, and a realtime command dashboard. A detection is treated as an observation—not automatically as a threat.
 
@@ -23,7 +26,7 @@ IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to
 | Does it replace cameras? | No. It ingests authorized RTSP and HTTP/MJPEG sources through OpenCV/FFmpeg-compatible capture. |
 | Where does inference run? | In a containerized Python edge service; structured observations go to the application backend. |
 | What reaches the browser? | Authenticated APIs, Socket.IO updates, and a short-lived preview proxy—not raw RTSP URLs or camera credentials. |
-| Is it production-deployed? | No. It remains a prototype pending field qualification. |
+| Is it production-deployed? | A public prototype is deployed for evaluation; field qualification is still required. |
 
 ## The problem
 
