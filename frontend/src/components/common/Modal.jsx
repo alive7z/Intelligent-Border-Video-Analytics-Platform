@@ -42,22 +42,22 @@ function Modal({ open, onClose, title, children, footer, size = "md" }) {
         aria-hidden="true"
       />
       <div
-        className={`relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto ${width} card animate-[modalIn_0.2s_ease-out] shadow-lift`}
+        className={`relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto ${width} card animate-[modalIn_0.2s_ease-out] shadow-pop`}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+          <h3 className="text-primary text-lg font-semibold">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="btn-focus rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="btn-focus text-muted hover:text-primary rounded-lg p-1.5 hover:bg-slate-100"
             aria-label="Close dialog"
           >
             <XIcon size={18} />
           </button>
         </div>
-        <div className="px-5 py-4">{children}</div>
+        <div className="px-6 py-5">{children}</div>
         {footer && (
-          <div className="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
+          <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50/70 px-6 py-4">
             {footer}
           </div>
         )}
