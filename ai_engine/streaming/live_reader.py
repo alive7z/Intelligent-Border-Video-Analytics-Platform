@@ -93,6 +93,7 @@ class LiveVideoSource(VideoSource):
         self._last_failure_reason: str | None = None
         self._last_failure_log_monotonic: float = 0.0
         self._pending_read: threading.Thread | None = None
+        self._pending_open: threading.Thread | None = None
 
     def _resolve_type(self) -> SourceType:
         # MOBILE is a classification; its actual transport is the protocol.
@@ -163,6 +164,8 @@ class LiveVideoSource(VideoSource):
     def open(self) -> None:
         if self._pending_read is not None and self._pending_read.is_alive():
             raise IOError(f"Previous decoder read still active: {self._source_id}")
+        if self._pending_open is not None and self._pending_open is not threading.current_thread() and self._pending_open.is_alive():
+            raise IOError(f"Previous decoder open still active: {self._source_id}")
         if self._cap is not None:
             self.close()
         # OpenCV/FFmpeg can write the full URL (including credentials) directly
@@ -253,6 +256,57 @@ class LiveVideoSource(VideoSource):
             "Live source opened: %s | %dx%d | %.1f fps (type=%s)",
             self._source_id, self._width, self._height, self._fps, self._source_type.value,
         )
+
+    def open_with_timeout(self, timeout_seconds: float | None = None) -> None:
+        """Bound the capture open so a dead source can never be stuck opening.
+
+        Some native backends ignore OPEN_TIMEOUT_MSEC and block inside
+        ``cv2.VideoCapture(...)``. This runs the open in a worker thread and, if
+        it exceeds the wall-clock budget (defaults to the connect timeout),
+        raises IOError exactly like a failed attempt — the pipeline then reports
+        OFFLINE and backs off instead of lingering on CONNECTING. Such a hung
+        open stays quarantined (identical to the read path): the camera reports
+        unavailable until that open exits, and threads cannot multiply. If the
+        quarantined open later completes, the orphaned capture is released by
+        the next successful open.
+        """
+        if self._pending_read is not None and self._pending_read.is_alive():
+            raise IOError(f"Previous decoder read still active: {self._source_id}")
+        if self._pending_open is not None and self._pending_open is not threading.current_thread() and self._pending_open.is_alive():
+            raise IOError(f"Previous decoder open still active: {self._source_id}")
+
+        budget = float(timeout_seconds) if timeout_seconds is not None else self._connect_timeout
+        block_duration = max(0.05, min(budget, 60.0) + 0.5)
+        result: dict = {"done": False}
+
+        def _blocking_open():
+            try:
+                self.open()
+                result["ok"] = True
+            except Exception as e:  # noqa: BLE001 - surfaced as a failed attempt
+                result["exc"] = e
+            finally:
+                result["done"] = True
+                self._pending_open = None
+
+        worker = threading.Thread(target=_blocking_open, daemon=True,
+                                  name=f"capture-open-{self._source_id}")
+        self._pending_open = worker
+        worker.start()
+
+        if not result["done"] and not worker.join(timeout=block_duration):
+            logger.warning(
+                "Live open timed out after %.0fs: %s — treating as failed attempt",
+                budget, self._source_id,
+            )
+            self._last_failure_reason = "open_timeout"
+            self._is_open = False
+            raise IOError(f"Live open timed out: {self._source_id}")
+
+        worker.join()
+        self._pending_open = None
+        if "exc" in result:
+            raise result["exc"]
 
     def is_open(self) -> bool:
         return self._is_open and self._cap is not None
@@ -382,6 +436,8 @@ class LiveVideoSource(VideoSource):
     def close(self) -> bool:
         self._is_open = False
         if self._pending_read is not None and self._pending_read.is_alive():
+            return False
+        if self._pending_open is not None and self._pending_open.is_alive():
             return False
         if self._cap is not None:
             try:
