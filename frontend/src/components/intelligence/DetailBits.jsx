@@ -8,8 +8,8 @@ import { formatEventLabel } from "../../utils/eventTypeLabels";
 export function DetailRow({ label, value }) {
   return (
     <div className="flex items-start justify-between gap-3 py-2">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-right text-sm font-medium text-slate-800">
+      <span className="text-sm text-muted">{label}</span>
+      <span className="text-right text-sm font-medium text-primary">
         {value || "—"}
       </span>
     </div>
@@ -23,7 +23,7 @@ export function CameraButton({ cameraId, label = "View Camera" }) {
   return (
     <Link
       to={`/surveillance/${cameraId}`}
-      className="btn-focus inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+      className="btn-focus inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50"
     >
       <CameraIcon size={14} /> {label}
     </Link>
@@ -37,12 +37,12 @@ export function EventButton({ eventId, eventType }) {
   if (!eventId) return null;
   return (
     <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <p className="text-xs text-slate-500">Related Event</p>
-      <p className="text-sm font-semibold text-slate-800">{eventId}</p>
-      {eventType && <p className="text-xs text-slate-500">{formatEventLabel(eventType)}</p>}
+      <p className="text-xs text-muted">Related Event</p>
+      <p className="text-sm font-semibold text-primary">{eventId}</p>
+      {eventType && <p className="text-xs text-muted">{formatEventLabel(eventType)}</p>}
       <Link
         to={`/events/${eventId}`}
-        className="btn-focus mt-2 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        className="btn-focus mt-2 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50"
       >
         View Event
       </Link>
@@ -56,10 +56,10 @@ export function EventButton({ eventId, eventType }) {
 export function Snapshot({ label = "Snapshot", sublabel = "" }) {
   return (
     <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50">
-      <div className="text-center text-slate-400">
+      <div className="text-center text-muted">
         <ImageIcon size={32} />
         <p className="mt-2 text-xs">No {label.toLowerCase()} available</p>
-        {sublabel && <p className="text-[10px] text-slate-600">{sublabel}</p>}
+        {sublabel && <p className="text-[10px] text-secondary">{sublabel}</p>}
       </div>
     </div>
   );
@@ -68,10 +68,10 @@ export function Snapshot({ label = "Snapshot", sublabel = "" }) {
 export function CroppedImage({ label = "Crop", sublabel = "" }) {
   return (
     <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 py-6">
-      <div className="text-center text-slate-400">
+      <div className="text-center text-muted">
         <ImageIcon size={24} className="mx-auto" />
         <p className="mt-1 text-xs">No {label.toLowerCase()} available</p>
-        {sublabel && <p className="text-[10px] text-slate-400">{sublabel}</p>}
+        {sublabel && <p className="text-[10px] text-muted">{sublabel}</p>}
       </div>
     </div>
   );
@@ -101,9 +101,9 @@ export function EvidenceImage({ evidenceId, alt = "Face snapshot", compact = fal
   }, [evidenceId]);
 
   if (!evidenceId || failed) {
-    return <span className="text-xs text-slate-400">No face snapshot available</span>;
+    return <span className="text-xs text-muted">No face snapshot available</span>;
   }
-  if (!src) return <span className="text-xs text-slate-400">Loading snapshot…</span>;
+  if (!src) return <span className="text-xs text-muted">Loading snapshot…</span>;
   return (
     <img
       src={src}
