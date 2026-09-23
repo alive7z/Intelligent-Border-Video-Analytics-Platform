@@ -11,15 +11,15 @@ function MapFilters({ filters, onChange, sectors, onSearch, actions }) {
   const selectCls = "input-field w-auto min-w-[150px] shrink-0 !py-1.5 pr-7 text-xs";
 
   return (
-    <div className="card pointer-events-auto flex w-full min-w-0 flex-wrap items-center gap-2 p-2.5">
+    <div className="pointer-events-auto flex w-full min-w-0 flex-wrap items-center gap-2">
       <div className="relative flex min-w-[260px] flex-1 items-center gap-1">
         <SearchIcon
           size={14}
-          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 shrink-0 text-black"
+          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 shrink-0 text-muted"
         />
         <input
           type="search"
-          className="input-field min-w-0 flex-1 !py-1.5 !pl-8 text-xs placeholder:text-black"
+          className="input-field min-w-0 flex-1 !py-1.5 !pl-8 text-xs"
           placeholder="Search camera, sector, alert..."
           value={filters.search}
           onChange={(e) => set("search", e.target.value)}
@@ -35,7 +35,7 @@ function MapFilters({ filters, onChange, sectors, onSearch, actions }) {
           <button
             type="button"
             onClick={() => onSearch(filters.search)}
-            className="btn-focus shrink-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            className="btn-focus shrink-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-secondary hover:bg-slate-50 dark:bg-slate-100"
           >
             Go
           </button>
