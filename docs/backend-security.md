@@ -18,66 +18,95 @@ across the IBVAP backend (`backend/`). It complements `backend/.env.example`
 
 ## Authentication
 
-| Mechanism | Derived key | Required at rest? | Rotation |
-|-----------|-------------|-------------------|----------|
-| Password (Argon2id) / bcrypt | salt + work factor | yes (never plain text) | periodic |
-| JWT access (Ed25519-signed) | 15 min TTL | no | on promote |
-| JWT refresh (rotating) | 7 d TTL | DB record | on each rotate |
-| MFA TOTP (HMAC-SHA1, 30 s) | per-user secret | keychain/DB | on re-enrol |
-| MFA recovery codes | BCrypt hash (single-use) | hashed rows | re-issue |
-| Ledger node bearer | random 32B | `LEDGER_NODE_TOKEN` env | on compromise |
+| Mechanism | Implementation | Required at rest? | Notes |
+|-----------|----------------|-------------------|-------|
+| Password | bcrypt (`bcryptjs`, 12 rounds) | yes (never plain text) | min 12 chars enforced on create |
+| JWT access | HS256-signed, issuer/audience-bound, unique `jti`, `token_version` claim | no | default TTL `JWT_EXPIRES_IN=8h` |
+| MFA TOTP | RFC 6238 (HMAC-SHA1, 6 digits, 30 s step) | secret AES-256-GCM encrypted | window `MFA_WINDOW` (default 1) |
+| MFA recovery codes | 8 single-use, SHA-256 hashed before storage | yes (hashed rows) | shown once at enrollment |
+| Ledger node bearer | shared `LEDGER_NODE_TOKEN` | `LEDGER_NODE_TOKEN` env | timing-safe compare |
 
-Environment: `JWT_ACCESS_TTL=900`, `JWT_REFRESH_TTL=604800`, `MFA_ENABLED=true`,
-`MFA_ISSUER=IBVAP`, `MFA_APPEAL_MINUTES=5`.
+There is **no refresh-token flow**. The system issues a single short-lived
+HS256 access token; session/token revocation is handled server-side via the
+in-memory JTI store, the `token_revocations` table, and `token_version` bumps.
+
+Environment: `JWT_SECRET`, `JWT_EXPIRES_IN=8h`, `MFA_ADMIN_REQUIRED`,
+`MFA_ISSUER=IBVAP`, `MFA_WINDOW=1`, `LOGIN_LOCKOUT_THRESHOLD=5`,
+`LOGIN_LOCKOUT_MINUTES=15`.
 
 ## Authorisation (RBAC)
 
-Roles enforced by middleware (`authorizeRoles`):
-`ADMINISTRATOR`, `SECURITY_OPERATOR`, `AUDITOR_ANALYST`, `OPERATOR`, `VIEWER`.
-Evidence-integrity endpoints also allow `AUDITOR_ANALYST` read + verify.
+Roles enforced server-side by middleware `authorizeRoles`
+(`backend/src/middleware/role.middleware.js`):
+`ADMINISTRATOR`, `SECURITY_OPERATOR`, `AUDITOR_ANALYST`.
+Evidence-integrity endpoints allow `AUDITOR_ANALYST` read + verify. Frontend
+route guards are UI-only; real access control is enforced on the backend.
 
 ## Integrity pipeline
 
 See `docs/blockchain-integrity.md` for the full A1–A12 capture→anchor→verify walk.
 
 - **Digest** — SHA-256 over exact captured bytes (`sha256File`).
-- **Signature** — Ed25519 (Rust-free, pure JS) replayable offline.
+- **Signature** — Ed25519 (Node `crypto`) replayable offline.
 - **Canonicalisation** — key-order-independent object digest for custody hashing.
-- **Chain of custody** — every transition (capture/inspect/export/transfer) appends
-  a signed link; each record hashes the prior link + canonical payload.
+- **Chain of custody** — append-only cryptographic hash chain
+  (`previousRecordHash` / `recordHash` links) with events CREATED → HASHED →
+  SIGNED → ANCHORED.
 - **Ledger anchor** — permissioned PoA ledger batch `REGISTER_AUDIT_BATCH` with a
   Merkle root; per-evidence `REGISTER_EVIDENCE`; read-back via ledger RPC.
 
-DB columns: `evidence_integrity.sha256`, `signature`, `signature_public_key`,
-`ledger_status`, `ledger_tx_hash`, `ledger_block_number`, `anchored_at`.
+DB columns: `evidence_integrity.sha256_hash`, `signature`,
+`signature_algorithm`, `signing_key_id`, `public_key_pem`, `ledger_status`,
+`ledger_tx_hash`, `ledger_block_number`, `anchored_at`.
 
 ## Transport security
 
 - All evidence/asset fetch endpoints are bearer-authenticated; no unauthenticated
   file read (path-traversal guarded).
-- `helmet` headers + CORS whitelisting (see `backend/.env.example`): `CORS_ORIGIN`,
-  `CSP_*`. Credentials never logged; secrets never serialized into API responses.
+- `helmet` + custom security headers: Content-Security-Policy,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+  `Permissions-Policy`, `X-Frame-Options`, and production-only
+  Strict-Transport-Security (`ENABLE_HSTS=true` + `NODE_ENV=production`).
+- CORS whitelisting (`FRONTEND_URL` + loopback dev origins + optional
+  `CORS_ALLOWED_ORIGINS`); disallowed origins get HTTP 403.
+- Optional mutual TLS for trusted edge-node communication (`MTLS_ENABLED=true`
+  + `MTLS_CA_CERT`); validates client certificates before other middleware.
+- HTTP(S) is chosen by the RPC client URL scheme (`https:` for production,
+  plain `http://` for the demo ledger on loopback).
 
 ## Rate limiting & brute-force defence
 
-- Per-IP limiter on MFA verify, JWT login, and evidence-integrity verification.
-- Configurable burst/window (`RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX`).
-- Optional `TIMEOUT_MS`, SSL (`HTTP_ENABLED`/`PORT`), and `MODE=production`.
+- Login: 10 requests / 15 min in production (50 / 5 min in development).
+- MFA verification: 8 attempts / 5 min.
+- Evidence-integrity verification: 20 / 1 min.
+- Account lockout after `LOGIN_LOCKOUT_THRESHOLD` (default 5) failed attempts
+  for `LOGIN_LOCKOUT_MINUTES` (default 15); cleared on successful login/MFA.
+  Blocked accounts receive HTTP 429.
 
 ## Audit & events
 
-- Security events (`EVIDENCE_VIEWED`, `MFA_ENROLLED`, custody transitions) are
-  recorded and can be fed to the audit-anchor service.
-- Ledger health and pending-anchor counts are surfaced through the security
-  overview endpoint for the admin dashboard.
+- Security events (`LOGIN_SUCCESS`, `LOGIN_FAILED`, `MFA_SUCCESS`, `MFA_FAILED`,
+  `MFA_ENABLED`, `SESSION_REVOKED`, `EVIDENCE_HASHED`, `EVIDENCE_SIGNED`,
+  `EVIDENCE_VERIFIED`, `EVIDENCE_TAMPERED`, `BLOCKCHAIN_ANCHOR`,
+  `BLOCKCHAIN_ANCHOR_FAILED`, `BRUTE_FORCE_LOCKOUT`, `KEY_ROTATION`, …) are
+  persisted to `audit_logs` and appended as newline-delimited JSON to
+  `storage/security-events.ndjson` for SIEM ingestion.
+- Ledger health and pending-anchor counts are surfaced through the
+  `GET /api/security/overview` endpoint (admin only).
+- Security counters are exposed as Prometheus text at
+  `GET /api/security/metrics` (`failed_logins_total`, `mfa_failures_total`,
+  `evidence_tamper_detected_total`, `blockchain_anchor_failures_total`, …).
 
 ## Turn-key hardening checklist (ops)
 
-1. Set a strong `JWT_SECRET`, `EVIDENCE_MASTER_KEY`, `MFA_*` and
-   `LEDGER_NODE_TOKEN` (do not reuse the demo token).
+1. Set strong `JWT_SECRET`, `EVIDENCE_MASTER_KEY`, `EVIDENCE_SIGNING_PRIVATE_KEY`
+   and `LEDGER_NODE_TOKEN` (do not reuse the demo token).
 2. Set `BLOCKCHAIN_ENABLED=true` and point `LEDGER_RPC_URL` at the permissioned
-   PoA node (default demo ports 8541–8543; override with `LEDGER_PORT`).
-3. Keep `MODE=production`, `HTTP_ENABLED=false` behind TLS only if deployed.
-4. Confirm `EVIDENCE_INTEGRITY_ENABLED=true` and non-empty
-   `EVIDENCE_INTEGRITY_MECHANISMS`.
-5. Run `node --test tests/security.*.test.js` and the ledger e2e to confirm.
+   PoA node (default demo ports 8541–8543).
+3. Keep `NODE_ENV=production`; terminate TLS at the deployment edge;
+   optionally enable `MTLS_ENABLED` and `ENABLE_HSTS`.
+4. Confirm `EVIDENCE_INTEGRITY_ENABLED=true` and `BLOCKCHAIN_ENABLED=true` where
+   ledger anchoring is required.
+5. Run `npm test` (backend) — the security suites cover authentication, MFA,
+   JWT, crypto, custody, Merkle batching, path traversal, ledger anchoring,
+   and API authorization.
