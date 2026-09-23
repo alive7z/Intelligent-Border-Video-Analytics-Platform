@@ -2,12 +2,12 @@
 # Register sample evidence + audit batch on the demo ledger and read them back.
 set -euo pipefail
 cd "$(dirname "$0")"
-TOKEN="${LEDGER_NODE_TOKEN:-ibvap-ledger-demo-token}"
+: "${LEDGER_NODE_TOKEN:?Set LEDGER_NODE_TOKEN before running the ledger demo}"
+TOKEN="$LEDGER_NODE_TOKEN"
 PORT="${LEDGER_PORT:-8541}"
 BASE="http://127.0.0.1:${PORT}"
 
 EVID="ev-demo-$(date +%s)-$RANDOM"
-TOKEN="${LEDGER_NODE_TOKEN:-$TOKEN}"
 SHA=$(printf 'demo-file-content' | shasum -a 256 | awk '{print $1}')
 
 echo "== REGISTER_EVIDENCE =="
