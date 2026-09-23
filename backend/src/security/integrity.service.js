@@ -11,6 +11,7 @@ const integrityRepository = require("../repositories/integrity.repository");
 const ledgerClient = require("../ldr/ledgerClient");
 const securityEvents = require("./securityEvents.service");
 const metrics = require("./metrics");
+const logger = require("../utils/logger");
 
 const OVERALL = { VERIFIED: "VERIFIED", TAMPERED: "TAMPERED", PARTIALLY_VERIFIED: "PARTIALLY_VERIFIED", NOT_ANCHORED: "NOT_ANCHORED", ERROR: "ERROR" };
 
@@ -59,9 +60,14 @@ async function onEvidenceIngested({ rowId, evidenceId, absolutePath, mimeType, e
       prev = rec.recordHash;
     }
     await securityEvents.recordSecurityEvent({ action: "EVIDENCE_HASHED", details: { evidenceId, sha256: core.sha256 } });
+    logger.info(
+      `EVIDENCE_TRACE stage=INTEGRITY evidence=${evidenceId} result=success ` +
+      `sha256=${core.sha256} custodyRecords=3`
+    );
     void anchorEvidence(evidenceId); // async, never blocks
     return core;
   } catch (err) {
+    logger.error(`EVIDENCE_TRACE stage=INTEGRITY evidence=${evidenceId} result=failed error=${err.message}`);
     return { error: err.message };
   }
 }
