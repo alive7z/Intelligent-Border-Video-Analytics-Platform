@@ -48,7 +48,7 @@ function AnprEvidenceImage({ evidenceId, label, sublabel }) {
 
   if (!evidenceId || failed) return <Snapshot label={label} sublabel={sublabel} />;
   if (!src)
-    return <span className="text-xs text-slate-400">Loading {label.toLowerCase()}…</span>;
+    return <span className="text-xs text-muted">Loading {label.toLowerCase()}…</span>;
   return (
     <img
       src={src}
@@ -86,7 +86,7 @@ function ANPRDetails({ event, eventType }) {
 
       <div className="mt-4 space-y-3">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
             Vehicle Snapshot
           </p>
           <AnprEvidenceImage
@@ -96,7 +96,7 @@ function ANPRDetails({ event, eventType }) {
           />
         </div>
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
             Plate Crop
           </p>
           <AnprEvidenceImage
