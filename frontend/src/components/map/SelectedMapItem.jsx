@@ -9,8 +9,8 @@ import { formatEventLabel } from "../../utils/eventTypeLabels";
 function Section({ label, value }) {
   return (
     <div className="flex items-center justify-between py-1.5 text-xs">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-800">{value || "—"}</span>
+      <span className="text-muted">{label}</span>
+      <span className="font-medium text-primary">{value || "—"}</span>
     </div>
   );
 }
@@ -43,12 +43,12 @@ function SelectedMapItem({ item, onClose, actions }) {
       <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2">
         <div className="flex items-center gap-2">
           {icon}
-          <h3 className="text-sm font-semibold text-slate-800">Selected</h3>
+          <h3 className="text-sm font-semibold text-primary">Selected</h3>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="btn-focus rounded p-1 text-slate-400 hover:bg-slate-100"
+          className="btn-focus rounded p-1 text-muted hover:bg-slate-100"
           aria-label="Clear selection"
         >
           <XIcon size={16} />
@@ -58,7 +58,7 @@ function SelectedMapItem({ item, onClose, actions }) {
       {item.kind === "camera" && (
         <>
           <p className="text-base font-bold text-blue-700">{item.id}</p>
-          <p className="text-sm text-slate-600">{item.name}</p>
+          <p className="text-sm text-secondary">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Sector" value={item.sector} />
             <Section
@@ -95,7 +95,7 @@ function SelectedMapItem({ item, onClose, actions }) {
       {item.kind === "alert" && (
         <>
           <p className="text-base font-bold text-red-700">{item.id}</p>
-          <p className="text-sm text-slate-700">{formatEventLabel(item.type)}</p>
+          <p className="text-sm text-secondary">{formatEventLabel(item.type)}</p>
           <div className="mt-2 space-y-1">
             <Section label="Severity" value={<AlertSeverityBadge severity={item.severity} />} />
             <Section label="Camera" value={item.cameraId} />
@@ -131,7 +131,7 @@ function SelectedMapItem({ item, onClose, actions }) {
       {item.kind === "fence" && (
         <>
           <p className="text-base font-bold text-blue-700">{item.id}</p>
-          <p className="text-sm text-slate-600">{item.name}</p>
+          <p className="text-sm text-secondary">{item.name}</p>
           <div className="mt-2 space-y-1">
             <Section label="Camera" value={item.cameraId} />
             <Section label="Rule" value={item.rule} />
