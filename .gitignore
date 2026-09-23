@@ -46,6 +46,7 @@ ai_engine/venv/
 .env
 .env.*
 !.env.example
+!deploy.env.example
 
 frontend/.env
 backend/.env
@@ -72,6 +73,10 @@ logs/
 
 /storage/*
 !/storage/.gitkeep
+
+# Local TLS material (never commit private keys or issued certificates)
+/certs/*
+!/certs/.gitkeep
 
 /evidence/
 /snapshots/
