@@ -1,13 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { EyeIcon, EyeOffIcon } from "../components/common/Icons";
+import { EyeIcon, EyeOffIcon, MoonIcon, ShieldIcon, SunIcon, UserIcon } from "../components/common/Icons";
 import Modal from "../components/common/Modal";
 import Logo from "../components/common/Logo";
 import { useAuth } from "../hooks/useAuth";
+import { getDemoAccess } from "../services/authApi";
 import {
   useLanguage,
   SUPPORTED_LANGUAGES,
 } from "../hooks/useLanguage";
+import { useTheme } from "../hooks/useTheme";
+
+const DEMO_OPTIONS = [
+  {
+    role: "ADMINISTRATOR",
+    title: "Explore as Administrator",
+    loadingTitle: "Entering Admin Demo...",
+    Icon: ShieldIcon,
+  },
+  {
+    role: "SECURITY_OPERATOR",
+    title: "Explore as Security Operator",
+    loadingTitle: "Entering Operator Demo...",
+    Icon: UserIcon,
+  },
+];
 
 function Login() {
   const navigate = useNavigate();
@@ -15,12 +32,14 @@ function Login() {
 
   const {
     login,
+    loginWithDemo,
     isAuthenticated,
     isChecking,
     isLoading,
   } = useAuth();
 
   const { lang, setLang } = useLanguage();
+  const { isDark, toggleTheme } = useTheme();
 
   const [values, setValues] = useState({
     email: "",
@@ -31,6 +50,26 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(null);
+
+  // Ask the backend whether demo logins are allowed before showing the
+  // Explore Demo section. Failures fall back to hidden (safe default).
+  useEffect(() => {
+    let active = true;
+
+    getDemoAccess()
+      .then((res) => {
+        if (active) setDemoEnabled(Boolean(res?.data?.enabled));
+      })
+      .catch(() => {
+        if (active) setDemoEnabled(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (isChecking || isLoading) return;
@@ -103,64 +142,78 @@ function Login() {
     }
   };
 
+  const handleDemoLogin = async (role) => {
+    if (demoLoading) return;
+
+    setError("");
+    setDemoLoading(role);
+
+    try {
+      const user = await loginWithDemo(role);
+
+      if (user) {
+        navigate("/dashboard", { replace: true });
+      }
+    } catch (err) {
+      setError(
+        err?.message || "Unable to enter demo mode. Please try again."
+      );
+    } finally {
+      setDemoLoading(null);
+    }
+  };
+
   return (
-    <main className="login-page relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-12">
-      {/* Soft background glow */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[650px] w-[650px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-200/20 blur-[130px]"
-        aria-hidden="true"
-      />
-
-      <div className="absolute right-5 top-5 flex items-center gap-1.5 sm:right-8 sm:top-8">
-        {SUPPORTED_LANGUAGES.map((language) => (
-          <button
-            key={language.code}
-            type="button"
-            onClick={() => setLang(language.code)}
-            className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
-              lang === language.code
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-white hover:bg-white hover:text-blue-600"
-            }`}
-          >
-            {language.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="relative z-10 w-full max-w-[640px]">
-        <div className="mb-10 flex justify-center">
-          <div className="transition duration-300 hover:scale-105">
-            <Logo
-              size={58}
-              rounded={false}
-            />
+    <main className="login-page relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-10">
+      <div className="relative z-10 w-full max-w-[480px]">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl shadow-sm"><Logo size={36} rounded={false} /></div>
+            <div>
+              <p className="text-xl font-semibold tracking-tight text-primary">IBVAP</p>
+              <p className="text-xs text-muted">Border surveillance command</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 dark:bg-slate-50">
+            {SUPPORTED_LANGUAGES.map((language) => (
+              <button
+                key={language.code}
+                type="button"
+                onClick={() => setLang(language.code)}
+                className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${lang === language.code ? "bg-blue-600 text-white" : "text-muted hover:bg-slate-100 hover:text-slate-800 dark:hover:text-white/90"}`}
+              >
+                {language.label}
+              </button>
+            ))}
+            <button type="button" onClick={toggleTheme} className="btn-focus flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-slate-100 hover:text-slate-800 dark:hover:text-white/90" aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}>
+              {isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
+            </button>
           </div>
         </div>
 
-        <section className="card rounded-2xl px-6 py-10 shadow-[0_20px_60px_rgba(37,99,235,0.08)] backdrop-blur-md sm:px-12 sm:py-14">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-[34px]">
+        <section className="login-card rounded-2xl border px-6 py-8 sm:px-9 sm:py-9">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-primary sm:text-[28px]">
               Welcome Back
             </h1>
 
-            <p className="mt-3 text-sm text-slate-400 sm:text-base">
+            <p className="mt-2 text-sm text-muted">
               Enter your credentials to access your account.
             </p>
           </div>
 
           <form
             onSubmit={handleSubmit}
-            className="mt-12"
+            className="mt-8"
             noValidate
           >
-            <div className="space-y-7">
+            <div className="space-y-4">
               <div className="group relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
-                    className="h-5 w-5 text-white transition group-focus-within:text-white"
+                    className="h-5 w-5 text-muted transition group-focus-within:text-blue-600"
                     aria-hidden="true"
                   >
                     <rect
@@ -188,20 +241,21 @@ function Login() {
                   id="email"
                   name="email"
                   type="email"
+                  aria-label="Email address"
                   value={values.email}
                   onChange={handleChange}
                   autoComplete="email"
                   placeholder="Enter your email"
-                  className="h-16 w-full rounded-xl border border-white/20 bg-white/5 pl-16 pr-5 text-[15px] text-white outline-none transition duration-200 placeholder:text-white hover:border-blue-300 focus:border-blue-500 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/20"
+                  className="input-field h-[52px] !pl-12 !pr-4"
                 />
               </div>
 
               <div className="group relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
-                    className="h-5 w-5 text-white transition group-focus-within:text-white"
+                    className="h-5 w-5 text-muted transition group-focus-within:text-blue-600"
                     aria-hidden="true"
                   >
                     <rect
@@ -232,6 +286,7 @@ function Login() {
                 <input
                   id="password"
                   name="password"
+                  aria-label="Password"
                   type={
                     showPassword
                       ? "text"
@@ -241,7 +296,7 @@ function Login() {
                   onChange={handleChange}
                   autoComplete="current-password"
                   placeholder="Enter your password"
-                  className="h-16 w-full rounded-xl border border-white/20 bg-white/5 pl-16 pr-14 text-[15px] text-white outline-none transition duration-200 placeholder:text-white hover:border-blue-300 focus:border-blue-500 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/20"
+                  className="input-field h-[52px] !pl-12 !pr-12"
                 />
 
                 <button
@@ -251,7 +306,7 @@ function Login() {
                       (current) => !current
                     )
                   }
-                  className="absolute inset-y-0 right-0 flex items-center px-5 text-slate-400 transition hover:text-blue-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center px-5 text-muted transition hover:text-blue-600 focus:outline-none"
                   aria-label={
                     showPassword
                       ? "Hide password"
@@ -279,7 +334,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-8 flex h-16 w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-base font-semibold text-white shadow-[0_10px_25px_rgba(37,99,235,0.20)] transition duration-200 hover:-translate-y-0.5 hover:from-blue-600 hover:to-blue-700 hover:shadow-[0_14px_30px_rgba(37,99,235,0.28)] focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+              className="btn-focus mt-6 flex h-12 w-full items-center justify-center rounded-lg bg-blue-600 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
                 <div className="flex items-center gap-3">
@@ -291,10 +346,56 @@ function Login() {
               )}
             </button>
           </form>
+
+          {demoEnabled && (
+            <div className="mt-7">
+              <div className="flex items-center gap-3" role="separator" aria-label="Explore Demo">
+                <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+                  Explore Demo
+                </span>
+                <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {DEMO_OPTIONS.map(({ role, title, loadingTitle, description, Icon }) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => handleDemoLogin(role)}
+                    disabled={demoLoading !== null || loading}
+                    className="btn-focus group flex flex-col items-start gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold text-secondary dark:text-white/90">
+                      <Icon
+                        size={16}
+                        className="shrink-0 text-muted transition group-hover:text-blue-600"
+                      />
+                      {demoLoading === role ? (
+                        <>
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600 dark:border-white/30 dark:border-t-white" />
+                          {loadingTitle}
+                        </>
+                      ) : (
+                        title
+                      )}
+                    </span>
+                    <span className="mt-0.5 pl-6 text-xs leading-5 text-muted">
+                      {description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <p className="mt-3 text-center text-[11px] text-muted">
+                Demo Access — For presentation/testing only
+              </p>
+            </div>
+          )}
         </section>
 
-        <div className="mt-10 text-center text-sm sm:text-base">
-          <span className="text-slate-400">
+        <div className="mt-6 text-center text-sm">
+          <span className="text-muted">
             Forgot your password?{" "}
           </span>
 
@@ -307,8 +408,8 @@ function Login() {
           </button>
         </div>
 
-        <div className="mt-7 text-center">
-          <p className="text-xs font-medium tracking-wide text-slate-300">
+        <div className="mt-5 text-center">
+          <p className="text-xs font-medium tracking-wide text-muted">
             IBVAP · Intelligent Border Video Analytics Platform
           </p>
         </div>
@@ -319,13 +420,13 @@ function Login() {
         onClose={() => setForgotOpen(false)}
         title="Reset Password"
       >
-        <p className="text-sm leading-6 text-slate-600">
+        <p className="text-sm leading-6 text-secondary">
           Password resets are handled by the platform
           administrator. Please contact the National Border
           Command Centre help desk to reset your password.
         </p>
 
-        <p className="mt-3 text-xs leading-5 text-slate-500">
+        <p className="mt-3 text-xs leading-5 text-muted">
           Self-service password reset will be available after
           the authentication backend is fully configured.
         </p>
