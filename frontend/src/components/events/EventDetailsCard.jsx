@@ -10,11 +10,11 @@ function Row({ label, value, children }) {
   const displayValue = value === null || value === undefined || value === "" ? "—" : value;
   return (
     <div className="flex items-start justify-between py-2">
-      <span className="text-sm text-slate-500">{label}</span>
+      <span className="text-sm text-muted">{label}</span>
       {children ? (
-        <span className="text-sm font-medium text-slate-800">{children}</span>
+        <span className="text-sm font-medium text-primary">{children}</span>
       ) : (
-        <span className="text-sm font-medium text-slate-800">{displayValue}</span>
+        <span className="text-sm font-medium text-primary">{displayValue}</span>
       )}
     </div>
   );
@@ -31,8 +31,8 @@ function EventDetailsCard({ event }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <InfoIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">Event Information</h3>
+        <InfoIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">Event Information</h3>
       </div>
       <dl className="divide-y divide-slate-100 text-sm">
         <Row label="Event ID" value={event.id} />
