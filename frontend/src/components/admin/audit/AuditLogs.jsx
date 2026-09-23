@@ -88,13 +88,13 @@ function AuditLogs() {
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-semibold text-slate-800">Audit Logs</h3>
-          <p className="text-sm text-slate-500">
+          <h3 className="text-base font-semibold text-primary">Audit Logs</h3>
+          <p className="text-sm text-muted">
             Immutable record of administrative and operational actions.
           </p>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-secondary">
             Current Records:{" "}
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-primary">
               {stats.total.toLocaleString()}
             </span>{" "}
             / {stats.maxRows.toLocaleString()}
@@ -184,7 +184,7 @@ function AuditLogs() {
           }}
         />
         <div>
-          <label htmlFor="audit-limit" className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label htmlFor="audit-limit" className="mb-1.5 block text-sm font-medium text-secondary">
             Page Size
           </label>
           <select
@@ -227,7 +227,7 @@ function AuditLogs() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
+                  <tr className="border-b border-slate-200 text-xs uppercase text-muted">
                     <th className="px-3 py-2 font-semibold">When</th>
                     <th className="px-3 py-2 font-semibold">Actor</th>
                     <th className="px-3 py-2 font-semibold">Action</th>
@@ -238,23 +238,23 @@ function AuditLogs() {
                 <tbody>
                   {logs.map((a) => (
                     <tr key={a.id} className="border-b border-slate-100">
-                      <td className="whitespace-nowrap px-3 py-2.5 text-xs text-slate-500">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-xs text-muted">
                         {formatDateTime(a.createdAt)}
                       </td>
                       <td className="px-3 py-2.5">
-                        <p className="text-slate-700">{a.userName || "System"}</p>
-                        {a.userEmail && <p className="text-xs text-slate-400">{a.userEmail}</p>}
-                        {a.actorRole && <p className="text-xs text-slate-400">{roleLabel(a.actorRole)}</p>}
+                        <p className="text-secondary">{a.userName || "System"}</p>
+                        {a.userEmail && <p className="text-xs text-muted">{a.userEmail}</p>}
+                        {a.actorRole && <p className="text-xs text-muted">{roleLabel(a.actorRole)}</p>}
                       </td>
                       <td className="px-3 py-2.5">
-                        <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">
+                        <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-secondary">
                           {a.action}
                         </code>
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-500">
+                      <td className="px-3 py-2.5 text-xs text-muted">
                         {a.entityType ? `${a.entityType}:${a.entityId || "—"}` : "—"}
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-400">{a.ipAddress || "—"}</td>
+                      <td className="px-3 py-2.5 text-xs text-muted">{a.ipAddress || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -262,7 +262,7 @@ function AuditLogs() {
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted">
                 Page {pagination.page} of {Math.max(1, totalPages)} · {pagination.total} records
               </p>
               <div className="flex items-center gap-2">
@@ -285,9 +285,9 @@ function AuditLogs() {
 
       <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Clean old audit logs">
         <div className="space-y-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             This permanently removes the oldest audit records beyond the{" "}
-            <span className="font-semibold text-slate-700">
+            <span className="font-semibold text-secondary">
               {stats.maxRows.toLocaleString()}
             </span>{" "}
             record cap, keeping the newest logs. A single{" "}
