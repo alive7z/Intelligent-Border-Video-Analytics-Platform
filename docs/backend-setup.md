@@ -232,8 +232,10 @@ Authorization: Bearer <access-token>
 - Invalid/expired token → HTTP 401 `Invalid or expired token`
 - Authenticated but insufficient role → HTTP 403 `Insufficient role permissions`
 
-Tokens are short-lived (`8h`); refresh tokens, Redis, and server-side revocation
-are intentionally out of scope for Phase 3.
+Tokens are HS256-signed and short-lived (default `8h`); there is no refresh-token
+flow. Server-side revocation is implemented: logout revokes the current `jti`
+(in-memory store + `token_revocations` table) and bumps `token_version` to
+invalidate any cached tokens; admins can revoke a user's sessions the same way.
 
 ## Phase 4 core APIs
 
