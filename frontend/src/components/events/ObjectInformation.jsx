@@ -7,8 +7,8 @@ import { formatEventLabel } from "../../utils/eventTypeLabels";
 function Row({ label, value }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="text-sm font-medium text-slate-800">
+      <span className="text-sm text-muted">{label}</span>
+      <span className="text-sm font-medium text-primary">
         {value == null || value === "" ? "—" : value}
       </span>
     </div>
@@ -35,8 +35,8 @@ function ObjectInformation({ event }) {
   return (
     <Card>
       <div className="mb-2 flex items-center gap-2">
-        <UserIcon size={18} className="text-white" />
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+        <UserIcon size={18} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-primary">{title}</h3>
       </div>
 
       {isAnpr && event.anpr ? (
@@ -56,7 +56,7 @@ function ObjectInformation({ event }) {
           <Row label="Detection Confidence" value={`${Math.round((event.face.confidence || 0) * 100)}%`} />
           <Row label="Timestamp" value={formatTime(event.face.timestamp)} />
           <dl className="pt-2">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted">
               Face detected — no identity match (person identification not yet integrated).
             </p>
           </dl>
