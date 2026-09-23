@@ -21,7 +21,6 @@ function MapControls({
         <Button
           variant="secondary"
           size="sm"
-          className="hover:!bg-white hover:!text-black"
           onClick={onShowLocation}
           loading={locationLoading}
           aria-label="Show my location"
