@@ -1,59 +1,433 @@
-version: '3.9'
+name: ibvap
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-backend-environment: &backend-environment
+  NODE_ENV: production
+  PORT: "5001"
+  API_PREFIX: /api
+  FRONTEND_URL: ${PUBLIC_ORIGIN:-http://localhost}
+  FRONTEND_BACKEND_URL: ${PUBLIC_ORIGIN:-http://localhost}
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_NAME: ${DB_NAME:-ibvap}
+  DB_USER: ${DB_USER:-ibvap_app}
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the deployment env file}
+  DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-10}
+  JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the deployment env file}
+  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+  JWT_ISSUER: ${JWT_ISSUER:-ibvap-backend}
+  JWT_AUDIENCE: ${JWT_AUDIENCE:-ibvap-frontend}
+  AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?Set AI_SERVICE_TOKEN in the deployment env file}
+  AI_INTERNAL_URL: ${AI_INTERNAL_URL:-http://ai-engine:8001}
+  PREVIEW_ENABLED: ${PREVIEW_ENABLED:-true}
+  PREVIEW_TOKEN_TTL_SECONDS: ${PREVIEW_TOKEN_TTL_SECONDS:-60}
+  PREVIEW_TOKEN_SECRET: ${PREVIEW_TOKEN_SECRET:?Set PREVIEW_TOKEN_SECRET in the deployment env file}
+  REDIS_ENABLED: ${REDIS_ENABLED:-false}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+  CAMERA_RUNTIME_KEY_PREFIX: ${CAMERA_RUNTIME_KEY_PREFIX:-ibvap:camera}
+  CAMERA_RUNTIME_TTL_SECONDS: ${CAMERA_RUNTIME_TTL_SECONDS:-15}
+  EVIDENCE_BASE_PATH: /storage
+  EVIDENCE_STORAGE_ROOT: /storage
+  SECURITY_EVENTS_FILE: /storage/security-events.ndjson
+  EVIDENCE_INTEGRITY_ENABLED: ${EVIDENCE_INTEGRITY_ENABLED:-true}
+  EVIDENCE_SIGNING_KEY_ID: ${EVIDENCE_SIGNING_KEY_ID:-ev-key-v1}
+  EVIDENCE_SIGNING_PRIVATE_KEY: ${EVIDENCE_SIGNING_PRIVATE_KEY:-}
+  EVIDENCE_SIGNING_PUBLIC_KEY: ${EVIDENCE_SIGNING_PUBLIC_KEY:-}
+  EVIDENCE_ENCRYPTION_ENABLED: ${EVIDENCE_ENCRYPTION_ENABLED:-false}
+  EVIDENCE_ACTIVE_KEY_ID: ${EVIDENCE_ACTIVE_KEY_ID:-ev-enc-v1}
+  EVIDENCE_MASTER_KEY: ${EVIDENCE_MASTER_KEY:-}
+  EVIDENCE_KEY_V2: ${EVIDENCE_KEY_V2:-}
+  EVIDENCE_KEY_V2_ID: ${EVIDENCE_KEY_V2_ID:-ev-enc-v2}
+  BLOCKCHAIN_ENABLED: ${BLOCKCHAIN_ENABLED:-false}
+  LEDGER_RPC_URL: ${LEDGER_RPC_URL:-http://ledger-bop:8541}
+  LEDGER_NODE_TOKEN: ${LEDGER_NODE_TOKEN:-}
+  LEDGER_CHAIN_ID: ${LEDGER_CHAIN_ID:-51201}
+  LEDGER_NETWORK: ${LEDGER_NETWORK:-ibvap-permissioned-poa}
+  LEDGER_BATCH_SIZE: ${LEDGER_BATCH_SIZE:-64}
+  DEMO_MODE: ${DEMO_MODE:-false}
+  MFA_ADMIN_REQUIRED: ${MFA_ADMIN_REQUIRED:-false}
+  MFA_ISSUER: ${MFA_ISSUER:-IBVAP}
+  LOGIN_LOCKOUT_THRESHOLD: ${LOGIN_LOCKOUT_THRESHOLD:-5}
+  LOGIN_LOCKOUT_MINUTES: ${LOGIN_LOCKOUT_MINUTES:-15}
+  SECURITY_AUDIT_ENABLED: ${SECURITY_AUDIT_ENABLED:-true}
+  SECURITY_METRICS_ENABLED: ${SECURITY_METRICS_ENABLED:-true}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+  ENABLE_HSTS: ${ENABLE_HSTS:-false}
+
+x-ledger-common: &ledger-common
+  build:
+    context: ./ledger
+  profiles: [ledger]
+  restart: unless-stopped
+  networks:
+    - ledger
+  healthcheck:
+    test: [CMD, python, -c, "import os,urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:'+os.environ['LEDGER_HEALTH_PORT']+'/health', data=b'{}'), timeout=3)"]
+    interval: 15s
+    timeout: 5s
+    retries: 5
+    start_period: 5s
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging: *default-logging
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "5173:5173"
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
     environment:
-      VITE_API_BASE_URL: http://backend:3001
-      VITE_WS_URL: http://backend:3001
+      MYSQL_DATABASE: ${DB_NAME:-ibvap}
+      MYSQL_USER: ${DB_USER:-ibvap_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the deployment env file}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in the deployment env file}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - data
+    healthcheck:
+      test: [CMD-SHELL, "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    profiles: [tools]
+    environment: *backend-environment
+    command: [node, src/db/migrate.js]
     depends_on:
-      - backend
+      mysql:
+        condition: service_healthy
+    networks:
+      - data
+    volumes:
+      - ${EVIDENCE_HOST_PATH:-./storage}:/storage
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
 
   backend:
     build:
-      context: ./backend
-    ports:
-      - "3001:3001"
-    environment:
-      PORT: 3001
-      NODE_ENV: development
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment: *backend-environment
     depends_on:
-      - redis
-      - sql
+      mysql:
+        condition: service_healthy
+    expose:
+      - "5001"
+    volumes:
+      - ${EVIDENCE_HOST_PATH:-./storage}:/storage
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - application
+      - data
+      - ledger
+    healthcheck:
+      test: [CMD, wget, -qO-, http://127.0.0.1:5001/api/health]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
 
-  ai_engine:
+  ai-engine:
     build:
       context: ./ai_engine
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
+    command: [--serve, --all-cameras]
     environment:
-      AI_ENGINE_PORT: 8000
+      APP_ENV: production
+      AI_HOST: 0.0.0.0
+      AI_PORT: "8001"
+      NODE_API_URL: http://backend:5001/api
+      NODE_AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?Set AI_SERVICE_TOKEN in the deployment env file}
+      NODE_INTEGRATION_ENABLED: ${NODE_INTEGRATION_ENABLED:-true}
+      YOLO_MODEL: /models/yolo11n.pt
+      ANPR_MODEL_PATH: /models/license_plate_detector.pt
+      FACE_MODEL_PATH: /models/face_detection_yunet_2023mar.onnx
+      YOLO_DEVICE: ${YOLO_DEVICE:-auto}
+      CONTEXT_TZ: ${CONTEXT_TZ:-Asia/Kolkata}
+      EVIDENCE_BASE_PATH: /storage
+      SNAPSHOT_PATH: /storage/snapshots
+      FACE_PATH: /storage/faces
+      REDIS_ENABLED: ${REDIS_ENABLED:-false}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-ibvap}
+      REDIS_CAMERA_STATUS_TTL_SECONDS: ${REDIS_CAMERA_STATUS_TTL_SECONDS:-15}
     depends_on:
-      - redis
+      backend:
+        condition: service_healthy
+    expose:
+      - "8001"
+    volumes:
+      - ${AI_MODEL_DIR:-./ai_engine/models/weights}:/models:ro
+      - ${EASYOCR_MODEL_DIR:?Set EASYOCR_MODEL_DIR to the EasyOCR model directory}:/home/ibvap/.EasyOCR/model:ro
+      - ${EVIDENCE_HOST_PATH:-./storage}:/storage
+    networks:
+      application:
+      data:
+      ai-egress:
+        gw_priority: 1
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
 
-  sql:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: ibvap
-      POSTGRES_USER: ibvap
-      POSTGRES_PASSWORD: change-me
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_WS_URL: /
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - application
+    healthcheck:
+      test: [CMD, wget, -qO-, http://127.0.0.1/]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
+    logging: *default-logging
+
+  nginx-gateway:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     ports:
-      - "5432:5432"
+      - ${HTTP_BIND_ADDRESS:-0.0.0.0}:${HTTP_PORT:-80}:80
+      - ${HTTPS_BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-443}:443
+    volumes:
+      - ${NGINX_CONFIG_FILE:-./infra/nginx/nginx.conf}:/etc/nginx/nginx.conf:ro
+      - ${TLS_CERT_DIR:-./certs}:/etc/nginx/tls:ro
+    networks:
+      - edge-public
+      - application
+    healthcheck:
+      test: [CMD, wget, -qO-, http://127.0.0.1/nginx-health]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
+    logging: *default-logging
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    profiles: [cache]
+    restart: unless-stopped
+    user: "999:1000"
+    command: [redis-server, --appendonly, "yes", --save, "60", "1000"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - data
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
+
+  ledger-bop:
+    <<: *ledger-common
+    environment:
+      LEDGER_NODE_TOKEN: ${LEDGER_NODE_TOKEN:-}
+      LEDGER_HEALTH_PORT: "8541"
+    command:
+      - --node-id
+      - BOP
+      - --bind
+      - 0.0.0.0
+      - --port
+      - "8541"
+      - --chain-id
+      - ${LEDGER_CHAIN_ID:-51201}
+      - --peers
+      - ledger-sector:8542,ledger-command:8543
+    volumes:
+      - ledger_bop_data:/ledger/data/BOP
+
+  ledger-sector:
+    <<: *ledger-common
+    environment:
+      LEDGER_NODE_TOKEN: ${LEDGER_NODE_TOKEN:-}
+      LEDGER_HEALTH_PORT: "8542"
+    command:
+      - --node-id
+      - Sector-HQ
+      - --bind
+      - 0.0.0.0
+      - --port
+      - "8542"
+      - --chain-id
+      - ${LEDGER_CHAIN_ID:-51201}
+      - --peers
+      - ledger-bop:8541,ledger-command:8543
+    volumes:
+      - ledger_sector_data:/ledger/data/Sector-HQ
+
+  ledger-command:
+    <<: *ledger-common
+    environment:
+      LEDGER_NODE_TOKEN: ${LEDGER_NODE_TOKEN:-}
+      LEDGER_HEALTH_PORT: "8543"
+    command:
+      - --node-id
+      - Command-Centre
+      - --bind
+      - 0.0.0.0
+      - --port
+      - "8543"
+      - --chain-id
+      - ${LEDGER_CHAIN_ID:-51201}
+      - --peers
+      - ledger-bop:8541,ledger-sector:8542
+    volumes:
+      - ledger_command_data:/ledger/data/Command-Centre
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.5.0
+    profiles: [monitoring]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
     ports:
-      - "9090:9090"
+      - ${PROMETHEUS_BIND_ADDRESS:-127.0.0.1}:${PROMETHEUS_PORT:-9090}:9090
+    volumes:
+      - ./infra/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - application
+      - monitoring
+      - monitoring-access
+    healthcheck:
+      test: [CMD, /bin/promtool, query, instant, http://127.0.0.1:9090, up]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.1.0
+    profiles: [monitoring]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - "test -n \"$$GF_SECURITY_ADMIN_PASSWORD\" || { echo 'Grafana startup error: GRAFANA_ADMIN_PASSWORD must be set.' >&2; exit 1; }; exec /run.sh"
     ports:
-      - "3002:3000"
+      - ${GRAFANA_BIND_ADDRESS:-127.0.0.1}:${GRAFANA_PORT:-3000}:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - monitoring
+      - monitoring-access
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+volumes:
+  mysql_data:
+  redis_data:
+  ledger_bop_data:
+  ledger_sector_data:
+  ledger_command_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  edge-public:
+  application:
+    internal: true
+  data:
+    internal: true
+  ai-egress:
+  ledger:
+    internal: true
+  monitoring:
+    internal: true
+  monitoring-access:
