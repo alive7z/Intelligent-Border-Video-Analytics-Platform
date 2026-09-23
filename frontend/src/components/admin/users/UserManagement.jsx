@@ -16,14 +16,14 @@ const MODULES = ["Dashboard", "Surveillance", "Alerts", "Events", "Intelligence"
 function RoleMatrix({ matrix }) {
   return (
     <Card>
-      <p className="mb-1 text-sm font-semibold text-slate-800">Role Permissions Matrix</p>
-      <p className="mb-4 text-xs text-slate-500">
+      <p className="mb-1 text-sm font-semibold text-primary">Role Permissions Matrix</p>
+      <p className="mb-4 text-xs text-muted">
         Read-only view of what each role may access. Enforcement happens on the backend.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-muted">
               <th className="px-3 py-2 font-semibold">Role</th>
               {MODULES.map((m) => (
                 <th key={m} className="px-2 py-2 text-center font-semibold">{m}</th>
@@ -33,13 +33,13 @@ function RoleMatrix({ matrix }) {
           <tbody>
             {Object.entries(matrix || {}).map(([role, perms]) => (
               <tr key={role} className="border-b border-slate-100">
-                <td className="px-3 py-2.5 font-medium text-slate-700">{roleLabel(role)}</td>
+                <td className="px-3 py-2.5 font-medium text-secondary">{roleLabel(role)}</td>
                 {MODULES.map((m) => {
                   const v = perms[m];
                   return (
                     <td key={m} className="px-2 py-2.5 text-center">
                       {v === false || v === "limited" ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+                        <span className="inline-flex items-center gap-1 text-xs text-muted">
                           {v === "limited" ? (
                             <>
                               <CheckIcon size={12} className="text-amber-600" /> L
@@ -138,17 +138,17 @@ function UserManagement() {
     <>
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Card className="!p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Active Users</p>
-          <p className="mt-1 text-2xl font-bold text-slate-800">{counts.active}</p>
+          <p className="text-xs uppercase tracking-wide text-muted">Active Users</p>
+          <p className="mt-1 text-2xl font-bold text-primary">{counts.active}</p>
         </Card>
         <Card className="!p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Disabled</p>
-          <p className="mt-1 text-2xl font-bold text-slate-800">{counts.disabled}</p>
+          <p className="text-xs uppercase tracking-wide text-muted">Disabled</p>
+          <p className="mt-1 text-2xl font-bold text-primary">{counts.disabled}</p>
         </Card>
       </div>
 
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-slate-500">Manage users and their platform roles.</p>
+        <p className="text-sm text-muted">Manage users and their platform roles.</p>
         {canManage && (
           <Button
             onClick={() => {
@@ -170,7 +170,7 @@ function UserManagement() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3 font-semibold">User</th>
                   <th className="px-4 py-3 font-semibold">Username</th>
                   <th className="px-4 py-3 font-semibold">Role</th>
@@ -183,13 +183,13 @@ function UserManagement() {
                 {users.map((u) => (
                   <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 font-medium text-slate-800">
-                        <UserIcon size={16} className="text-white" />
+                      <div className="flex items-center gap-2 font-medium text-primary">
+                        <UserIcon size={16} className="text-blue-600" />
                         {u.name}
                       </div>
-                      <p className="text-xs text-slate-400">{u.email}</p>
+                      <p className="text-xs text-muted">{u.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{u.username}</td>
+                    <td className="px-4 py-3 text-secondary">{u.username}</td>
                     <td className="px-4 py-3">
                       <Badge tone="info">{roleLabel(u.role)}</Badge>
                     </td>
@@ -200,7 +200,7 @@ function UserManagement() {
                         <Badge tone="success">Active</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{u.lastLogin}</td>
+                    <td className="px-4 py-3 text-secondary">{u.lastLogin}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         {canManage && (
@@ -208,7 +208,6 @@ function UserManagement() {
                             <Button
                             variant="ghost"
                             size="sm"
-                            className="bg-green-500! text-white! hover:bg-green-600!"
                             onClick={() => {
                               setEditing(u);
                               setFormOpen(true);
@@ -220,7 +219,7 @@ function UserManagement() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-red-600 hover:bg-red-50"
+                                className="text-red-300 hover:bg-red-500/10"
                                 onClick={() => setDeactivateTarget(u)}
                               >
                                 Deactivate
@@ -267,7 +266,7 @@ function UserManagement() {
           </>
         }
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-secondary">
           Deactivating <span className="font-medium">{deactivateTarget?.name}</span> prevents them
           from signing in. Their history and audit trail is preserved.
         </p>
