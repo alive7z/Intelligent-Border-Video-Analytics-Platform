@@ -37,7 +37,7 @@ const actions = [
 function QuickActions() {
   return (
     <Card>
-      <h3 className="mb-4 text-sm font-semibold text-white">
+      <h3 className="mb-4 text-sm font-semibold text-primary">
         Quick Actions
       </h3>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -47,9 +47,9 @@ function QuickActions() {
             <Link
               key={a.label}
               to={a.to}
-              className="group btn-focus inline-flex min-h-11 items-center justify-start gap-2 rounded-lg border border-white/20 bg-white px-4 py-2.5 text-left text-sm font-medium text-slate-900 transition-all duration-150 hover:border-white/20 hover:bg-transparent hover:text-white active:scale-[0.98]"
+              className="group btn-focus inline-flex min-h-11 items-center justify-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-sm font-medium text-secondary transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             >
-              <Icon size={16} className="shrink-0 text-black transition-colors group-hover:text-white" />
+              <Icon size={16} className="shrink-0 text-blue-600" />
               {a.label}
             </Link>
           );
