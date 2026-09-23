@@ -19,7 +19,7 @@ export function ProtectedRoute({ roles, children }) {
 
   if (isChecking) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-100 dark:bg-[#0f172a]">
+      <div className="flex h-screen items-center justify-center bg-slate-100 dark:bg-[#09090B]">
         <Loader label="Checking session..." />
       </div>
     );
