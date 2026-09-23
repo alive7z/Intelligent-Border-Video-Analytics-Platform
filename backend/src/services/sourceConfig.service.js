@@ -56,6 +56,20 @@ const getCameraSourceConfig = async (cameraCode) => {
   return toSourceConfig(camera);
 };
 
+// Effective clockwise rotation the AI pipeline must apply to the source frame
+// (and matching zone/fence config) BEFORE drawing annotation text. Net =
+// pipeline rotation_degrees + display_rotation_degrees, normalized to [0, 360).
+// The AI therefore emits a fully canonical frame and the browser applies NO
+// extra rotation on top, keeping every baked label upright regardless of the
+// per-camera orientation.
+const toNetRotationDegrees = (camera) => {
+  const net =
+    (Number(camera.rotation_degrees || 0) +
+      Number(camera.display_rotation_degrees || 0)) %
+    360;
+  return ((net % 360) + 360) % 360;
+};
+
 const toSourceConfig = (camera) => ({
     cameraCode: camera.camera_code,
     enabled: camera.enabled,
@@ -64,7 +78,7 @@ const toSourceConfig = (camera) => ({
     sourceType: toTransportSourceType(camera.source_type, camera.stream_protocol),
     streamUrl: camera.stream_url || null,
     targetFps: camera.target_fps === null || camera.target_fps === undefined ? null : Number(camera.target_fps),
-    rotationDegrees: Number(camera.rotation_degrees || 0),
+    rotationDegrees: toNetRotationDegrees(camera),
   });
 
 const listCameraSourceConfigs = async () => ({
