@@ -13,7 +13,7 @@ import { SUPPORTED_LANGUAGES } from "../../../hooks/useLanguage";
 function ToggleField({ label, value, disabled, onChange }) {
   return (
     <label className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2.5">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <span className="text-sm font-medium text-secondary">{label}</span>
       <input
         type="checkbox"
         checked={!!value}
@@ -29,7 +29,7 @@ function TextField({ label, value, disabled, onChange, options, masked }) {
   if (options) {
     return (
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+        <label className="mb-1.5 block text-sm font-medium text-secondary">{label}</label>
         <select className="input-field" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
           {options.map((o) => (
             <option key={o} value={o}>
@@ -55,8 +55,8 @@ function TextField({ label, value, disabled, onChange, options, masked }) {
 function SettingsCard({ title, subtitle, fields, values, setValue, onSave, canManage }) {
   return (
     <Card>
-      <p className="mb-1 text-sm font-semibold text-slate-800">{title}</p>
-      <p className="mb-4 text-xs text-slate-500">{subtitle}</p>
+      <p className="mb-1 text-sm font-semibold text-primary">{title}</p>
+      <p className="mb-4 text-xs text-muted">{subtitle}</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {fields.map((f) =>
           f.type === "toggle" ? (
@@ -248,8 +248,8 @@ function SystemSettings() {
       <Card>
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-slate-800">Audit Log</p>
-            <p className="text-xs text-slate-500">Recent administration activity preview.</p>
+            <p className="text-sm font-semibold text-primary">Audit Log</p>
+            <p className="text-xs text-muted">Recent administration activity preview.</p>
           </div>
           <Badge tone="info">
             <ClockIcon size={12} /> {audit.length} entries
@@ -258,7 +258,7 @@ function SystemSettings() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-muted">
                 <th className="px-3 py-2 font-semibold">Time</th>
                 <th className="px-3 py-2 font-semibold">User</th>
                 <th className="px-3 py-2 font-semibold">Action</th>
@@ -268,10 +268,10 @@ function SystemSettings() {
             <tbody>
               {audit.map((a) => (
                 <tr key={a.id} className="border-b border-slate-100">
-                  <td className="px-3 py-2.5 text-slate-500">{a.time}</td>
-                  <td className="px-3 py-2.5 text-slate-700">{a.user}</td>
-                  <td className="px-3 py-2.5 text-slate-700">{a.action}</td>
-                  <td className="px-3 py-2.5 text-slate-500">{a.target}</td>
+                  <td className="px-3 py-2.5 text-muted">{a.time}</td>
+                  <td className="px-3 py-2.5 text-secondary">{a.user}</td>
+                  <td className="px-3 py-2.5 text-secondary">{a.action}</td>
+                  <td className="px-3 py-2.5 text-muted">{a.target}</td>
                 </tr>
               ))}
             </tbody>
