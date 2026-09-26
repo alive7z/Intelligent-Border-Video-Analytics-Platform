@@ -11,10 +11,10 @@
   <img src="https://img.shields.io/badge/Python-FastAPI-009688?style=flat-square&amp;logo=fastapi&amp;logoColor=white" alt="Python and FastAPI">
   <img src="https://img.shields.io/badge/Deployment-Docker-2496ed?style=flat-square&amp;logo=docker&amp;logoColor=white" alt="Docker deployment">
   <img src="https://img.shields.io/badge/AWS-EC2-ff9900?style=flat-square&amp;logo=amazonwebservices&amp;logoColor=white" alt="AWS EC2">
-  <a href="http://52.66.247.63"><img src="https://img.shields.io/badge/Live_Deployment-Open_IBVAP-16a34a?style=flat-square" alt="Open the live IBVAP deployment"></a>
+  <a href="https://ibvap-uk.duckdns.org"><img src="https://img.shields.io/badge/Live_Deployment-Open_IBVAP-16a34a?style=flat-square" alt="Open the live IBVAP deployment"></a>
 </p>
 
-<p align="center"><strong>Live prototype:</strong> <a href="http://52.66.247.63">http://52.66.247.63</a></p>
+<p align="center"><strong>Live prototype:</strong> <a href="https://ibvap-uk.duckdns.org">https://ibvap-uk.duckdns.org</a></p>
 
 IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to existing CCTV infrastructure. Its hybrid deployment runs the command platform on AWS EC2 and the camera-facing AI runtime on a Mac connected through Tailscale. A detection is treated as an observation—not automatically as a threat.
 
@@ -23,7 +23,7 @@ IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to
 ## Command Centre Preview
 
 <p align="center">
-  <a href="http://52.66.247.63">
+  <a href="https://ibvap-uk.duckdns.org">
     <img src="docs/assets/ibvap-dashboard.png" alt="IBVAP command centre dashboard showing surveillance, alerts, analytics, and system health" width="100%">
   </a>
 </p>

@@ -145,6 +145,7 @@ services:
       - application
       - data
       - ledger
+      - ai-egress
     healthcheck:
       test: [CMD, wget, -qO-, http://127.0.0.1:5001/api/health]
       interval: 20s
