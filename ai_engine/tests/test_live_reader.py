@@ -153,6 +153,32 @@ def test_non_rtsp_never_sets_ffmpeg_options(monkeypatch):
     assert calls[0][2] is None or "OPENCV_FFMPEG_CAPTURE_OPTIONS" not in os.environ
 
 
+def test_open_with_timeout_accepts_success_before_deadline(monkeypatch):
+    class SlowOpenCapture:
+        def __init__(self, *_args):
+            time.sleep(0.1)
+
+        def isOpened(self):
+            return True
+
+        def get(self, _prop):
+            return 0.0
+
+        def set(self, _prop, _value):
+            return True
+
+        def release(self):
+            return None
+
+    monkeypatch.setattr(cv2, "VideoCapture", SlowOpenCapture)
+    src = make_live(connect_timeout_seconds=0.5)
+
+    src.open_with_timeout()
+
+    assert src.is_open() is True
+    src.close()
+
+
 class _HungCapture:
     """A capture whose read() blocks forever (RTSP hang)."""
 

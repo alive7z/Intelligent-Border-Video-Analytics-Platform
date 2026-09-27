@@ -736,6 +736,55 @@ test("evidence media file is streamed for a real stored file and 404s when missi
   assert.strictEqual(missing.status, 404);
 });
 
+test("remote AI evidence media is materialized and streamed on the backend", async () => {
+  const fs = require("fs");
+  const path = require("path");
+
+  const res = await postRisk(riskObservation({ trackId: 1905, riskScore: 70, riskSeverity: "HIGH" }));
+  const alertId = res.body.data.alertActions[0].alertId;
+  createdAlertIds.push(alertId);
+
+  const evidenceId = crypto.randomUUID();
+  const fileName = evidenceId + ".jpg";
+  const absPath = path.resolve(__dirname, "..", "..", "storage", "snapshots", fileName);
+  const bytes = Buffer.from("REMOTE-JPEG-BYTES-2026", "utf8");
+  const checksum = crypto.createHash("sha256").update(bytes).digest("hex");
+
+  try {
+    const ingest = await request(app)
+      .post("/api/internal/ai/evidence")
+      .set("X-IBVAP-AI-Key", SERVICE_TOKEN)
+      .send({
+        schemaVersion: 1,
+        cameraCode: "CAM-ALERT-1",
+        evidence: [{
+          evidenceId,
+          alertId,
+          type: "SNAPSHOT",
+          storageReference: "storage/snapshots/" + fileName,
+          mimeType: "image/jpeg",
+          fileSizeBytes: bytes.length,
+          checksum,
+          capturedAt: new Date().toISOString(),
+          contentBase64: bytes.toString("base64"),
+        }],
+      });
+    assert.strictEqual(ingest.status, 200);
+    assert.strictEqual(ingest.body.data.evidenceCreated, 1);
+    createdEvidenceIds.push(evidenceId);
+    assert.ok(fs.readFileSync(absPath).equals(bytes));
+
+    const stream = await request(app)
+      .get(`/api/evidence/${evidenceId}/file`)
+      .set("Authorization", `Bearer ${operatorToken(apiUserId)}`)
+      .buffer(true);
+    assert.strictEqual(stream.status, 200);
+    assert.ok(Buffer.from(stream.body).equals(bytes));
+  } finally {
+    fs.rmSync(absPath, { force: true });
+  }
+});
+
 test("event and alert evidence lookups return the linked evidence items", async () => {
   const res = await postRisk(riskObservation({ trackId: 906, riskScore: 70, riskSeverity: "HIGH" }));
   const alertId = res.body.data.alertActions[0].alertId;

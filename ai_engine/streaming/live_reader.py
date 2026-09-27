@@ -294,7 +294,8 @@ class LiveVideoSource(VideoSource):
         self._pending_open = worker
         worker.start()
 
-        if not result["done"] and not worker.join(timeout=block_duration):
+        worker.join(timeout=block_duration)
+        if worker.is_alive():
             logger.warning(
                 "Live open timed out after %.0fs: %s — treating as failed attempt",
                 budget, self._source_id,

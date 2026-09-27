@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const evidenceRepository = require("../repositories/evidence.repository");
 const eventRepository = require("../repositories/event.repository");
 const alertRepository = require("../repositories/alert.repository");
@@ -44,6 +45,8 @@ const resolveStorageReference = (reference) => {
 };
 
 const EVIDENCE_TYPES = ["SNAPSHOT", "FACE", "PLATE", "VEHICLE"];
+// Fits below app.js's 1 MiB JSON limit after base64 expansion + metadata.
+const MAX_EVIDENCE_BYTES = 640 * 1024;
 // Alert-anchored types must carry + be validated against an alertId. PLATE and
 // VEHICLE are alert-anchored when a vehicle-triggered alert requests evidence;
 // the same types stay event-anchored (PLATE_DETECTED event) when reported from
@@ -61,6 +64,52 @@ const toSafeEvidence = (evidence) => {
     ...safe
   } = evidence;
   return safe;
+};
+
+// Persist media sent by a remote AI worker (the production Mac). Deployments
+// where AI and Node share /storage remain compatible because contentBase64 is
+// optional. Every write stays within STORAGE_ROOT and is verified against the
+// metadata generated at capture time before becoming visible.
+const persistEvidenceContent = (absolutePath, item) => {
+  if (item.contentBase64 === undefined || item.contentBase64 === null) return null;
+  if (typeof item.contentBase64 !== "string" || item.contentBase64.length === 0 ||
+      item.contentBase64.length % 4 !== 0 ||
+      !/^[A-Za-z0-9+/]*={0,2}$/.test(item.contentBase64)) {
+    throw new ApiError(400, "evidence.contentBase64 is invalid");
+  }
+
+  const bytes = Buffer.from(item.contentBase64, "base64");
+  if (bytes.length === 0 || bytes.length > MAX_EVIDENCE_BYTES ||
+      bytes.toString("base64") !== item.contentBase64) {
+    throw new ApiError(400, "evidence media payload is invalid or too large");
+  }
+  if (item.fileSizeBytes !== undefined && item.fileSizeBytes !== null &&
+      Number(item.fileSizeBytes) !== bytes.length) {
+    throw new ApiError(400, "evidence media size does not match metadata");
+  }
+  const checksum = crypto.createHash("sha256").update(bytes).digest("hex");
+  if (item.checksum && item.checksum !== checksum) {
+    throw new ApiError(400, "evidence media checksum does not match metadata");
+  }
+
+  fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+  const temporary = `${absolutePath}.${crypto.randomUUID()}.tmp`;
+  try {
+    fs.writeFileSync(temporary, bytes, { flag: "wx", mode: 0o600 });
+    try {
+      fs.linkSync(temporary, absolutePath);
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      const existing = fs.readFileSync(absolutePath);
+      const existingChecksum = crypto.createHash("sha256").update(existing).digest("hex");
+      if (existing.length !== bytes.length || existingChecksum !== checksum) {
+        throw new ApiError(409, "Existing evidence media does not match upload");
+      }
+    }
+  } finally {
+    fs.rmSync(temporary, { force: true });
+  }
+  return fs.statSync(absolutePath);
 };
 
 // Validate + persist evidence metadata reported by the AI engine for a
@@ -110,17 +159,6 @@ const ingestEvidence = async ({ schemaVersion, cameraCode, evidence }) => {
       throw new ApiError(400, "evidence.storageReference must be a relative file path");
     }
     const absolutePath = resolveStorageReference(storageRef);
-    let fileStat = null;
-    try {
-      fileStat = fs.statSync(absolutePath);
-    } catch (_err) {
-      fileStat = null;
-    }
-    logger.info(
-      `EVIDENCE_TRACE stage=FILESYSTEM camera=${cameraCode} evidence=${it.evidenceId} ` +
-      `event=${it.eventId || "none"} alert=${it.alertId || "none"} ` +
-      `exists=${Boolean(fileStat?.isFile())} bytes=${fileStat?.size ?? "unknown"}`
-    );
 
     let event = null;
     let alert = null;
@@ -162,6 +200,22 @@ const ingestEvidence = async ({ schemaVersion, cameraCode, evidence }) => {
       }
       eventId = event.id;
     }
+
+    // Do not materialize attacker-controlled bytes until all camera and parent
+    // bindings have passed authorization/ownership validation above.
+    let fileStat = persistEvidenceContent(absolutePath, it);
+    if (!fileStat) {
+      try {
+        fileStat = fs.statSync(absolutePath);
+      } catch (_err) {
+        fileStat = null;
+      }
+    }
+    logger.info(
+      `EVIDENCE_TRACE stage=FILESYSTEM camera=${cameraCode} evidence=${it.evidenceId} ` +
+      `event=${it.eventId || "none"} alert=${it.alertId || "none"} ` +
+      `exists=${Boolean(fileStat?.isFile())} bytes=${fileStat?.size ?? "unknown"}`
+    );
 
     // Idempotency by evidenceId (stored as the unique evidence_code).
     const existing = await evidenceRepository.findByEvidenceId(it.evidenceId);

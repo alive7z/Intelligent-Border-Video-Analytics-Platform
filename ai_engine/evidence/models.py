@@ -1,11 +1,9 @@
 """Evidence metadata models and payload builders (Phase 11).
 
 Python never inserts alerts or queries MySQL. It captures snapshot-oriented
-evidence on the local filesystem and POSTs metadata to Node's internal evidence
-endpoint so Node can persist it.
-
-Only metadata is sent to Node — the actual media bytes stay on the Python side
-under the shared storage directory (mounted/accessible to both services).
+evidence on the local filesystem and sends it to Node's authenticated internal
+evidence endpoint so Node can persist both the media and its metadata. This
+works with either a shared storage volume or the production Mac-to-AWS split.
 """
 from __future__ import annotations
 

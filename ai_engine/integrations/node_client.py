@@ -1,11 +1,17 @@
+import base64
 import uuid
+from pathlib import Path
 
 import httpx
 
-from config import NODE_AI_SERVICE_TOKEN, NODE_API_URL, NODE_INTEGRATION_ENABLED
+from config import EVIDENCE_DIR, NODE_AI_SERVICE_TOKEN, NODE_API_URL, NODE_INTEGRATION_ENABLED
 from utils.logger import get_logger
 
 logger = get_logger("node_client")
+
+# Express accepts 1 MiB JSON bodies. Keep the binary below that ceiling after
+# base64 expansion plus metadata rather than discovering the limit via a 413.
+MAX_EVIDENCE_BYTES = 640 * 1024
 
 # Trusted internal Node route delivering a camera's live source configuration.
 # Final endpoint = NODE_API_URL + this path. Only this route may return stream_url.
@@ -374,10 +380,13 @@ class NodeClient:
         evidence: list,
         retries: int = 2,
     ) -> dict:
-        """Deliver evidence metadata to Node's internal evidence endpoint.
+        """Deliver evidence metadata and media to Node's internal endpoint.
 
-        `evidence` is a list of EvidenceMeta objects (media lives on the local
-        filesystem; only metadata is POSTed). Node deduplicates by evidenceId.
+        Production runs Python on the Mac and Node on AWS, so a local
+        ``storage/...`` reference alone is not sufficient. The JPEG bytes ride
+        over the same authenticated private request; Node validates them before
+        materializing the file in its own confined evidence storage. Node still
+        deduplicates records and files by evidenceId.
         """
         if not self._enabled:
             return {"sent": False, "reason": "integration_disabled"}
@@ -389,7 +398,31 @@ class NodeClient:
         if not evidence:
             return {"sent": False, "reason": "no_evidence"}
 
-        items = [e.to_dict() for e in evidence]
+        items = []
+        evidence_root = Path(EVIDENCE_DIR).resolve()
+        for item in evidence:
+            encoded = item.to_dict()
+            reference = encoded.get("storageReference", "")
+            if not reference.startswith("storage/"):
+                return {"sent": False, "reason": "invalid_storage_reference"}
+            media_path = (evidence_root / reference.removeprefix("storage/")).resolve()
+            try:
+                media_path.relative_to(evidence_root)
+                media_bytes = media_path.read_bytes()
+            except (OSError, ValueError) as exc:
+                logger.warning(
+                    "Evidence media unavailable for %s (%s)",
+                    encoded.get("evidenceId"), type(exc).__name__,
+                )
+                return {"sent": False, "reason": "media_unavailable"}
+            if len(media_bytes) > MAX_EVIDENCE_BYTES:
+                logger.warning(
+                    "Evidence media exceeds upload limit for %s (%d bytes)",
+                    encoded.get("evidenceId"), len(media_bytes),
+                )
+                return {"sent": False, "reason": "media_too_large"}
+            encoded["contentBase64"] = base64.b64encode(media_bytes).decode("ascii")
+            items.append(encoded)
         payload = {
             "schemaVersion": 1,
             "cameraCode": camera_code,

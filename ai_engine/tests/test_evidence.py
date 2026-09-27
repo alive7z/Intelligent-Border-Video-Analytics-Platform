@@ -229,7 +229,7 @@ class TestEvidenceManager:
 
 
 class TestNodeClientEvidence:
-    def test_send_evidence_payload_and_success(self, monkeypatch):
+    def test_send_evidence_payload_and_success(self, monkeypatch, tmp_path):
         import httpx
 
         from integrations.node_client import NodeClient
@@ -253,12 +253,18 @@ class TestNodeClientEvidence:
         monkeypatch.setattr("integrations.node_client.httpx.AsyncClient", FakeClient)
         monkeypatch.setattr("integrations.node_client.NODE_INTEGRATION_ENABLED", True)
         monkeypatch.setattr("integrations.node_client.NODE_AI_SERVICE_TOKEN", "tok")
+        monkeypatch.setattr("integrations.node_client.EVIDENCE_DIR", tmp_path)
+
+        media = b"jpeg-evidence"
+        media_path = tmp_path / "snapshots" / "e1.jpg"
+        media_path.parent.mkdir(parents=True)
+        media_path.write_bytes(media)
 
         nc = NodeClient(base_url="http://localhost:5001/api")
         meta = EvidenceMeta(
             evidence_id="e1", alert_id=7, type="SNAPSHOT",
             storage_reference="storage/snapshots/e1.jpg", mime_type="image/jpeg",
-            file_size_bytes=10, checksum="x" * 64, captured_at="t",
+            file_size_bytes=len(media), checksum="x" * 64, captured_at="t",
         )
         result = __import__("asyncio").run(nc.send_evidence("CAM-01", [meta]))
 
@@ -269,6 +275,7 @@ class TestNodeClientEvidence:
         body = __import__("json").loads(captured["body"])
         assert body["cameraCode"] == "CAM-01"
         assert body["evidence"][0]["evidenceId"] == "e1"
+        assert __import__("base64").b64decode(body["evidence"][0]["contentBase64"]) == media
 
     def test_risk_observations_parse_alert_actions(self, monkeypatch):
         import asyncio
