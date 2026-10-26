@@ -15,6 +15,7 @@
 </p>
 
 <p align="center"><strong>Live prototype:</strong> <a href="https://ibvap-uk.duckdns.org">https://ibvap-uk.duckdns.org</a></p>
+<p align="center"><strong>YouTube Demo Video:</strong> <a href="https://youtu.be/cADT5T_aQG4?si=ggpUxYd0-1h9Hs3U">https://youtu.be/cADT5T_aQG4?si=ggpUxYd0-1h9Hs3U</a></p>
 
 IBVAP is a Smart India Hackathon 2026 prototype for adding local intelligence to existing CCTV infrastructure. Its hybrid deployment runs the command platform on AWS EC2 and the camera-facing AI runtime on a Mac connected through Tailscale. A detection is treated as an observation—not automatically as a threat.
 
